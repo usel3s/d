@@ -1230,33 +1230,12 @@
 
     .stage-idle.hidden { display: none; }
 
-    .stage-chrome-top {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      z-index: 5;
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      padding: calc(10px + var(--safe-top, 0px)) 14px 0;
-      pointer-events: none;
-      background: linear-gradient(180deg, rgba(0,0,0,0.45) 0%, transparent 100%);
-      height: 88px;
-    }
-
-    .stage-chrome-top > * { pointer-events: auto; }
-
-    .stage.mode-draw .stage-chrome-top .act-cam-only { visibility: hidden; }
-
     .stage-icon-btn {
-      width: 42px;
-      height: 42px;
+      width: 44px;
+      height: 44px;
       border-radius: 50%;
       border: none;
-      background: rgba(0,0,0,0.38);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
+      background: rgba(255,255,255,0.12);
       color: #fff;
       display: grid;
       place-items: center;
@@ -1283,6 +1262,12 @@
 
     .stage-icon-btn.btn-flash.on svg {
       fill: #111;
+    }
+
+    .stage-dock-icons {
+      display: flex;
+      align-items: center;
+      gap: 10px;
     }
 
     .stage-bar {
@@ -1420,6 +1405,16 @@
       color: rgba(255,255,255,0.72);
       font-size: 15px;
       font-weight: 600;
+    }
+
+    .cam-shot-hint {
+      display: block;
+      text-align: center;
+      color: rgba(255,255,255,0.55);
+      font-size: 11px;
+      font-weight: 700;
+      margin-top: 4px;
+      min-height: 14px;
     }
 
     .btn-shutter {
@@ -1703,19 +1698,6 @@
       <video id="stageVideo" class="hidden" playsinline muted autoplay></video>
       <img id="stageImage" class="stage-img hidden" alt="Снимок" />
       <canvas id="stageCanvas"></canvas>
-
-      <div class="stage-chrome-top">
-        <button type="button" class="stage-icon-btn btn-flash act-cam-only" id="btnFlash" disabled aria-label="Вспышка" title="Вспышка">
-          <svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor">
-            <path d="M7.5 2.5h7.2L11.2 10H17.5L9.2 21.5 11.1 12.2H5.5L7.5 2.5Z"/>
-          </svg>
-        </button>
-        <button type="button" class="stage-icon-btn" id="btnCancelStage" aria-label="Закрыть" title="Закрыть">
-          <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
-            <path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/>
-          </svg>
-        </button>
-      </div>
     </div>
     <div class="stage-bar">
       <div class="stage-hint" id="stageHint"></div>
@@ -1745,9 +1727,21 @@
           <button type="button" class="btn-shutter" id="btnCapture" aria-label="Снять" title="Снять"></button>
         </div>
         <div class="stage-side stage-side-right">
-          <span class="stage-text-btn muted" id="camShotHint" aria-hidden="true"></span>
+          <div class="stage-dock-icons">
+            <button type="button" class="stage-icon-btn btn-flash" id="btnFlash" disabled aria-label="Вспышка" title="Вспышка">
+              <svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor">
+                <path d="M7.5 2.5h7.2L11.2 10H17.5L9.2 21.5 11.1 12.2H5.5L7.5 2.5Z"/>
+              </svg>
+            </button>
+            <button type="button" class="stage-icon-btn" id="btnCancelStage" aria-label="Закрыть" title="Закрыть">
+              <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+                <path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/>
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
+      <div class="cam-shot-hint act-cam" id="camShotHint" aria-hidden="true"></div>
 
       <div class="stage-draw-dock act-draw">
         <div class="stage-side stage-side-left">
@@ -1755,7 +1749,14 @@
         </div>
         <div class="stage-side stage-side-center"></div>
         <div class="stage-side stage-side-right">
-          <button type="button" class="stage-text-btn accent" id="btnDoneDraw">Готово</button>
+          <div class="stage-dock-icons">
+            <button type="button" class="stage-text-btn accent" id="btnDoneDraw">Готово</button>
+            <button type="button" class="stage-icon-btn" id="btnCancelDraw" aria-label="Закрыть" title="Закрыть">
+              <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+                <path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/>
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -3551,10 +3552,7 @@
     function preventStageScroll(e) {
       if (!stageOpen) return;
       // не блокируем ползунок толщины и кнопки
-      if (e.target && e.target.closest && (
-        e.target.closest(".stage-bar") ||
-        e.target.closest(".stage-chrome-top")
-      )) return;
+      if (e.target && e.target.closest && e.target.closest(".stage-bar")) return;
       e.preventDefault();
     }
 
@@ -4341,6 +4339,10 @@
       haptic("light");
     });
     els.btnCancelStage.addEventListener("click", () => closeStage());
+    const btnCancelDraw = $("btnCancelDraw");
+    if (btnCancelDraw) {
+      btnCancelDraw.addEventListener("click", () => closeStage());
+    }
 
     els.stageCanvas.addEventListener("pointerdown", onDrawStart, { passive: false });
     els.stageCanvas.addEventListener("pointermove", onDrawMove, { passive: false });

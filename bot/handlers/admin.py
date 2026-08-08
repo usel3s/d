@@ -20,6 +20,7 @@ from utils.formatting import (
     format_grams,
     format_items_export,
     format_manual_export,
+    format_money,
     location_label,
 )
 
@@ -50,6 +51,48 @@ def _export_text(user_id: int, media_store: MediaStore) -> str:
     if manual:
         return format_manual_export(user_id=user_id, **manual)
     return format_items_export([], user_id=user_id)
+
+
+def _user_inventory_stats(user_id: int, media_store: MediaStore) -> dict[str, float | int]:
+    """Позиции/вес/сумма админа: из store или из известной сводки."""
+    items = media_store.list_items(user_id=user_id)
+    if items:
+        weight = 0.0
+        revenue = 0.0
+        photos = 0
+        for item in items:
+            try:
+                w = float(item.get("weight") or 0)
+            except (TypeError, ValueError):
+                w = 0.0
+            weight += w
+            # цена по умолчанию из MANUAL / defaults
+            key = str(int(w)) if w.is_integer() else str(w)
+            price_map = {"0.5": 850, "1": 1100, "2": 260, "3": 380, "4": 490, "5": 600}
+            revenue += float(price_map.get(key, 0) or 0)
+            photos += len(item.get("photos") or [])
+        return {
+            "count": len(items),
+            "weight": weight,
+            "revenue": revenue,
+            "photos": photos,
+            "source": "store",
+        }
+
+    manual = MANUAL_EXPORTS.get(user_id)
+    if manual:
+        count = int(manual["count"])
+        w = float(manual["weight"])
+        price = float(manual["price_per_item"])
+        return {
+            "count": count,
+            "weight": count * w,
+            "revenue": count * price,
+            "photos": 0,
+            "source": "manual",
+        }
+
+    return {"count": 0, "weight": 0.0, "revenue": 0.0, "photos": 0, "source": "empty"}
 
 
 @router.message(Command("admin"))
@@ -123,15 +166,16 @@ async def admin_stats(
     uid = callback.from_user.id
     users = await db.count_users()
     syncs = await db.count_syncs()
-    items = media_store.list_items(user_id=uid)
-    photos = sum(len(i.get("photos") or []) for i in items)
+    inv = _user_inventory_stats(uid, media_store)
     text = (
         f"{pe('stats')} <b>Статистика</b>\n"
         f"<i>только ваши позиции</i>\n\n"
-        f"{pe('users')} Пользователи: <b>{users}</b>\n"
-        f"{pe('analytics')} Синхронизации: <b>{syncs}</b>\n"
-        f"{pe('package')} Позиции: <b>{len(items)}</b>\n"
-        f"{pe('file')} Фото: <b>{photos}</b>"
+        f"{pe('package')} Позиции: <b>{inv['count']}</b>\n"
+        f"{pe('analytics')} Вес: <b>{format_grams(inv['weight'])}</b>\n"
+        f"{pe('coins')} Сумма: <b>{format_money(inv['revenue'])}</b>\n"
+        f"{pe('file')} Фото: <b>{inv['photos']}</b>\n\n"
+        f"{pe('users')} Пользователи бота: <b>{users}</b>\n"
+        f"{pe('loading')} Синхронизации: <b>{syncs}</b>"
     )
     if callback.message:
         await callback.message.edit_text(text, reply_markup=admin_keyboard())
