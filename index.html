@@ -1189,10 +1189,14 @@
       inset: 0;
       width: 100%;
       height: 100%;
-      object-fit: contain;
+      object-fit: cover;
       display: block;
       background: #000;
       pointer-events: none;
+    }
+
+    .stage.mode-draw .stage-viewport img.stage-img {
+      object-fit: contain;
     }
 
     .stage-viewport video.hidden,
@@ -1226,36 +1230,94 @@
 
     .stage-idle.hidden { display: none; }
 
+    .stage-chrome-top {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 5;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      padding: calc(10px + var(--safe-top, 0px)) 14px 0;
+      pointer-events: none;
+      background: linear-gradient(180deg, rgba(0,0,0,0.45) 0%, transparent 100%);
+      height: 88px;
+    }
+
+    .stage-chrome-top > * { pointer-events: auto; }
+
+    .stage.mode-draw .stage-chrome-top .act-cam-only { visibility: hidden; }
+
+    .stage-icon-btn {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      border: none;
+      background: rgba(0,0,0,0.38);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      color: #fff;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      padding: 0;
+      flex-shrink: 0;
+    }
+
+    .stage-icon-btn svg {
+      width: 22px;
+      height: 22px;
+      display: block;
+    }
+
+    .stage-icon-btn:disabled {
+      opacity: 0.28;
+      cursor: not-allowed;
+    }
+
+    .stage-icon-btn.btn-flash.on {
+      background: rgba(255, 204, 0, 0.95);
+      color: #111;
+    }
+
+    .stage-icon-btn.btn-flash.on svg {
+      fill: #111;
+    }
+
     .stage-bar {
       flex-shrink: 0;
-      padding: 12px 14px calc(14px + var(--safe-bottom));
-      background: rgba(18, 18, 20, 0.96);
-      border-top: 1px solid rgba(255,255,255,0.08);
+      padding: 10px 18px calc(18px + var(--safe-bottom));
+      background: #000;
       display: grid;
-      gap: 10px;
+      gap: 12px;
       touch-action: manipulation;
+      min-height: 132px;
+      align-content: end;
     }
 
     .stage-hint { display: none; }
 
     .draw-row {
       display: none;
-      grid-template-columns: auto 1fr auto;
-      gap: 8px;
+      grid-template-columns: 1fr;
+      gap: 10px;
       align-items: center;
+      padding: 0 2px;
     }
 
     .stage.mode-draw .draw-row { display: grid; }
 
     .draw-colors {
       display: flex;
-      gap: 6px;
+      gap: 8px;
       align-items: center;
+      justify-content: center;
     }
 
     .draw-color {
-      width: 26px;
-      height: 26px;
+      width: 28px;
+      height: 28px;
       border-radius: 50%;
       border: 2px solid transparent;
       cursor: pointer;
@@ -1270,14 +1332,15 @@
     .draw-size {
       display: flex;
       align-items: center;
-      gap: 4px;
+      justify-content: center;
+      gap: 8px;
       color: rgba(255,255,255,0.55);
       font-size: 11px;
       font-weight: 700;
     }
 
     .draw-size input[type="range"] {
-      width: 96px;
+      width: 120px;
       accent-color: #fff;
       touch-action: manipulation;
       pointer-events: auto;
@@ -1285,18 +1348,17 @@
 
     .draw-tools {
       display: flex;
-      gap: 6px;
-      justify-content: flex-end;
+      gap: 8px;
+      justify-content: center;
       flex-wrap: wrap;
     }
 
-    .draw-tools button,
-    .stage-actions button {
+    .draw-tools button {
       border: 1px solid rgba(255,255,255,0.14);
       background: rgba(255,255,255,0.08);
       color: #fff;
-      border-radius: 12px;
-      padding: 10px 12px;
+      border-radius: 999px;
+      padding: 8px 14px;
       font-size: 12px;
       font-weight: 800;
       cursor: pointer;
@@ -1308,47 +1370,95 @@
       cursor: not-allowed;
     }
 
-    .stage-actions {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
+    .stage-cam-dock {
+      display: none;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 12px;
+      min-height: 84px;
     }
 
-    .stage-actions .btn-shot,
-    .stage-actions .btn-done {
-      grid-column: 1 / -1;
+    .stage.mode-camera .stage-cam-dock { display: grid; }
+
+    .stage-draw-dock {
+      display: none;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 12px;
+      min-height: 56px;
+    }
+
+    .stage.mode-draw .stage-draw-dock { display: grid; }
+
+    .stage-side {
+      display: flex;
+      align-items: center;
+      min-width: 0;
+    }
+
+    .stage-side-left { justify-content: flex-start; }
+    .stage-side-right { justify-content: flex-end; }
+    .stage-side-center { justify-content: center; }
+
+    .stage-text-btn {
       border: none;
-      background: #fff;
-      color: #111;
+      background: transparent;
+      color: #fff;
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      padding: 10px 6px;
+      cursor: pointer;
+      text-shadow: 0 1px 4px rgba(0,0,0,0.45);
+    }
+
+    .stage-text-btn.accent {
+      color: #ffd60a;
+    }
+
+    .stage-text-btn.muted {
+      color: rgba(255,255,255,0.72);
       font-size: 15px;
-      padding: 14px;
-      border-radius: 16px;
+      font-weight: 600;
     }
 
-    .stage-actions .btn-gold {
-      color: #f0d78c;
-      border-color: rgba(240, 215, 140, 0.35);
+    .btn-shutter {
+      width: 74px;
+      height: 74px;
+      border-radius: 50%;
+      border: 4px solid rgba(255,255,255,0.92);
+      background: transparent;
+      padding: 4px;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+      transition: transform 0.12s ease;
     }
 
-    .stage-actions .btn-flash {
-      border-color: rgba(255,255,255,0.22);
-    }
-
-    .stage-actions .btn-flash.on {
+    .btn-shutter::after {
+      content: "";
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
       background: #fff;
-      color: #111;
-      border-color: #fff;
+      display: block;
     }
 
-    .stage-actions .btn-flash:disabled {
-      opacity: 0.35;
-      cursor: not-allowed;
+    .btn-shutter:active {
+      transform: scale(0.92);
+    }
+
+    .btn-shutter:active::after {
+      background: #e8e8e8;
+    }
+
+    .stage:not(.streaming) .btn-shutter {
+      opacity: 0.45;
     }
 
     .stage.mode-camera .act-draw { display: none; }
     .stage.mode-draw .act-cam { display: none; }
-    .stage.mode-camera .btn-shot { display: block; }
-    .stage:not(.streaming) .btn-shot { opacity: 0.5; }
 
     .camera-fallback {
       position: absolute;
@@ -1593,6 +1703,19 @@
       <video id="stageVideo" class="hidden" playsinline muted autoplay></video>
       <img id="stageImage" class="stage-img hidden" alt="Снимок" />
       <canvas id="stageCanvas"></canvas>
+
+      <div class="stage-chrome-top">
+        <button type="button" class="stage-icon-btn btn-flash act-cam-only" id="btnFlash" disabled aria-label="Вспышка" title="Вспышка">
+          <svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor">
+            <path d="M7.5 2.5h7.2L11.2 10H17.5L9.2 21.5 11.1 12.2H5.5L7.5 2.5Z"/>
+          </svg>
+        </button>
+        <button type="button" class="stage-icon-btn" id="btnCancelStage" aria-label="Закрыть" title="Закрыть">
+          <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+            <path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/>
+          </svg>
+        </button>
+      </div>
     </div>
     <div class="stage-bar">
       <div class="stage-hint" id="stageHint"></div>
@@ -1613,13 +1736,27 @@
           <button type="button" id="btnClearDraw" disabled>Сброс</button>
         </div>
       </div>
-      <div class="stage-actions">
-        <button type="button" class="btn-shot act-cam" id="btnCapture">Снять</button>
-        <button type="button" class="btn-flash act-cam" id="btnFlash" disabled>Вспышка</button>
-        <button type="button" class="btn-done act-cam" id="btnFinishCam">Готово</button>
-        <button type="button" class="btn-done act-draw" id="btnDoneDraw">Готово</button>
-        <button type="button" class="btn-gold act-draw" id="btnRetake">Сброс</button>
-        <button type="button" id="btnCancelStage">Закрыть</button>
+
+      <div class="stage-cam-dock act-cam">
+        <div class="stage-side stage-side-left">
+          <button type="button" class="stage-text-btn accent" id="btnFinishCam">Готово</button>
+        </div>
+        <div class="stage-side stage-side-center">
+          <button type="button" class="btn-shutter" id="btnCapture" aria-label="Снять" title="Снять"></button>
+        </div>
+        <div class="stage-side stage-side-right">
+          <span class="stage-text-btn muted" id="camShotHint" aria-hidden="true"></span>
+        </div>
+      </div>
+
+      <div class="stage-draw-dock act-draw">
+        <div class="stage-side stage-side-left">
+          <button type="button" class="stage-text-btn muted" id="btnRetake">Сброс</button>
+        </div>
+        <div class="stage-side stage-side-center"></div>
+        <div class="stage-side stage-side-right">
+          <button type="button" class="stage-text-btn accent" id="btnDoneDraw">Готово</button>
+        </div>
       </div>
     </div>
     <input type="file" id="photoInput" class="camera-fallback" accept="image/*" capture="environment" tabindex="-1" />
@@ -3169,7 +3306,15 @@
       const supported = cameraSupportsTorch();
       btn.disabled = !supported;
       btn.classList.toggle("on", !!(supported && torchOn));
-      btn.textContent = torchOn ? "Вспышка · вкл" : "Вспышка";
+      btn.setAttribute("aria-label", torchOn ? "Вспышка включена" : "Вспышка");
+      btn.title = torchOn ? "Вспышка · вкл" : "Вспышка";
+    }
+
+    function updateCamShotHint() {
+      const hint = $("camShotHint");
+      if (!hint) return;
+      const n = (formPhotos && formPhotos.length) || 0;
+      hint.textContent = n > 0 ? String(n) + "/" + MAX_PHOTOS : "";
     }
 
     async function setTorch(enabled) {
@@ -3406,7 +3551,10 @@
     function preventStageScroll(e) {
       if (!stageOpen) return;
       // не блокируем ползунок толщины и кнопки
-      if (e.target && e.target.closest && e.target.closest(".stage-bar")) return;
+      if (e.target && e.target.closest && (
+        e.target.closest(".stage-bar") ||
+        e.target.closest(".stage-chrome-top")
+      )) return;
       e.preventDefault();
     }
 
@@ -3440,6 +3588,7 @@
       setStageMode("camera");
       els.stageImage.classList.add("hidden");
       els.stageIdle.classList.remove("hidden");
+      updateCamShotHint();
       await startCamera();
     }
 
@@ -3552,6 +3701,7 @@
         final: compressed
       });
       renderPhotosGrid();
+      updateCamShotHint();
       if (!saveDraft()) {
         // draft overflow — still keep in memory
       }
