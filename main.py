@@ -42,6 +42,51 @@ async def handle_health(_: web.Request) -> web.Response:
     return web.json_response({"ok": True, "service": "logistics-bot"})
 
 
+def _resolve_request_user_id(request: web.Request, payload: dict | None = None) -> int:
+    from utils.webapp_auth import resolve_webapp_user_id
+
+    settings = request.app["settings"]
+    payload = payload or {}
+    user_id = int(payload.get("userId") or 0)
+    init_data = str(
+        payload.get("initData")
+        or request.headers.get("X-Telegram-Init-Data")
+        or ""
+    )
+    if not user_id and init_data:
+        resolved = resolve_webapp_user_id(init_data, settings.bot_token)
+        if resolved:
+            user_id = resolved
+    return user_id
+
+
+def _is_admin_user(request: web.Request, user_id: int) -> bool:
+    settings = request.app["settings"]
+    return bool(user_id) and user_id in settings.admin_ids
+
+
+async def handle_auth(request: web.Request) -> web.Response:
+    """Проверка: доступ в WebApp только у ADMIN_IDS."""
+    try:
+        payload = await request.json()
+    except Exception:
+        payload = {}
+
+    user_id = _resolve_request_user_id(request, payload)
+    admin = _is_admin_user(request, user_id)
+    if not user_id:
+        return web.json_response(
+            {"ok": False, "admin": False, "error": "no_user"},
+            status=401,
+        )
+    if not admin:
+        return web.json_response(
+            {"ok": False, "admin": False, "userId": user_id, "error": "forbidden"},
+            status=403,
+        )
+    return web.json_response({"ok": True, "admin": True, "userId": user_id})
+
+
 async def handle_sync_items(request: web.Request) -> web.Response:
     """WebApp → сервер: позиции + фото для админ-галереи."""
     media_store = request.app["media_store"]
@@ -50,13 +95,18 @@ async def handle_sync_items(request: web.Request) -> web.Response:
     except Exception:
         return web.json_response({"ok": False, "error": "invalid_json"}, status=400)
 
-    user_id = int(payload.get("userId") or 0)
+    user_id = _resolve_request_user_id(request, payload)
+    if not user_id:
+        return web.json_response({"ok": False, "error": "no_user"}, status=401)
+    if not _is_admin_user(request, user_id):
+        return web.json_response({"ok": False, "error": "forbidden"}, status=403)
+
     items = payload.get("items") or []
-    if not user_id or not isinstance(items, list):
+    if not isinstance(items, list):
         return web.json_response({"ok": False, "error": "bad_payload"}, status=400)
 
     saved = media_store.upsert_items(user_id, items)
-    return web.json_response({"ok": True, "saved": saved})
+    return web.json_response({"ok": True, "saved": saved, "userId": user_id})
 
 
 async def run() -> None:
@@ -78,6 +128,7 @@ async def run() -> None:
     app.router.add_get("/", handle_index)
     app.router.add_get("/index.html", handle_index)
     app.router.add_get("/health", handle_health)
+    app.router.add_post("/api/auth", handle_auth)
     app.router.add_post("/api/sync-items", handle_sync_items)
 
     runner = web.AppRunner(app)

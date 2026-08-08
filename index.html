@@ -332,6 +332,7 @@
       flex-direction: column;
       animation: riseIn 0.4s ease both;
       transition: transform 0.18s ease, box-shadow 0.18s ease;
+      cursor: pointer;
     }
 
     .card:active {
@@ -408,9 +409,11 @@
 
     .card-photo {
       position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
+      top: 50%;
+      left: 50%;
+      width: 104%;
+      height: 104%;
+      transform: translate(-50%, -50%);
       object-fit: cover;
       object-position: center;
       display: block;
@@ -421,6 +424,7 @@
       inset: 0;
       width: 100%;
       height: 100%;
+      transform: none;
       display: grid;
       place-items: center;
       color: var(--ink-soft);
@@ -970,7 +974,188 @@
       color: #7a5608;
     }
 
+    .access-gate {
+      position: fixed;
+      inset: 0;
+      z-index: 500;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background:
+        radial-gradient(ellipse 90% 55% at 50% -8%, #ffffff 0%, transparent 60%),
+        linear-gradient(180deg, #eceef2 0%, #e4e6eb 100%);
+    }
+
+    .access-gate.show { display: flex; }
+
+    .access-card {
+      width: min(100%, 360px);
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      padding: 28px 22px;
+      text-align: center;
+    }
+
+    .access-card .mark {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      background: #111114;
+      color: #fff;
+      display: grid;
+      place-items: center;
+      margin: 0 auto 14px;
+      font-size: 20px;
+    }
+
+    .access-card h2 {
+      font-size: 18px;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+
+    .access-card p {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--ink-soft);
+      line-height: 1.45;
+    }
+
     .hidden { display: none !important; }
+
+    /* fullscreen item photo gallery */
+    .gallery {
+      position: fixed;
+      inset: 0;
+      z-index: 350;
+      display: none;
+      flex-direction: column;
+      background: #0c0d10;
+      touch-action: none;
+    }
+
+    .gallery.open { display: flex; }
+
+    .gallery-top {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 12px 14px calc(10px);
+      padding-top: calc(12px + var(--safe-top));
+    }
+
+    .gallery-meta {
+      color: rgba(255,255,255,0.55);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .gallery-count {
+      color: #fff;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .gallery-close {
+      width: 40px;
+      height: 40px;
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 14px;
+      background: rgba(255,255,255,0.08);
+      color: #fff;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+    }
+
+    .gallery-close svg { width: 18px; height: 18px; }
+
+    .gallery-track-wrap {
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .gallery-track {
+      height: 100%;
+      display: flex;
+      transition: transform 0.28s ease;
+      will-change: transform;
+    }
+
+    .gallery-track.dragging {
+      transition: none;
+    }
+
+    .gallery-slide {
+      flex: 0 0 100%;
+      height: 100%;
+      display: grid;
+      place-items: center;
+      padding: 8px 12px 16px;
+    }
+
+    .gallery-slide img {
+      max-width: 100%;
+      max-height: 100%;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+      border-radius: 16px;
+      user-select: none;
+      -webkit-user-drag: none;
+      pointer-events: none;
+    }
+
+    .gallery-nav {
+      flex-shrink: 0;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      padding: 0 14px calc(14px + var(--safe-bottom));
+    }
+
+    .gallery-nav button {
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.08);
+      color: #fff;
+      border-radius: 16px;
+      padding: 13px;
+      font-weight: 800;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .gallery-nav button:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+
+    .gallery-dots {
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+      padding: 0 14px 10px;
+    }
+
+    .gallery-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.25);
+    }
+
+    .gallery-dot.active {
+      background: #fff;
+      width: 16px;
+      border-radius: 999px;
+    }
 
     .stage {
       position: fixed;
@@ -1176,6 +1361,14 @@
   </style>
 </head>
 <body>
+  <div class="access-gate" id="accessGate" aria-hidden="true">
+    <div class="access-card">
+      <div class="mark">✦</div>
+      <h2 id="accessTitle">доступ</h2>
+      <p id="accessText">проверка…</p>
+    </div>
+  </div>
+
   <div class="app">
     <header class="header">
       <div class="brand">
@@ -1408,6 +1601,29 @@
     <input type="file" id="photoInput" class="camera-fallback" accept="image/*" capture="environment" tabindex="-1" />
   </div>
 
+  <!-- FULLSCREEN ITEM GALLERY -->
+  <div class="gallery" id="gallery" aria-hidden="true">
+    <div class="gallery-top">
+      <div>
+        <div class="gallery-meta" id="galleryMeta">#photo</div>
+        <div class="gallery-count" id="galleryCount">1 / 1</div>
+      </div>
+      <button type="button" class="gallery-close" id="btnCloseGallery" aria-label="close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M6 6l12 12M18 6L6 18" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+    <div class="gallery-track-wrap" id="galleryTrackWrap">
+      <div class="gallery-track" id="galleryTrack"></div>
+    </div>
+    <div class="gallery-dots" id="galleryDots"></div>
+    <div class="gallery-nav">
+      <button type="button" id="btnGalleryPrev">Назад</button>
+      <button type="button" id="btnGalleryNext">Далее</button>
+    </div>
+  </div>
+
   <div class="toast" id="toast"></div>
 
   <script>
@@ -1418,6 +1634,7 @@
     const STORAGE_PRICES = "logistics_prices_v2";
     const STORAGE_DRAFT = "logistics_draft_v2";
     const STORAGE_LAST = "logistics_last_v2";
+    const STORAGE_TG_UID = "logistics_tg_uid";
     const MAX_PHOTOS = 5;
 
     const LOCATIONS = [
@@ -1471,6 +1688,16 @@
     let editingPhotoIdx = null;
     /** natural size of photo in draw mode */
     let stageImgSize = { w: 1, h: 1 };
+
+    /** Gallery viewer */
+    let galleryOpen = false;
+    let galleryItemId = null;
+    let galleryIndex = 0;
+    let gallerySources = [];
+    let galleryDragX = 0;
+    let galleryDragging = false;
+    let galleryStartX = 0;
+    let galleryStartY = 0;
 
     /** Geo */
     let currentGeo = null;
@@ -1547,7 +1774,16 @@
       btnFinishCam: $("btnFinishCam"),
       btnDoneDraw: $("btnDoneDraw"),
       btnRetake: $("btnRetake"),
-      btnCancelStage: $("btnCancelStage")
+      btnCancelStage: $("btnCancelStage"),
+      gallery: $("gallery"),
+      galleryMeta: $("galleryMeta"),
+      galleryCount: $("galleryCount"),
+      galleryTrack: $("galleryTrack"),
+      galleryTrackWrap: $("galleryTrackWrap"),
+      galleryDots: $("galleryDots"),
+      btnCloseGallery: $("btnCloseGallery"),
+      btnGalleryPrev: $("btnGalleryPrev"),
+      btnGalleryNext: $("btnGalleryNext")
     };
 
     /* ── Telegram ── */
@@ -1559,7 +1795,41 @@
         tg.expand();
         if (tg.setHeaderColor) tg.setHeaderColor("#e9ebef");
         if (tg.setBackgroundColor) tg.setBackgroundColor("#e9ebef");
+        resolveTelegramUserId();
       } catch (_) { /* ignore */ }
+    }
+
+    function resolveTelegramUserId() {
+      let id = 0;
+      try {
+        if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.id) {
+          id = Number(tg.initDataUnsafe.user.id) || 0;
+        }
+      } catch (_) { /* ignore */ }
+
+      if (!id && tg && tg.initData) {
+        try {
+          const params = new URLSearchParams(tg.initData);
+          const raw = params.get("user");
+          if (raw) {
+            const user = JSON.parse(raw);
+            id = Number(user && user.id) || 0;
+          }
+        } catch (_) { /* ignore */ }
+      }
+
+      if (!id) {
+        id = Number(localStorage.getItem(STORAGE_TG_UID) || 0) || 0;
+      }
+
+      if (id) {
+        try { localStorage.setItem(STORAGE_TG_UID, String(id)); } catch (_) { /* ignore */ }
+      }
+      return id;
+    }
+
+    function getTelegramInitData() {
+      return (tg && tg.initData) ? String(tg.initData) : "";
     }
 
     function setVerticalSwipes(enabled) {
@@ -2375,6 +2645,97 @@
       els.btnRepeat.disabled = !last;
     }
 
+    function itemPhotoSources(item) {
+      if (!item || !item.photos) return [];
+      return item.photos
+        .map((p) => p.final || p.raw || "")
+        .filter(Boolean);
+    }
+
+    function renderGalleryFrame() {
+      const n = gallerySources.length;
+      const idx = Math.max(0, Math.min(galleryIndex, Math.max(0, n - 1)));
+      galleryIndex = idx;
+      els.galleryCount.textContent = n ? (idx + 1) + " / " + n : "0 / 0";
+      els.galleryTrack.style.transform =
+        "translateX(calc(" + (-idx * 100) + "% + " + galleryDragX + "px))";
+      els.btnGalleryPrev.disabled = idx <= 0;
+      els.btnGalleryNext.disabled = idx >= n - 1;
+      els.galleryDots.innerHTML = gallerySources.map((_, i) => {
+        return '<span class="gallery-dot' + (i === idx ? " active" : "") + '"></span>';
+      }).join("");
+    }
+
+    function openGallery(itemId, startIndex) {
+      const item = items.find((i) => i.id === itemId);
+      if (!item) return;
+      const sources = itemPhotoSources(item);
+      if (!sources.length) {
+        showToast("нет фото");
+        return;
+      }
+      galleryOpen = true;
+      galleryItemId = itemId;
+      gallerySources = sources;
+      galleryIndex = Math.max(0, Math.min(startIndex || 0, sources.length - 1));
+      galleryDragX = 0;
+      galleryDragging = false;
+
+      const loc = locationLabel(item.location);
+      els.galleryMeta.textContent =
+        "#" + String(loc).toLowerCase() +
+        " · #" + tapeLabel(item.tapeColor).toLowerCase();
+
+      els.galleryTrack.innerHTML = sources.map((src) => {
+        return (
+          '<div class="gallery-slide">' +
+            '<img src="' + escapeAttr(src) + '" alt="" />' +
+          "</div>"
+        );
+      }).join("");
+
+      els.gallery.classList.add("open");
+      els.gallery.setAttribute("aria-hidden", "false");
+      setVerticalSwipes(false);
+      if (tg && tg.BackButton) tg.BackButton.show();
+      renderGalleryFrame();
+      haptic("light");
+    }
+
+    function closeGallery() {
+      galleryOpen = false;
+      galleryItemId = null;
+      gallerySources = [];
+      galleryIndex = 0;
+      galleryDragX = 0;
+      galleryDragging = false;
+      els.gallery.classList.remove("open");
+      els.gallery.setAttribute("aria-hidden", "true");
+      els.galleryTrack.innerHTML = "";
+      els.galleryDots.innerHTML = "";
+      setVerticalSwipes(true);
+      if (
+        tg &&
+        tg.BackButton &&
+        !els.formOverlay.classList.contains("open") &&
+        !els.menuOverlay.classList.contains("open") &&
+        !els.settingsOverlay.classList.contains("open") &&
+        !stageOpen
+      ) {
+        tg.BackButton.hide();
+      }
+    }
+
+    function galleryStep(delta) {
+      if (!gallerySources.length) return;
+      const next = galleryIndex + delta;
+      if (next < 0 || next >= gallerySources.length) return;
+      galleryIndex = next;
+      galleryDragX = 0;
+      renderGalleryFrame();
+      haptic("light");
+    }
+
     /* ── Overlays ── */
 
     function openOverlay(el) {
@@ -2525,8 +2886,7 @@
       const tagSize = Math.max(10, Math.round(fontSize * 0.9));
       const lineH = Math.round(fontSize * 1.42);
       const radius = Math.max(14, Math.round(width * 0.032));
-      const mark = Math.max(16, Math.round(fontSize * 1.35));
-      const maxTextW = width - margin * 2 - padX * 2 - mark - 10;
+      const maxTextW = width - margin * 2 - padX * 2;
 
       ctx.save();
       ctx.textBaseline = "top";
@@ -2585,20 +2945,6 @@
         ctx.stroke();
       }
       ctx.restore();
-
-      // star mark
-      const mx = boxX + padX;
-      const my = boxY + boxH - padY - mark;
-      roundRectPath(ctx, mx, my, mark, mark, Math.max(4, Math.round(mark * 0.28)));
-      ctx.fillStyle = "#111114";
-      ctx.fill();
-      ctx.fillStyle = "#fff";
-      ctx.font = "700 " + Math.max(8, Math.round(mark * 0.55)) + "px Manrope, Segoe UI, sans-serif";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText("✦", mx + mark / 2, my + mark / 2 + 0.5);
-      ctx.textAlign = "left";
-      ctx.textBaseline = "top";
 
       // barcode
       const barW = Math.max(22, Math.round(width * 0.05));
@@ -3198,9 +3544,19 @@
       localStorage.removeItem(STORAGE_DRAFT);
     }
 
-    function loadDraftIntoForm() {
+    function loadDraftIntoForm(options) {
+      options = options || {};
       const draft = loadJSON(STORAGE_DRAFT, null);
       if (!draft) return false;
+      // Черновик редактирования не должен открываться через «Добавить»
+      if (draft.editingId && !options.allowEdit) return false;
+      if (
+        options.requireEditingId &&
+        draft.editingId !== options.requireEditingId
+      ) {
+        return false;
+      }
+
       editingId = draft.editingId || null;
       els.locationSelect.value = draft.location || "warehouse_1";
       els.weightSelect.value = draft.weight != null ? String(draft.weight) : "0.5";
@@ -3254,26 +3610,33 @@
 
       if (options.editItem) {
         const item = options.editItem;
-        editingId = item.id;
-        els.formTitle.textContent = "Редактирование";
-        els.locationSelect.value = item.location || "warehouse_1";
-        els.weightSelect.value = String(item.weight != null ? item.weight : "0.5");
-        els.tapeSelect.value = item.tapeColor || "yellow";
-        els.noteInput.value = item.note || "";
-        formPhotos = (item.photos || []).map(migratePhoto).filter(Boolean);
-        if (item.geo) {
-          currentGeo = normalizeFix(Object.assign({}, item.geo, { source: item.geo.source || "browser" }));
-          if (currentGeo) {
-            geoSamples = [currentGeo];
-            currentAddress = streetOnlyAddress(item.geo.address || "");
-            if (currentAddress) {
-              lastAddressCoords = { lat: currentGeo.latitude, lon: currentGeo.longitude };
+        // если есть черновик именно этой позиции — восстановить его
+        const restoredEdit = loadDraftIntoForm({
+          allowEdit: true,
+          requireEditingId: item.id
+        });
+        if (!restoredEdit) {
+          editingId = item.id;
+          els.formTitle.textContent = "Редактирование";
+          els.locationSelect.value = item.location || "warehouse_1";
+          els.weightSelect.value = String(item.weight != null ? item.weight : "0.5");
+          els.tapeSelect.value = item.tapeColor || "yellow";
+          els.noteInput.value = item.note || "";
+          formPhotos = (item.photos || []).map(migratePhoto).filter(Boolean);
+          if (item.geo) {
+            currentGeo = normalizeFix(Object.assign({}, item.geo, { source: item.geo.source || "browser" }));
+            if (currentGeo) {
+              geoSamples = [currentGeo];
+              currentAddress = streetOnlyAddress(item.geo.address || "");
+              if (currentAddress) {
+                lastAddressCoords = { lat: currentGeo.latitude, lon: currentGeo.longitude };
+              }
             }
           }
+          renderPhotosGrid();
+          updateHeavyAlert();
+          renderGeoUi();
         }
-        renderPhotosGrid();
-        updateHeavyAlert();
-        renderGeoUi();
       } else if (options.repeatLast) {
         const last = loadJSON(STORAGE_LAST, null);
         if (last) {
@@ -3285,9 +3648,14 @@
           });
           showToast("повтор — фото");
         }
-      } else if (options.useDraft !== false) {
-        const restored = loadDraftIntoForm();
+      } else {
+        // «Добавить» — только черновик новой позиции (без editingId)
+        const restored = loadDraftIntoForm({ allowEdit: false });
         if (restored) showToast("draft");
+        else {
+          editingId = null;
+          els.formTitle.textContent = "Новая позиция";
+        }
       }
 
       suppressDraft = false;
@@ -3407,16 +3775,23 @@
         if (!options.silent) showToast("пусто");
         return false;
       }
-      const userId =
-        (tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.id) || 0;
-      if (!userId) {
-        if (!options.silent) showToast("no userId", true);
+
+      if (tg && typeof tg.ready === "function") {
+        try { tg.ready(); } catch (_) { /* ignore */ }
+      }
+
+      let userId = resolveTelegramUserId();
+      const initData = getTelegramInitData();
+
+      if (!userId && !initData) {
+        if (!options.silent) showToast("открой из бота", true);
         return false;
       }
 
       if (!options.silent) showToast("sync…");
       const payload = {
-        userId: userId,
+        userId: userId || 0,
+        initData: initData,
         items: items.map((i) => ({
           id: i.id,
           location: i.location,
@@ -3436,19 +3811,30 @@
       try {
         const res = await fetch("/api/sync-items", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "X-Telegram-Init-Data": initData
+          },
           body: JSON.stringify(payload)
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok || !data.ok) {
           if (!options.silent) {
-            showToast("sync fail", true);
+            const err = data.error || "";
+            const msg =
+              err === "forbidden" ? "нет доступа" :
+              err === "no_user" || err === "bad_payload" ? "открой из бота" :
+              "sync fail";
+            showToast(msg, true);
             haptic("warn");
           }
           return false;
         }
+        if (data.userId) {
+          try { localStorage.setItem(STORAGE_TG_UID, String(data.userId)); } catch (_) { /* ignore */ }
+        }
         if (!options.silent) {
-          showToast("sync " + (data.saved || 0) + " +foto");
+          showToast("sync " + (data.saved || 0) + " +фото");
           haptic("ok");
         }
         if (options.notifyBot) notifyBotMeta();
@@ -3470,10 +3856,10 @@
 
     /* ── Events ── */
 
-    els.btnAdd.addEventListener("click", () => openForm({ useDraft: true }));
+    els.btnAdd.addEventListener("click", () => openForm({ create: true }));
     els.btnRepeat.addEventListener("click", () => {
       if (els.btnRepeat.disabled) return;
-      openForm({ repeatLast: true, useDraft: false });
+      openForm({ repeatLast: true });
     });
 
     els.btnCloseForm.addEventListener("click", () => closeForm(true));
@@ -3534,27 +3920,83 @@
 
     els.itemsList.addEventListener("click", (e) => {
       const btn = e.target.closest("[data-action]");
-      if (!btn) return;
-      const card = btn.closest(".card");
+      const card = e.target.closest(".card");
       if (!card) return;
       const id = card.getAttribute("data-id");
-      const action = btn.getAttribute("data-action");
 
-      if (action === "delete") {
-        items = items.filter((i) => i.id !== id);
-        saveItemsPersistent(items);
-        renderAll();
-        showToast("удалено");
-        haptic("light");
+      if (btn) {
+        const action = btn.getAttribute("data-action");
+        if (action === "delete") {
+          items = items.filter((i) => i.id !== id);
+          saveItemsPersistent(items);
+          renderAll();
+          showToast("удалено");
+          haptic("light");
+          return;
+        }
+        if (action === "edit") {
+          const item = items.find((i) => i.id === id);
+          if (!item) return;
+          openForm({ editItem: item });
+        }
         return;
       }
 
-      if (action === "edit") {
-        const item = items.find((i) => i.id === id);
-        if (!item) return;
-        openForm({ editItem: item, useDraft: false });
-      }
+      openGallery(id, 0);
     });
+
+    els.btnCloseGallery.addEventListener("click", () => closeGallery());
+    els.btnGalleryPrev.addEventListener("click", () => galleryStep(-1));
+    els.btnGalleryNext.addEventListener("click", () => galleryStep(1));
+
+    (function bindGallerySwipe() {
+      const wrap = els.galleryTrackWrap;
+      if (!wrap) return;
+
+      function onStart(e) {
+        if (!galleryOpen || gallerySources.length < 2) return;
+        const t = e.touches ? e.touches[0] : e;
+        galleryDragging = true;
+        galleryStartX = t.clientX;
+        galleryStartY = t.clientY;
+        galleryDragX = 0;
+        els.galleryTrack.classList.add("dragging");
+      }
+
+      function onMove(e) {
+        if (!galleryDragging) return;
+        const t = e.touches ? e.touches[0] : e;
+        const dx = t.clientX - galleryStartX;
+        const dy = t.clientY - galleryStartY;
+        if (Math.abs(dx) > Math.abs(dy)) {
+          e.preventDefault();
+          galleryDragX = dx;
+          renderGalleryFrame();
+        }
+      }
+
+      function onEnd() {
+        if (!galleryDragging) return;
+        galleryDragging = false;
+        els.galleryTrack.classList.remove("dragging");
+        const threshold = Math.min(80, (wrap.clientWidth || 300) * 0.18);
+        if (galleryDragX <= -threshold) galleryStep(1);
+        else if (galleryDragX >= threshold) galleryStep(-1);
+        else {
+          galleryDragX = 0;
+          renderGalleryFrame();
+        }
+      }
+
+      wrap.addEventListener("touchstart", onStart, { passive: true });
+      wrap.addEventListener("touchmove", onMove, { passive: false });
+      wrap.addEventListener("touchend", onEnd);
+      wrap.addEventListener("touchcancel", onEnd);
+      wrap.addEventListener("pointerdown", onStart);
+      wrap.addEventListener("pointermove", onMove);
+      wrap.addEventListener("pointerup", onEnd);
+      wrap.addEventListener("pointercancel", onEnd);
+    })();
 
     els.photosGrid.addEventListener("click", (e) => {
       const btn = e.target.closest("[data-remove]");
@@ -3814,6 +4256,10 @@
           closeStage();
           return;
         }
+        if (galleryOpen) {
+          closeGallery();
+          return;
+        }
         if (els.formOverlay.classList.contains("open")) {
           closeForm(true);
           return;
@@ -3830,16 +4276,73 @@
 
     /* ── Init ── */
 
-    initTelegram();
-    items = loadItems();
-    const storedPrices = loadJSON(STORAGE_PRICES, {});
-    prices = {};
-    WEIGHTS.forEach((w) => {
-      const key = weightKey(w);
-      const raw = storedPrices && storedPrices[key];
-      prices[key] = raw != null ? Math.max(0, Number(raw) || 0) : DEFAULT_PRICES[key];
-    });
-    renderAll();
+    function showAccessGate(title, text) {
+      const gate = $("accessGate");
+      if (!gate) return;
+      $("accessTitle").textContent = title;
+      $("accessText").textContent = text;
+      gate.classList.add("show");
+      gate.setAttribute("aria-hidden", "false");
+      document.body.classList.add("stage-lock");
+    }
+
+    function hideAccessGate() {
+      const gate = $("accessGate");
+      if (!gate) return;
+      gate.classList.remove("show");
+      gate.setAttribute("aria-hidden", "true");
+      document.body.classList.remove("stage-lock");
+    }
+
+    async function ensureAdminAccess() {
+      initTelegram();
+      const userId = resolveTelegramUserId();
+      const initData = getTelegramInitData();
+
+      if (!userId && !initData) {
+        showAccessGate("нет доступа", "открой Mini App из бота");
+        return false;
+      }
+
+      try {
+        const res = await fetch("/api/auth", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Telegram-Init-Data": initData
+          },
+          body: JSON.stringify({ userId: userId || 0, initData: initData })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.ok || !data.admin) {
+          showAccessGate("нет доступа", "только admin");
+          return false;
+        }
+        if (data.userId) {
+          try { localStorage.setItem(STORAGE_TG_UID, String(data.userId)); } catch (_) { /* ignore */ }
+        }
+        hideAccessGate();
+        return true;
+      } catch (_) {
+        showAccessGate("нет доступа", "сервер недоступен");
+        return false;
+      }
+    }
+
+    (async function boot() {
+      const allowed = await ensureAdminAccess();
+      if (!allowed) return;
+
+      items = loadItems();
+      const storedPrices = loadJSON(STORAGE_PRICES, {});
+      prices = {};
+      WEIGHTS.forEach((w) => {
+        const key = weightKey(w);
+        const raw = storedPrices && storedPrices[key];
+        prices[key] = raw != null ? Math.max(0, Number(raw) || 0) : DEFAULT_PRICES[key];
+      });
+      renderAll();
+    })();
   })();
   </script>
 </body>

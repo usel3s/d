@@ -5,6 +5,7 @@ import logging
 from aiogram import F, Router
 from aiogram.types import Message
 
+from config import Settings
 from services import LogisticsService
 from utils.emoji import pe
 from utils.formatting import summarize_sync
@@ -15,10 +16,18 @@ router = Router(name="webapp")
 
 
 @router.message(F.web_app_data)
-async def on_web_app_data(message: Message, logistics: LogisticsService) -> None:
+async def on_web_app_data(
+    message: Message,
+    logistics: LogisticsService,
+    settings: Settings,
+) -> None:
     user = message.from_user
     data = message.web_app_data
     if user is None or data is None:
+        return
+
+    if user.id not in settings.admin_ids:
+        await message.answer(f"{pe('lock')} нет доступа")
         return
 
     await logistics.register_user(user.id, user.username, user.full_name)
