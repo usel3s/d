@@ -655,7 +655,145 @@
       resize: vertical;
     }
 
-    .photos-box,
+    .photos-box {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      background: var(--surface-solid);
+      box-shadow: var(--shadow);
+      padding: 14px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .photos-box::before {
+      content: "";
+      position: absolute;
+      inset: 12px;
+      background:
+        linear-gradient(var(--cross) 1px, transparent 1px) 0 50% / 100% 16px,
+        linear-gradient(90deg, var(--cross) 1px, transparent 1px) 50% 0 / 16px 100%;
+      opacity: 0.55;
+      pointer-events: none;
+      border-radius: 12px;
+    }
+
+    .photos-head {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .photos-tag {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--ink-soft);
+      letter-spacing: 0.02em;
+    }
+
+    .photos-hint {
+      border: 1px solid var(--ink);
+      border-radius: 999px;
+      padding: 3px 9px;
+      font-size: 10px;
+      font-weight: 800;
+      color: var(--ink);
+      background: rgba(255,255,255,0.9);
+    }
+
+    .photos-grid {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+      min-height: 56px;
+    }
+
+    .photos-grid:empty::after {
+      content: "—";
+      grid-column: 1 / -1;
+      display: grid;
+      place-items: center;
+      height: 72px;
+      color: var(--ink-soft);
+      font-weight: 800;
+      font-size: 12px;
+      border-radius: 14px;
+      background: rgba(243,244,247,0.7);
+      border: 1px solid var(--line);
+    }
+
+    .photo-thumb {
+      position: relative;
+      aspect-ratio: 1;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.9);
+      background: linear-gradient(145deg, rgba(255,255,255,0.9), rgba(243,244,247,0.7));
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.95),
+        0 6px 14px rgba(20, 24, 33, 0.08);
+      cursor: pointer;
+    }
+
+    .photo-thumb img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+      display: block;
+      pointer-events: none;
+    }
+
+    .photo-thumb .btn-remove-photo {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      z-index: 2;
+      width: 22px;
+      height: 22px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255,255,255,0.92);
+      color: var(--ink);
+      font-size: 14px;
+      line-height: 1;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: var(--shadow-soft);
+    }
+
+    .btn-add-photo {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      border: none;
+      background: var(--ink);
+      color: #fff;
+      border-radius: 16px;
+      padding: 13px;
+      font-weight: 800;
+      font-size: 13px;
+      letter-spacing: -0.01em;
+      cursor: pointer;
+      box-shadow: 0 10px 20px rgba(17, 17, 20, 0.14);
+    }
+
+    .btn-add-photo:active { transform: scale(0.98); }
+
+    .btn-add-photo:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+      transform: none;
+    }
+
     .geo-box,
     .settings-block,
     .menu-item {
@@ -665,74 +803,10 @@
       box-shadow: var(--shadow-soft);
     }
 
-    .photos-box,
     .geo-box {
       padding: 12px;
       display: grid;
       gap: 10px;
-    }
-
-    .photos-grid {
-      display: grid;
-      grid-template-columns: repeat(5, 1fr);
-      gap: 8px;
-    }
-
-    .photo-thumb {
-      position: relative;
-      aspect-ratio: 1;
-      border-radius: 12px;
-      overflow: hidden;
-      border: 1px solid var(--line);
-      background: #f3f4f7;
-      cursor: pointer;
-    }
-
-    .photo-thumb img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-      pointer-events: none;
-    }
-
-    .photo-thumb .btn-remove-photo {
-      position: absolute;
-      top: 2px;
-      right: 2px;
-      width: 22px;
-      height: 22px;
-      border: none;
-      border-radius: 8px;
-      background: rgba(17, 17, 20, 0.72);
-      color: #fff;
-      font-size: 14px;
-      line-height: 1;
-      cursor: pointer;
-    }
-
-    .btn-add-photo {
-      width: 100%;
-      border: 1px dashed rgba(17,17,20,0.25);
-      background: rgba(17,17,20,0.04);
-      color: var(--ink);
-      border-radius: 14px;
-      padding: 12px;
-      font-weight: 800;
-      font-size: 13px;
-      cursor: pointer;
-    }
-
-    .btn-add-photo:disabled {
-      opacity: 0.4;
-      cursor: not-allowed;
-    }
-
-    .photos-hint {
-      font-size: 11px;
-      color: var(--ink-soft);
-      text-align: center;
-      font-weight: 700;
     }
 
     .geo-status {
@@ -1155,17 +1229,21 @@
 
       <form class="form" id="itemForm">
         <div class="field">
-          <label>Фото Клада <span class="req">*</span></label>
           <div class="photos-box">
+            <div class="photos-head">
+              <span class="photos-tag">#photo</span>
+              <span class="photos-hint" id="photosHint">0 / 5</span>
+            </div>
             <div class="photos-grid" id="photosGrid"></div>
-            <button type="button" class="btn-add-photo" id="btnAddPhoto">Снять фото</button>
-            <div class="photos-hint" id="photosHint">0 / 5</div>
+            <button type="button" class="btn-add-photo" id="btnAddPhoto">Снять</button>
           </div>
         </div>
 
         <div class="field">
-          <label>GPS <span class="req">*</span></label>
           <div class="geo-box" id="geoBox">
+            <div class="photos-head">
+              <span class="photos-tag">#gps</span>
+            </div>
             <div class="geo-status">
               <span class="geo-dot pending" id="geoDot"></span>
               <div>
@@ -1181,7 +1259,7 @@
         </div>
 
         <div class="field">
-          <label for="locationSelect">Тип локации <span class="req">*</span></label>
+          <label for="locationSelect">#location <span class="req">*</span></label>
           <select id="locationSelect" required>
             <option value="warehouse_1">Тайник</option>
             <option value="warehouse_2">Подьезд</option>
@@ -1190,7 +1268,7 @@
         </div>
 
         <div class="field">
-          <label for="weightSelect">Граммовка (г) <span class="req">*</span></label>
+          <label for="weightSelect">#weight <span class="req">*</span></label>
           <select id="weightSelect" required>
             <option value="0.5">0.5 г</option>
             <option value="1">1 г</option>
@@ -1206,7 +1284,7 @@
         </div>
 
         <div class="field">
-          <label for="tapeSelect">Цвет изоленты <span class="req">*</span></label>
+          <label for="tapeSelect">#tape <span class="req">*</span></label>
           <select id="tapeSelect" required>
             <option value="yellow">Жёлтый</option>
             <option value="red">Красный</option>
@@ -1216,8 +1294,8 @@
         </div>
 
         <div class="field">
-          <label for="noteInput">Описание</label>
-          <textarea id="noteInput" maxlength="500" placeholder="описание"></textarea>
+          <label for="noteInput">#note</label>
+          <textarea id="noteInput" maxlength="500" placeholder="note"></textarea>
         </div>
 
         <div class="form-actions">
@@ -2403,62 +2481,155 @@
       return lines;
     }
 
-    function buildStampMeta(meta) {
+    function buildStampRows(meta) {
       meta = meta || {};
       const note = (meta.note || "").trim();
-      const lines = [
-        "Изолента: " + tapeLabel(meta.tapeColor),
-        "Место: " + locationLabel(meta.location),
-        "Описание: " + (note || "—")
+      const rows = [
+        { tag: "#tape", value: tapeLabel(meta.tapeColor) },
+        { tag: "#location", value: locationLabel(meta.location) },
+        { tag: "#note", value: note || "—" }
       ];
       const geo = meta.geo;
       if (geo && geo.latitude != null && geo.longitude != null) {
-        lines.push(
-          formatCoords(geo.latitude, geo.longitude) +
-          (geo.accuracy != null ? "  ±" + formatAccuracy(geo.accuracy) : "")
-        );
+        rows.push({
+          tag: "#gps",
+          value:
+            formatCoords(geo.latitude, geo.longitude) +
+            (geo.accuracy != null ? "  ±" + formatAccuracy(geo.accuracy) : "")
+        });
       }
       const addr = streetOnlyAddress(meta.address || (geo && geo.address) || "");
-      if (addr) lines.push(addr);
-      return lines;
+      if (addr) rows.push({ tag: "#addr", value: addr });
+      return rows;
+    }
+
+    function roundRectPath(ctx, x, y, w, h, r) {
+      const radius = Math.min(r, w / 2, h / 2);
+      ctx.beginPath();
+      ctx.moveTo(x + radius, y);
+      ctx.arcTo(x + w, y, x + w, y + h, radius);
+      ctx.arcTo(x + w, y + h, x, y + h, radius);
+      ctx.arcTo(x, y + h, x, y, radius);
+      ctx.arcTo(x, y, x + w, y, radius);
+      ctx.closePath();
     }
 
     function paintStamp(ctx, width, height, meta) {
-      const pad = Math.max(10, Math.round(width * 0.025));
-      const fontSize = Math.max(13, Math.round(width * 0.028));
-      const lineH = Math.round(fontSize * 1.28);
+      const rows = buildStampRows(meta);
+      if (!rows.length) return;
+
+      const margin = Math.max(10, Math.round(width * 0.028));
+      const padX = Math.max(12, Math.round(width * 0.03));
+      const padY = Math.max(10, Math.round(width * 0.022));
+      const fontSize = Math.max(11, Math.round(width * 0.024));
+      const tagSize = Math.max(10, Math.round(fontSize * 0.9));
+      const lineH = Math.round(fontSize * 1.42);
+      const radius = Math.max(14, Math.round(width * 0.032));
+      const mark = Math.max(16, Math.round(fontSize * 1.35));
+      const maxTextW = width - margin * 2 - padX * 2 - mark - 10;
+
       ctx.save();
-      ctx.font = "600 " + fontSize + "px Segoe UI, system-ui, sans-serif";
       ctx.textBaseline = "top";
 
-      const maxTextW = width - pad * 2;
       const wrapped = [];
-      buildStampMeta(meta).forEach((l, idx) => {
-        if (idx === 2 || idx >= 4) {
-          wrapTextLines(ctx, l, maxTextW).slice(0, 3).forEach((w) => wrapped.push(w));
+      rows.forEach((row) => {
+        ctx.font = "700 " + fontSize + "px Manrope, Segoe UI, sans-serif";
+        const prefix = row.tag + "  ";
+        const prefixW = ctx.measureText(prefix).width;
+        const valueLines = wrapTextLines(ctx, row.value, Math.max(40, maxTextW - prefixW)).slice(0, 2);
+        valueLines.forEach((line, i) => {
+          wrapped.push({
+            tag: i === 0 ? row.tag : "",
+            value: line
+          });
+        });
+      });
+
+      const boxW = width - margin * 2;
+      const boxH = padY * 2 + wrapped.length * lineH + 4;
+      const boxX = margin;
+      const boxY = height - margin - boxH;
+
+      // soft shadow
+      ctx.fillStyle = "rgba(20, 24, 33, 0.18)";
+      roundRectPath(ctx, boxX + 2, boxY + 3, boxW, boxH, radius);
+      ctx.fill();
+
+      // glass card
+      ctx.fillStyle = "rgba(255, 255, 255, 0.92)";
+      roundRectPath(ctx, boxX, boxY, boxW, boxH, radius);
+      ctx.fill();
+
+      ctx.strokeStyle = "rgba(17, 17, 20, 0.1)";
+      ctx.lineWidth = Math.max(1, Math.round(width * 0.002));
+      roundRectPath(ctx, boxX, boxY, boxW, boxH, radius);
+      ctx.stroke();
+
+      // faint grid
+      ctx.save();
+      roundRectPath(ctx, boxX, boxY, boxW, boxH, radius);
+      ctx.clip();
+      ctx.strokeStyle = "rgba(17, 17, 20, 0.05)";
+      ctx.lineWidth = 1;
+      const grid = Math.max(10, Math.round(fontSize * 0.9));
+      for (let x = boxX; x < boxX + boxW; x += grid) {
+        ctx.beginPath();
+        ctx.moveTo(x, boxY);
+        ctx.lineTo(x, boxY + boxH);
+        ctx.stroke();
+      }
+      for (let y = boxY; y < boxY + boxH; y += grid) {
+        ctx.beginPath();
+        ctx.moveTo(boxX, y);
+        ctx.lineTo(boxX + boxW, y);
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      // star mark
+      const mx = boxX + padX;
+      const my = boxY + boxH - padY - mark;
+      roundRectPath(ctx, mx, my, mark, mark, Math.max(4, Math.round(mark * 0.28)));
+      ctx.fillStyle = "#111114";
+      ctx.fill();
+      ctx.fillStyle = "#fff";
+      ctx.font = "700 " + Math.max(8, Math.round(mark * 0.55)) + "px Manrope, Segoe UI, sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("✦", mx + mark / 2, my + mark / 2 + 0.5);
+      ctx.textAlign = "left";
+      ctx.textBaseline = "top";
+
+      // barcode
+      const barW = Math.max(22, Math.round(width * 0.05));
+      const barH = Math.max(10, Math.round(fontSize * 0.85));
+      const bx = boxX + boxW - padX - barW;
+      const by = boxY + padY;
+      ctx.fillStyle = "rgba(17, 17, 20, 0.55)";
+      for (let i = 0; i < 8; i++) {
+        const tw = i % 3 === 0 ? 2.2 : 1.2;
+        ctx.fillRect(bx + i * 3.2, by, tw, barH);
+      }
+
+      // rows
+      const textX = boxX + padX;
+      wrapped.forEach((row, i) => {
+        const y = boxY + padY + i * lineH;
+        if (row.tag) {
+          ctx.font = "700 " + tagSize + "px Manrope, Segoe UI, sans-serif";
+          ctx.fillStyle = "#5c5f6a";
+          ctx.fillText(row.tag, textX, y);
+          const tagW = ctx.measureText(row.tag + "  ").width;
+          ctx.font = "800 " + fontSize + "px Manrope, Segoe UI, sans-serif";
+          ctx.fillStyle = "#111114";
+          ctx.fillText(row.value, textX + tagW, y, maxTextW);
         } else {
-          wrapped.push(l);
+          ctx.font = "700 " + fontSize + "px Manrope, Segoe UI, sans-serif";
+          ctx.fillStyle = "#111114";
+          ctx.fillText(row.value, textX, y, maxTextW);
         }
       });
 
-      const boxH = pad + wrapped.length * lineH + pad;
-      const boxY = height - boxH;
-
-      ctx.fillStyle = "rgba(0, 0, 0, 0.66)";
-      ctx.fillRect(0, boxY, width, boxH);
-
-      const grad = ctx.createLinearGradient(0, boxY, width, boxY);
-      grad.addColorStop(0, "#3dcf7a");
-      grad.addColorStop(1, "#d4af37");
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, boxY, width, Math.max(2, Math.round(fontSize * 0.18)));
-
-      wrapped.forEach((text, i) => {
-        const y = boxY + pad + i * lineH;
-        ctx.fillStyle = i === 0 ? "#f0d000" : i < 4 ? "#e8efe9" : "#cfcfcf";
-        if (text.indexOf("Место:") === 0) ctx.fillStyle = "#3dcf7a";
-        ctx.fillText(text, pad, y, maxTextW);
-      });
       ctx.restore();
     }
 
