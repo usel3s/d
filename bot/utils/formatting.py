@@ -10,6 +10,13 @@ LOCATION_LABELS = {
     "pickup": "Прикоп",
 }
 
+TAPE_LABELS = {
+    "yellow": "Жёлтый",
+    "red": "Красный",
+    "white": "Белый",
+    "blue": "Синий",
+}
+
 
 def location_label(location_id: str) -> str:
     return LOCATION_LABELS.get(location_id, location_id)

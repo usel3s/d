@@ -68,6 +68,13 @@ def admin_keyboard() -> InlineKeyboardMarkup:
         inline_keyboard=[
             [
                 InlineKeyboardButton(
+                    text="Все фото",
+                    callback_data="admin:photos:0",
+                    icon_custom_emoji_id=pe_id("file"),
+                )
+            ],
+            [
+                InlineKeyboardButton(
                     text="Статистика",
                     callback_data="admin:stats",
                     icon_custom_emoji_id=pe_id("stats"),
@@ -82,3 +89,49 @@ def admin_keyboard() -> InlineKeyboardMarkup:
             ],
         ]
     )
+
+
+def photos_list_keyboard(page: int, total_pages: int, item_ids: list[str]) -> InlineKeyboardMarkup:
+    rows: list[list[InlineKeyboardButton]] = []
+    for item_id in item_ids:
+        short = item_id[-8:]
+        rows.append(
+            [
+                InlineKeyboardButton(
+                    text=f"Позиция …{short}",
+                    callback_data=f"admin:photo:{item_id}",
+                    icon_custom_emoji_id=pe_id("package"),
+                )
+            ]
+        )
+
+    nav: list[InlineKeyboardButton] = []
+    if page > 0:
+        nav.append(
+            InlineKeyboardButton(
+                text="Назад",
+                callback_data=f"admin:photos:{page - 1}",
+                icon_custom_emoji_id=pe_id("home"),
+            )
+        )
+    if page + 1 < total_pages:
+        nav.append(
+            InlineKeyboardButton(
+                text="Далее",
+                callback_data=f"admin:photos:{page + 1}",
+                icon_custom_emoji_id=pe_id("link"),
+            )
+        )
+    if nav:
+        rows.append(nav)
+
+    rows.append(
+        [
+            InlineKeyboardButton(
+                text="В админку",
+                callback_data="admin:home",
+                icon_custom_emoji_id=pe_id("settings"),
+            )
+        ]
+    )
+    return InlineKeyboardMarkup(inline_keyboard=rows)

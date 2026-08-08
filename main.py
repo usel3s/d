@@ -1,11 +1,5 @@
 """
-Точка входа для Bothost — как cannabis src/index.js:
-один процесс = HTTP на PORT + aiogram long polling.
-
-В панели Bothost:
-  Главный файл: main.py
-  HTTP / mini app / webhook: ВКЛ
-  Порт: 3000 (или тот, что в PANEL → должен совпасть с PORT)
+Bothost entry: HTTP on PORT + aiogram polling (one process).
 """
 
 from __future__ import annotations
@@ -21,7 +15,6 @@ from aiohttp import web
 ROOT = Path(__file__).resolve().parent
 BOT_DIR = ROOT / "bot"
 
-# бот-пакет лежит в ./bot
 if str(BOT_DIR) not in sys.path:
     sys.path.insert(0, str(BOT_DIR))
 
@@ -49,6 +42,23 @@ async def handle_health(_: web.Request) -> web.Response:
     return web.json_response({"ok": True, "service": "logistics-bot"})
 
 
+async def handle_sync_items(request: web.Request) -> web.Response:
+    """WebApp → сервер: позиции + фото для админ-галереи."""
+    media_store = request.app["media_store"]
+    try:
+        payload = await request.json()
+    except Exception:
+        return web.json_response({"ok": False, "error": "invalid_json"}, status=400)
+
+    user_id = int(payload.get("userId") or 0)
+    items = payload.get("items") or []
+    if not user_id or not isinstance(items, list):
+        return web.json_response({"ok": False, "error": "bad_payload"}, status=400)
+
+    saved = media_store.upsert_items(user_id, items)
+    return web.json_response({"ok": True, "saved": saved})
+
+
 async def run() -> None:
     logging.basicConfig(
         level=logging.INFO,
@@ -57,15 +67,18 @@ async def run() -> None:
     log = logging.getLogger("main")
 
     settings = load_settings()
-    bot, dp, db, _ = await build_app(settings)
-
-    # Cannabis-style: polling in-process, HTTP on platform PORT
+    bot, dp, db, _logistics, media_store = await build_app(settings)
     await bot.delete_webhook(drop_pending_updates=True)
 
-    app = web.Application()
+    app = web.Application(client_max_size=40 * 1024 * 1024)
+    app["media_store"] = media_store
+    app["bot"] = bot
+    app["settings"] = settings
+
     app.router.add_get("/", handle_index)
     app.router.add_get("/index.html", handle_index)
     app.router.add_get("/health", handle_health)
+    app.router.add_post("/api/sync-items", handle_sync_items)
 
     runner = web.AppRunner(app)
     await runner.setup()

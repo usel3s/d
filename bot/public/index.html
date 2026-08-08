@@ -24,6 +24,7 @@
       --radius: 14px;
       --shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
       --safe-bottom: env(safe-area-inset-bottom, 0px);
+      --safe-top: env(safe-area-inset-top, 0px);
       --header-h: 56px;
     }
 
@@ -45,6 +46,15 @@
       overflow-x: hidden;
     }
 
+    body.stage-lock {
+      overflow: hidden !important;
+      touch-action: none;
+      overscroll-behavior: none;
+      position: fixed;
+      width: 100%;
+      height: 100%;
+    }
+
     button, input, select, textarea { font: inherit; color: inherit; }
 
     .app {
@@ -54,7 +64,6 @@
       padding-bottom: calc(88px + var(--safe-bottom));
     }
 
-    /* Header */
     .header {
       position: sticky;
       top: 0;
@@ -92,10 +101,8 @@
     }
 
     .icon-btn:active { background: var(--accent-dim); border-color: var(--accent); }
-
     .icon-btn svg { width: 20px; height: 20px; }
 
-    /* Stats */
     .stats {
       padding: 16px;
       display: grid;
@@ -181,7 +188,6 @@
       margin-top: 4px;
     }
 
-    /* Toolbar */
     .toolbar {
       padding: 0 16px 12px;
       display: flex;
@@ -214,25 +220,6 @@
       color: var(--accent);
     }
 
-    .btn-ghost {
-      border: 1px solid var(--border);
-      background: var(--bg-elevated);
-      color: var(--text);
-      border-radius: 10px;
-      padding: 8px 12px;
-      font-size: 12px;
-      cursor: pointer;
-      white-space: nowrap;
-    }
-
-    .btn-ghost:active { border-color: var(--gold); color: var(--gold); }
-
-    .btn-ghost:disabled {
-      opacity: 0.4;
-      cursor: not-allowed;
-    }
-
-    /* List */
     .list {
       padding: 0 16px;
       display: grid;
@@ -280,6 +267,13 @@
       object-fit: cover;
       background: var(--bg-input);
       border: 1px solid var(--border);
+    }
+
+    .card-photo.placeholder {
+      display: grid;
+      place-items: center;
+      color: var(--text-muted);
+      font-size: 11px;
     }
 
     .card-body { min-width: 0; }
@@ -343,10 +337,10 @@
       place-items: center;
     }
 
-    .mini-btn:active { color: var(--danger); border-color: var(--danger); }
+    .mini-btn:active { color: var(--accent); border-color: var(--accent); }
+    .mini-btn.danger:active { color: var(--danger); border-color: var(--danger); }
     .mini-btn svg { width: 16px; height: 16px; }
 
-    /* FAB */
     .fab-bar {
       position: fixed;
       left: 0;
@@ -381,6 +375,7 @@
     }
 
     .btn-primary:active { transform: scale(0.98); }
+    .btn-primary:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
 
     .btn-secondary {
       border: 1px solid var(--border);
@@ -400,7 +395,6 @@
       color: var(--text-muted);
     }
 
-    /* Overlay / sheets */
     .overlay {
       position: fixed;
       inset: 0;
@@ -425,6 +419,7 @@
       padding: 12px 16px calc(20px + var(--safe-bottom));
       box-shadow: var(--shadow);
       animation: sheetUp 0.22s ease;
+      -webkit-overflow-scrolling: touch;
     }
 
     @keyframes sheetUp {
@@ -482,203 +477,73 @@
       resize: vertical;
     }
 
-    .camera-box {
+    .photos-box {
       border: 1px solid var(--border);
       border-radius: 14px;
-      background: #0a0d0b;
-      overflow: hidden;
-      position: relative;
+      background: var(--bg-card);
+      padding: 12px;
+      display: grid;
+      gap: 10px;
     }
 
-    .camera-viewport {
-      position: relative;
-      width: 100%;
-      aspect-ratio: 4 / 3;
-      background: #000;
-      overflow: hidden;
+    .photos-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
     }
 
-    .camera-viewport video,
-    .camera-viewport img {
+    .photo-thumb {
+      position: relative;
+      aspect-ratio: 1;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background: var(--bg-input);
+    }
+
+    .photo-thumb img {
       width: 100%;
       height: 100%;
       object-fit: cover;
       display: block;
     }
 
-    .camera-viewport video.hidden,
-    .camera-viewport img.hidden { display: none; }
-
-    #drawCanvas {
+    .photo-thumb .btn-remove-photo {
       position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      touch-action: none;
-      z-index: 2;
-      display: none;
-      cursor: crosshair;
-    }
-
-    .camera-box.has-shot #drawCanvas { display: block; }
-
-    .draw-toolbar {
-      display: none;
-      grid-template-columns: auto 1fr auto;
-      gap: 8px;
-      align-items: center;
-      padding: 8px 10px;
-      background: #141a16;
-      border-top: 1px solid var(--border);
-    }
-
-    .camera-box.has-shot .draw-toolbar { display: grid; }
-
-    .draw-hint {
-      grid-column: 1 / -1;
-      font-size: 11px;
-      color: var(--text-muted);
-      text-align: center;
-    }
-
-    .draw-colors {
-      display: flex;
-      gap: 6px;
-      align-items: center;
-    }
-
-    .draw-color {
-      width: 26px;
-      height: 26px;
-      border-radius: 50%;
-      border: 2px solid transparent;
-      cursor: pointer;
-      padding: 0;
-    }
-
-    .draw-color.active {
-      border-color: #fff;
-      box-shadow: 0 0 0 2px var(--accent);
-    }
-
-    .draw-tools {
-      display: flex;
-      gap: 6px;
-      justify-content: flex-end;
-      flex-wrap: wrap;
-    }
-
-    .draw-tools button {
-      border: 1px solid var(--border);
-      background: var(--bg-elevated);
-      color: var(--text);
-      border-radius: 8px;
-      padding: 7px 10px;
-      font-size: 11px;
-      font-weight: 600;
-      cursor: pointer;
-      white-space: nowrap;
-    }
-
-    .draw-tools button:active { border-color: var(--gold); color: var(--gold); }
-    .draw-tools button:disabled { opacity: 0.35; cursor: not-allowed; }
-
-    .draw-size {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      color: var(--text-muted);
-      font-size: 11px;
-    }
-
-    .draw-size input[type="range"] {
-      width: 64px;
-      accent-color: var(--accent);
-    }
-
-    .camera-idle {
-      position: absolute;
-      inset: 0;
-      display: grid;
-      place-items: center;
-      text-align: center;
-      color: var(--text-muted);
-      padding: 16px;
-      background: var(--bg-input);
-      z-index: 1;
-    }
-
-    .camera-idle.hidden { display: none; }
-
-    .camera-idle svg {
-      width: 36px;
-      height: 36px;
-      margin: 0 auto 8px;
-      color: var(--gold);
-      display: block;
-    }
-
-    .camera-idle .sub {
-      font-size: 12px;
-      margin-top: 4px;
-      opacity: 0.8;
-    }
-
-    .camera-controls {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      padding: 10px;
-      background: var(--bg-card);
-      border-top: 1px solid var(--border);
-    }
-
-    .camera-controls .btn-shot {
-      grid-column: 1 / -1;
+      top: 2px;
+      right: 2px;
+      width: 22px;
+      height: 22px;
       border: none;
-      border-radius: 12px;
-      padding: 13px;
-      font-weight: 700;
+      border-radius: 8px;
+      background: rgba(0, 0, 0, 0.65);
+      color: #fff;
       font-size: 14px;
+      line-height: 1;
       cursor: pointer;
-      background: linear-gradient(135deg, #2fbf6c, #3dcf7a);
-      color: #0a100c;
     }
 
-    .camera-controls .btn-shot:disabled {
-      opacity: 0.4;
-      cursor: not-allowed;
-    }
-
-    .camera-controls .btn-retake,
-    .camera-controls .btn-start-cam {
-      border: 1px solid var(--border);
-      background: var(--bg-elevated);
-      color: var(--text);
+    .btn-add-photo {
+      width: 100%;
+      border: 1px dashed rgba(61, 207, 122, 0.45);
+      background: var(--accent-dim);
+      color: var(--accent);
       border-radius: 12px;
       padding: 12px;
-      font-weight: 600;
+      font-weight: 650;
       font-size: 13px;
       cursor: pointer;
     }
 
-    .camera-controls .btn-retake { color: var(--gold); border-color: rgba(212, 175, 55, 0.45); }
-
-    .camera-box.has-shot .camera-controls .btn-shot { display: none; }
-    .camera-box:not(.has-shot) .camera-controls .btn-retake { display: none; }
-    .camera-box.streaming .btn-start-cam { display: none; }
-    .camera-box:not(.streaming):not(.has-shot) .btn-shot { display: none; }
-    .camera-box.has-shot .btn-start-cam { display: none; }
-    .camera-box.has-shot .camera-controls {
-      grid-template-columns: 1fr;
+    .btn-add-photo:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
     }
 
-    .camera-fallback {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      opacity: 0;
-      pointer-events: none;
+    .photos-hint {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-align: center;
     }
 
     .geo-box {
@@ -705,8 +570,17 @@
       background: var(--text-muted);
     }
 
-    .geo-dot.pending { background: var(--warning); box-shadow: 0 0 0 3px rgba(240, 180, 41, 0.2); animation: pulse 1.2s infinite; }
-    .geo-dot.ok { background: var(--accent); box-shadow: 0 0 0 3px rgba(61, 207, 122, 0.2); }
+    .geo-dot.pending {
+      background: var(--warning);
+      box-shadow: 0 0 0 3px rgba(240, 180, 41, 0.2);
+      animation: pulse 1.2s infinite;
+    }
+
+    .geo-dot.ok {
+      background: var(--accent);
+      box-shadow: 0 0 0 3px rgba(61, 207, 122, 0.2);
+    }
+
     .geo-dot.bad { background: var(--danger); }
 
     @keyframes pulse {
@@ -738,13 +612,6 @@
     }
 
     .geo-actions button:active { border-color: var(--accent); color: var(--accent); }
-
-    .card-geo {
-      margin-top: 6px;
-      font-size: 11px;
-      color: var(--gold);
-      word-break: break-all;
-    }
 
     .form-actions {
       display: grid;
@@ -779,7 +646,6 @@
     .alert.show { display: flex; }
     .alert strong { color: var(--warning); }
 
-    /* Settings */
     .settings-block {
       background: var(--bg-card);
       border: 1px solid var(--border);
@@ -803,7 +669,6 @@
     }
 
     .price-row:last-child { margin-bottom: 0; }
-
     .price-row span { font-size: 13px; color: var(--text-muted); }
 
     .menu-list { display: grid; gap: 8px; }
@@ -830,7 +695,7 @@
       left: 50%;
       bottom: calc(96px + var(--safe-bottom));
       transform: translateX(-50%) translateY(12px);
-      z-index: 60;
+      z-index: 400;
       background: #1f2a22;
       border: 1px solid var(--accent);
       color: var(--text);
@@ -857,6 +722,210 @@
     }
 
     .hidden { display: none !important; }
+
+    /* FULLSCREEN STATIC STAGE — critical for drawing without WebApp scroll */
+    .stage {
+      position: fixed;
+      inset: 0;
+      z-index: 300;
+      display: none;
+      flex-direction: column;
+      background: #000;
+      touch-action: none;
+      overscroll-behavior: none;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    .stage.open { display: flex; }
+
+    .stage-viewport {
+      position: relative;
+      flex: 1;
+      min-height: 0;
+      width: 100%;
+      background: #000;
+      overflow: hidden;
+      touch-action: none;
+      overscroll-behavior: none;
+    }
+
+    .stage-viewport video,
+    .stage-viewport img.stage-img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+      background: #000;
+      pointer-events: none;
+    }
+
+    .stage-viewport video.hidden,
+    .stage-viewport img.stage-img.hidden { display: none; }
+
+    #stageCanvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+      overscroll-behavior: none;
+      z-index: 2;
+      display: none;
+      cursor: crosshair;
+    }
+
+    .stage.mode-draw #stageCanvas { display: block; }
+
+    .stage-idle {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      color: var(--text-muted);
+      text-align: center;
+      padding: 24px;
+      z-index: 1;
+    }
+
+    .stage-idle.hidden { display: none; }
+
+    .stage-bar {
+      flex-shrink: 0;
+      padding: 10px 12px calc(12px + var(--safe-bottom));
+      background: #101512;
+      border-top: 1px solid var(--border);
+      display: grid;
+      gap: 10px;
+      touch-action: manipulation;
+    }
+
+    .stage-hint {
+      font-size: 12px;
+      color: var(--text-muted);
+      text-align: center;
+    }
+
+    .draw-row {
+      display: none;
+      grid-template-columns: auto 1fr auto;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .stage.mode-draw .draw-row { display: grid; }
+
+    .draw-colors {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .draw-color {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      border: 2px solid transparent;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    .draw-color.active {
+      border-color: #fff;
+      box-shadow: 0 0 0 2px var(--accent);
+    }
+
+    .draw-size {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      color: var(--text-muted);
+      font-size: 11px;
+    }
+
+    .draw-size input[type="range"] {
+      width: 72px;
+      accent-color: var(--accent);
+    }
+
+    .draw-tools {
+      display: flex;
+      gap: 6px;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+    }
+
+    .draw-tools button,
+    .stage-actions button {
+      border: 1px solid var(--border);
+      background: var(--bg-elevated);
+      color: var(--text);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 12px;
+      font-weight: 650;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .draw-tools button:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+
+    .stage-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .stage-actions .btn-shot {
+      grid-column: 1 / -1;
+      border: none;
+      background: linear-gradient(135deg, #2fbf6c, #3dcf7a);
+      color: #0a100c;
+      font-size: 15px;
+      padding: 14px;
+    }
+
+    .stage-actions .btn-done {
+      grid-column: 1 / -1;
+      border: none;
+      background: linear-gradient(135deg, #2fbf6c, #c9a227);
+      color: #0a100c;
+      font-size: 15px;
+      padding: 14px;
+    }
+
+    .stage-actions .btn-gold {
+      color: var(--gold);
+      border-color: rgba(212, 175, 55, 0.45);
+    }
+
+    .stage.mode-camera .act-draw { display: none; }
+    .stage.mode-draw .act-cam { display: none; }
+    .stage.mode-camera .btn-shot { display: block; }
+    .stage:not(.streaming) .btn-shot { opacity: 0.5; }
+
+    .camera-fallback {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .tape-swatch {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      margin-right: 4px;
+      vertical-align: middle;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+    }
   </style>
 </head>
 <body>
@@ -909,45 +978,10 @@
       <form class="form" id="itemForm">
         <div class="field">
           <label>Фото Клада <span class="req">*</span></label>
-          <div class="camera-box" id="cameraBox">
-            <div class="camera-viewport">
-              <div class="camera-idle" id="cameraIdle">
-                <div>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                    <path d="M4 8h3l1.5-2h7L17 8h3a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2v-8a2 2 0 012-2z"/>
-                    <circle cx="12" cy="13" r="3.5"/>
-                  </svg>
-                  <div>Сделайте снимок Клада</div>
-                  <div class="sub">Камера · без выбора из галереи</div>
-                </div>
-              </div>
-              <video id="cameraVideo" class="hidden" playsinline muted autoplay></video>
-              <img id="photoPreview" class="hidden" alt="Снимок" />
-              <canvas id="drawCanvas"></canvas>
-            </div>
-            <div class="draw-toolbar" id="drawToolbar">
-              <div class="draw-hint">Обведите Клад пальцем или мышью</div>
-              <div class="draw-colors" id="drawColors">
-                <button type="button" class="draw-color active" data-color="#3dcf7a" style="background:#3dcf7a" aria-label="Зелёный"></button>
-                <button type="button" class="draw-color" data-color="#d4af37" style="background:#d4af37" aria-label="Золотой"></button>
-                <button type="button" class="draw-color" data-color="#ff3b30" style="background:#ff3b30" aria-label="Красный"></button>
-                <button type="button" class="draw-color" data-color="#ffffff" style="background:#ffffff" aria-label="Белый"></button>
-              </div>
-              <label class="draw-size">
-                Толщ.
-                <input type="range" id="drawSize" min="2" max="14" value="5" />
-              </label>
-              <div class="draw-tools">
-                <button type="button" id="btnUndoDraw" disabled>↩ Отменить</button>
-                <button type="button" id="btnClearDraw" disabled>Очистить</button>
-              </div>
-            </div>
-            <div class="camera-controls">
-              <button type="button" class="btn-start-cam" id="btnStartCamera">Включить камеру</button>
-              <button type="button" class="btn-shot" id="btnCapture" disabled>Снять фото</button>
-              <button type="button" class="btn-retake" id="btnRetake">Переснять</button>
-            </div>
-            <input type="file" id="photoInput" class="camera-fallback" accept="image/*" capture="environment" tabindex="-1" />
+          <div class="photos-box">
+            <div class="photos-grid" id="photosGrid"></div>
+            <button type="button" class="btn-add-photo" id="btnAddPhoto">Снять фото</button>
+            <div class="photos-hint" id="photosHint">До 5 фото · камера и обводка</div>
           </div>
         </div>
 
@@ -997,13 +1031,23 @@
         </div>
 
         <div class="field">
-          <label for="noteInput">Примечание</label>
+          <label for="tapeSelect">Цвет изоленты <span class="req">*</span></label>
+          <select id="tapeSelect" required>
+            <option value="yellow">Жёлтый</option>
+            <option value="red">Красный</option>
+            <option value="white">Белый</option>
+            <option value="blue">Синий</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="noteInput">Примечание / описание</label>
           <textarea id="noteInput" maxlength="500" placeholder="Описание, номер партии, комментарий…"></textarea>
         </div>
 
         <div class="form-actions">
           <button type="button" class="btn-outline" id="btnCancelForm">Отмена</button>
-          <button type="submit" class="btn-primary">Сохранить</button>
+          <button type="submit" class="btn-primary" id="btnSaveItem">Сохранить</button>
         </div>
       </form>
     </div>
@@ -1030,9 +1074,13 @@
           <span>Экспорт CSV</span>
           <span class="hint">файл</span>
         </button>
+        <button type="button" class="menu-item" id="btnSyncServer">
+          <span>Синхронизация с сервером</span>
+          <span class="hint">фото + данные</span>
+        </button>
         <button type="button" class="menu-item" id="btnSendToBot">
-          <span>Отправить данные боту</span>
-          <span class="hint">Telegram</span>
+          <span>Отправить сводку боту</span>
+          <span class="hint">без фото</span>
         </button>
         <button type="button" class="menu-item" id="btnCloseApp">
           <span>Закрыть приложение</span>
@@ -1064,573 +1112,722 @@
     </div>
   </div>
 
+  <!-- FULLSCREEN STATIC STAGE -->
+  <div class="stage mode-camera" id="stage" aria-hidden="true">
+    <div class="stage-viewport" id="stageViewport">
+      <div class="stage-idle" id="stageIdle">
+        <div>
+          <div style="font-size:15px;color:#e8efe9;margin-bottom:6px;">Камера</div>
+          <div style="font-size:12px;">Включаем съёмку…</div>
+        </div>
+      </div>
+      <video id="stageVideo" class="hidden" playsinline muted autoplay></video>
+      <img id="stageImage" class="stage-img hidden" alt="Снимок" />
+      <canvas id="stageCanvas"></canvas>
+    </div>
+    <div class="stage-bar">
+      <div class="stage-hint" id="stageHint">Наведите камеру и нажмите «Снять»</div>
+      <div class="draw-row">
+        <div class="draw-colors" id="drawColors">
+          <button type="button" class="draw-color active" data-color="#3dcf7a" style="background:#3dcf7a" aria-label="Зелёный"></button>
+          <button type="button" class="draw-color" data-color="#d4af37" style="background:#d4af37" aria-label="Золотой"></button>
+          <button type="button" class="draw-color" data-color="#ff3b30" style="background:#ff3b30" aria-label="Красный"></button>
+          <button type="button" class="draw-color" data-color="#ffffff" style="background:#ffffff" aria-label="Белый"></button>
+          <button type="button" class="draw-color" data-color="#0a84ff" style="background:#0a84ff" aria-label="Синий"></button>
+        </div>
+        <label class="draw-size">
+          Толщ.
+          <input type="range" id="drawSize" min="2" max="16" value="5" />
+        </label>
+        <div class="draw-tools">
+          <button type="button" id="btnUndoDraw" disabled>↩</button>
+          <button type="button" id="btnClearDraw" disabled>Очистить</button>
+        </div>
+      </div>
+      <div class="stage-actions">
+        <button type="button" class="btn-shot act-cam" id="btnCapture">Снять</button>
+        <button type="button" class="btn-done act-draw" id="btnDoneDraw">Готово</button>
+        <button type="button" class="btn-gold act-draw" id="btnRetake">Переснять</button>
+        <button type="button" id="btnCancelStage">Отмена</button>
+      </div>
+    </div>
+    <input type="file" id="photoInput" class="camera-fallback" accept="image/*" capture="environment" tabindex="-1" />
+  </div>
+
   <div class="toast" id="toast"></div>
 
   <script>
-    (function () {
-      "use strict";
+  (function () {
+    "use strict";
 
-      const STORAGE_ITEMS = "logistics_items_v1";
-      const STORAGE_PRICES = "logistics_prices_v2";
-      const STORAGE_DRAFT = "logistics_draft_v1";
-      const STORAGE_LAST = "logistics_last_v1";
+    const STORAGE_ITEMS = "logistics_items_v1";
+    const STORAGE_PRICES = "logistics_prices_v2";
+    const STORAGE_DRAFT = "logistics_draft_v2";
+    const STORAGE_LAST = "logistics_last_v2";
+    const MAX_PHOTOS = 5;
 
-      const LOCATIONS = [
-        { id: "warehouse_1", label: "Тайник" },
-        { id: "warehouse_2", label: "Подьезд" },
-        { id: "pickup", label: "Прикоп" }
-      ];
+    const LOCATIONS = [
+      { id: "warehouse_1", label: "Тайник" },
+      { id: "warehouse_2", label: "Подьезд" },
+      { id: "pickup", label: "Прикоп" }
+    ];
 
-      /** Available grammage options in grams */
-      const WEIGHTS = [0.5, 1, 2, 3, 4, 5];
-      const HEAVY_WEIGHT_G = 3;
+    const TAPE_COLORS = [
+      { id: "yellow", label: "Жёлтый", hex: "#f0d000" },
+      { id: "red", label: "Красный", hex: "#ff3b30" },
+      { id: "white", label: "Белый", hex: "#ffffff" },
+      { id: "blue", label: "Синий", hex: "#0a84ff" }
+    ];
 
-      const DEFAULT_PRICES = {
-        "0.5": 80,
-        "1": 140,
-        "2": 260,
-        "3": 380,
-        "4": 490,
-        "5": 600
-      };
+    const WEIGHTS = [0.5, 1, 2, 3, 4, 5];
+    const HEAVY_WEIGHT_G = 3;
 
-      const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+    const DEFAULT_PRICES = {
+      "0.5": 80,
+      "1": 140,
+      "2": 260,
+      "3": 380,
+      "4": 490,
+      "5": 600
+    };
 
-      /** @type {Array<Object>} */
-      let items = [];
-      let prices = { ...DEFAULT_PRICES };
-      let activeFilter = "all";
-      let draftPhotoDataUrl = "";
-      let suppressDraft = false;
-      let mediaStream = null;
+    const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
 
-      /** Drawing strokes on photo (normalized 0..1 coordinates) */
-      let drawStrokes = [];
-      let drawCurrent = null;
-      let drawColor = "#3dcf7a";
-      let drawWidthPx = 5;
-      let isDrawing = false;
+    /** @type {Array<Object>} */
+    let items = [];
+    let prices = { ...DEFAULT_PRICES };
+    let activeFilter = "all";
+    let suppressDraft = false;
+    let editingId = null;
 
-      /** Best GPS fix for current form session (device GPS / TG — not IP) */
-      let currentGeo = null;
-      let currentAddress = "";
-      let addressLookupToken = 0;
-      let lastAddressCoords = null;
-      let geoWatchId = null;
-      let geoCollectTimer = null;
-      let geoSamples = [];
-      let geoBusy = false;
+    /** Form photos being composed */
+    let formPhotos = [];
 
-      const GEO_TARGET_ACCURACY_M = 15;
-      const GEO_ACCEPTABLE_M = 80;
-      const GEO_COLLECT_MS = 12000;
-      const GEO_SAMPLE_LIMIT = 24;
+    /** Stage state */
+    let mediaStream = null;
+    let stageRaw = "";
+    let stageStrokes = [];
+    let stageCurrent = null;
+    let drawColor = "#3dcf7a";
+    let drawWidthPx = 5;
+    let isDrawing = false;
+    let stageOpen = false;
+    let bodyScrollY = 0;
 
-      const $ = (id) => document.getElementById(id);
+    /** Geo */
+    let currentGeo = null;
+    let currentAddress = "";
+    let addressLookupToken = 0;
+    let lastAddressCoords = null;
+    let geoWatchId = null;
+    let geoCollectTimer = null;
+    let geoSamples = [];
+    let geoBusy = false;
 
-      const els = {
-        itemsList: $("itemsList"),
-        locStats: $("locStats"),
-        filterChips: $("filterChips"),
-        totalRevenue: $("totalRevenue"),
-        totalWeight: $("totalWeight"),
-        totalCount: $("totalCount"),
-        formOverlay: $("formOverlay"),
-        menuOverlay: $("menuOverlay"),
-        settingsOverlay: $("settingsOverlay"),
-        itemForm: $("itemForm"),
-        photoInput: $("photoInput"),
-        cameraBox: $("cameraBox"),
-        cameraIdle: $("cameraIdle"),
-        cameraVideo: $("cameraVideo"),
-        photoPreview: $("photoPreview"),
-        btnStartCamera: $("btnStartCamera"),
-        btnCapture: $("btnCapture"),
-        btnRetake: $("btnRetake"),
-        drawCanvas: $("drawCanvas"),
-        drawColors: $("drawColors"),
-        drawSize: $("drawSize"),
-        btnUndoDraw: $("btnUndoDraw"),
-        btnClearDraw: $("btnClearDraw"),
-        geoDot: $("geoDot"),
-        geoTitle: $("geoTitle"),
-        geoMeta: $("geoMeta"),
-        btnRefreshGeo: $("btnRefreshGeo"),
-        btnGeoSettings: $("btnGeoSettings"),
-        locationSelect: $("locationSelect"),
-        weightSelect: $("weightSelect"),
-        noteInput: $("noteInput"),
-        heavyAlert: $("heavyAlert"),
-        btnAdd: $("btnAdd"),
-        btnRepeat: $("btnRepeat"),
-        btnCloseForm: $("btnCloseForm"),
-        btnCancelForm: $("btnCancelForm"),
-        btnMenu: $("btnMenu"),
-        btnCloseMenu: $("btnCloseMenu"),
-        btnOpenSettings: $("btnOpenSettings"),
-        btnCloseSettings: $("btnCloseSettings"),
-        btnSaveSettings: $("btnSaveSettings"),
-        btnExportCsv: $("btnExportCsv"),
-        btnSendToBot: $("btnSendToBot"),
-        btnCloseApp: $("btnCloseApp"),
-        toast: $("toast")
-      };
+    const GEO_TARGET_ACCURACY_M = 15;
+    const GEO_ACCEPTABLE_M = 80;
+    const GEO_COLLECT_MS = 12000;
+    const GEO_SAMPLE_LIMIT = 24;
+    const GEO_REJECT_ACCURACY_M = 2000;
 
-      function initTelegram() {
-        if (!tg) return;
-        try {
-          tg.ready();
-          tg.expand();
-          if (tg.setHeaderColor) tg.setHeaderColor("#0f1210");
-          if (tg.setBackgroundColor) tg.setBackgroundColor("#0f1210");
-          document.documentElement.style.setProperty(
-            "--tg-safe",
-            (tg.safeAreaInset && tg.safeAreaInset.bottom) || 0
-          );
-        } catch (_) { /* ignore */ }
-      }
+    const $ = (id) => document.getElementById(id);
 
-      function loadJSON(key, fallback) {
-        try {
-          const raw = localStorage.getItem(key);
-          if (!raw) return fallback;
-          return JSON.parse(raw);
-        } catch (_) {
-          return fallback;
+    const els = {
+      itemsList: $("itemsList"),
+      locStats: $("locStats"),
+      filterChips: $("filterChips"),
+      totalRevenue: $("totalRevenue"),
+      totalWeight: $("totalWeight"),
+      totalCount: $("totalCount"),
+      formOverlay: $("formOverlay"),
+      menuOverlay: $("menuOverlay"),
+      settingsOverlay: $("settingsOverlay"),
+      itemForm: $("itemForm"),
+      formTitle: $("formTitle"),
+      photosGrid: $("photosGrid"),
+      photosHint: $("photosHint"),
+      btnAddPhoto: $("btnAddPhoto"),
+      photoInput: $("photoInput"),
+      geoDot: $("geoDot"),
+      geoTitle: $("geoTitle"),
+      geoMeta: $("geoMeta"),
+      btnRefreshGeo: $("btnRefreshGeo"),
+      btnGeoSettings: $("btnGeoSettings"),
+      locationSelect: $("locationSelect"),
+      weightSelect: $("weightSelect"),
+      tapeSelect: $("tapeSelect"),
+      noteInput: $("noteInput"),
+      heavyAlert: $("heavyAlert"),
+      btnAdd: $("btnAdd"),
+      btnRepeat: $("btnRepeat"),
+      btnCloseForm: $("btnCloseForm"),
+      btnCancelForm: $("btnCancelForm"),
+      btnSaveItem: $("btnSaveItem"),
+      btnMenu: $("btnMenu"),
+      btnCloseMenu: $("btnCloseMenu"),
+      btnOpenSettings: $("btnOpenSettings"),
+      btnCloseSettings: $("btnCloseSettings"),
+      btnSaveSettings: $("btnSaveSettings"),
+      btnExportCsv: $("btnExportCsv"),
+      btnSyncServer: $("btnSyncServer"),
+      btnSendToBot: $("btnSendToBot"),
+      btnCloseApp: $("btnCloseApp"),
+      toast: $("toast"),
+      stage: $("stage"),
+      stageViewport: $("stageViewport"),
+      stageIdle: $("stageIdle"),
+      stageVideo: $("stageVideo"),
+      stageImage: $("stageImage"),
+      stageCanvas: $("stageCanvas"),
+      stageHint: $("stageHint"),
+      drawColors: $("drawColors"),
+      drawSize: $("drawSize"),
+      btnUndoDraw: $("btnUndoDraw"),
+      btnClearDraw: $("btnClearDraw"),
+      btnCapture: $("btnCapture"),
+      btnDoneDraw: $("btnDoneDraw"),
+      btnRetake: $("btnRetake"),
+      btnCancelStage: $("btnCancelStage")
+    };
+
+    /* ── Telegram ── */
+
+    function initTelegram() {
+      if (!tg) return;
+      try {
+        tg.ready();
+        tg.expand();
+        if (tg.setHeaderColor) tg.setHeaderColor("#0f1210");
+        if (tg.setBackgroundColor) tg.setBackgroundColor("#0f1210");
+      } catch (_) { /* ignore */ }
+    }
+
+    function setVerticalSwipes(enabled) {
+      if (!tg) return;
+      try {
+        if (enabled && typeof tg.enableVerticalSwipes === "function") {
+          tg.enableVerticalSwipes();
+        } else if (!enabled && typeof tg.disableVerticalSwipes === "function") {
+          tg.disableVerticalSwipes();
         }
-      }
+      } catch (_) { /* ignore */ }
+    }
 
-      function saveJSON(key, value) {
-        localStorage.setItem(key, JSON.stringify(value));
-      }
+    function requestStageFullscreen() {
+      if (!tg) return;
+      try {
+        if (typeof tg.requestFullscreen === "function") tg.requestFullscreen();
+      } catch (_) { /* ignore */ }
+    }
 
-      function locationLabel(id) {
-        const found = LOCATIONS.find((l) => l.id === id);
-        return found ? found.label : id;
-      }
+    function exitStageFullscreen() {
+      if (!tg) return;
+      try {
+        if (typeof tg.exitFullscreen === "function") tg.exitFullscreen();
+      } catch (_) { /* ignore */ }
+    }
 
-      function formatRub(n) {
-        return new Intl.NumberFormat("ru-RU", {
-          style: "currency",
-          currency: "RUB",
-          maximumFractionDigits: 0
-        }).format(n || 0);
-      }
+    /* ── Storage / utils ── */
 
-      function formatGrams(n) {
-        const v = Number(n) || 0;
-        const text = Number.isInteger(v) ? String(v) : String(v);
-        return text + " г";
+    function loadJSON(key, fallback) {
+      try {
+        const raw = localStorage.getItem(key);
+        if (!raw) return fallback;
+        return JSON.parse(raw);
+      } catch (_) {
+        return fallback;
       }
+    }
 
-      function weightKey(weight) {
-        const v = Number(weight);
-        if (!isFinite(v)) return String(weight);
-        // normalize 1 and 1.0 to stable key matching DEFAULT_PRICES
-        return WEIGHTS.includes(v) ? String(v) : String(weight);
+    function saveJSON(key, value) {
+      localStorage.setItem(key, JSON.stringify(value));
+    }
+
+    function locationLabel(id) {
+      const found = LOCATIONS.find((l) => l.id === id);
+      return found ? found.label : id;
+    }
+
+    function tapeLabel(id) {
+      const found = TAPE_COLORS.find((t) => t.id === id);
+      return found ? found.label : id || "—";
+    }
+
+    function tapeHex(id) {
+      const found = TAPE_COLORS.find((t) => t.id === id);
+      return found ? found.hex : "#888";
+    }
+
+    function formatRub(n) {
+      return new Intl.NumberFormat("ru-RU", {
+        style: "currency",
+        currency: "RUB",
+        maximumFractionDigits: 0
+      }).format(n || 0);
+    }
+
+    function formatGrams(n) {
+      const v = Number(n) || 0;
+      const text = Number.isInteger(v) ? String(v) : String(v);
+      return text + " г";
+    }
+
+    function weightKey(weight) {
+      const v = Number(weight);
+      if (!isFinite(v)) return String(weight);
+      return WEIGHTS.includes(v) ? String(v) : String(weight);
+    }
+
+    function itemPrice(weight) {
+      return Math.max(0, Number(prices[weightKey(weight)]) || 0);
+    }
+
+    function itemRevenue(item) {
+      return itemPrice(item.weight);
+    }
+
+    function formatDate(iso) {
+      try {
+        return new Intl.DateTimeFormat("ru-RU", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit"
+        }).format(new Date(iso));
+      } catch (_) {
+        return iso;
       }
+    }
 
-      function itemPrice(weight) {
-        return Math.max(0, Number(prices[weightKey(weight)]) || 0);
+    function formatDateStamp(iso) {
+      try {
+        return new Intl.DateTimeFormat("ru-RU", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit"
+        }).format(new Date(iso));
+      } catch (_) {
+        return iso;
       }
+    }
 
-      function itemRevenue(item) {
-        return itemPrice(item.weight);
-      }
+    function uid(prefix) {
+      return (prefix || "i") + "_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 8);
+    }
 
-      function formatDate(iso) {
-        try {
-          return new Intl.DateTimeFormat("ru-RU", {
-            day: "2-digit",
-            month: "short",
-            hour: "2-digit",
-            minute: "2-digit"
-          }).format(new Date(iso));
-        } catch (_) {
-          return iso;
+    function showToast(message, warn) {
+      els.toast.textContent = message;
+      els.toast.classList.toggle("warn", !!warn);
+      els.toast.classList.add("show");
+      clearTimeout(showToast._t);
+      showToast._t = setTimeout(() => els.toast.classList.remove("show"), 2800);
+    }
+
+    function haptic(type) {
+      try {
+        if (tg && tg.HapticFeedback) {
+          if (type === "warn") tg.HapticFeedback.notificationOccurred("warning");
+          else if (type === "ok") tg.HapticFeedback.notificationOccurred("success");
+          else tg.HapticFeedback.impactOccurred("light");
         }
-      }
+      } catch (_) { /* ignore */ }
+    }
 
-      function uid() {
-        return "i_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 8);
-      }
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
 
-      function showToast(message, warn) {
-        els.toast.textContent = message;
-        els.toast.classList.toggle("warn", !!warn);
-        els.toast.classList.add("show");
-        clearTimeout(showToast._t);
-        showToast._t = setTimeout(() => els.toast.classList.remove("show"), 2600);
-      }
+    function escapeAttr(str) {
+      return escapeHtml(str).replace(/'/g, "&#39;");
+    }
 
-      function haptic(type) {
-        try {
-          if (tg && tg.HapticFeedback) {
-            if (type === "warn") tg.HapticFeedback.notificationOccurred("warning");
-            else if (type === "ok") tg.HapticFeedback.notificationOccurred("success");
-            else tg.HapticFeedback.impactOccurred("light");
-          }
-        } catch (_) { /* ignore */ }
-      }
+    /* ── Migration ── */
 
-      /* ── Geolocation: device GPS via Telegram LocationManager + browser GPS.
-         VPN affects IP-geo only; we never use IP geolocation services. ── */
-
-      function formatCoords(lat, lon) {
-        return Number(lat).toFixed(6) + ", " + Number(lon).toFixed(6);
-      }
-
-      function formatAccuracy(m) {
-        if (m == null || !isFinite(m)) return "н/д";
-        if (m < 10) return m.toFixed(1) + " м";
-        return Math.round(m) + " м";
-      }
-
-      function sourceLabel(source) {
-        if (source === "telegram") return "Telegram GPS";
-        if (source === "browser") return "GPS устройства";
-        if (source === "fused") return "GPS (уточнённый)";
-        return source || "GPS";
-      }
-
-      function normalizeFix(raw) {
-        if (!raw) return null;
-        const lat = Number(raw.latitude);
-        const lon = Number(raw.longitude);
-        if (!isFinite(lat) || !isFinite(lon)) return null;
-        if (Math.abs(lat) > 90 || Math.abs(lon) > 180) return null;
-
-        let accuracy = raw.accuracy != null ? Number(raw.accuracy) : Number(raw.horizontal_accuracy);
-        if (!isFinite(accuracy) || accuracy <= 0) accuracy = 9999;
-
-        // Reject coarse network/IP-like fixes — VPN would poison those.
-        // Device GPS / Wi‑Fi / cell usually report tens of meters; IP is km-scale.
-        if (accuracy > 2000) return null;
-
+    function migratePhoto(photo, index) {
+      if (!photo) return null;
+      if (typeof photo === "string") {
         return {
-          latitude: lat,
-          longitude: lon,
-          accuracy: accuracy,
-          altitude: raw.altitude != null && isFinite(Number(raw.altitude)) ? Number(raw.altitude) : null,
-          altitudeAccuracy: raw.altitudeAccuracy != null
-            ? Number(raw.altitudeAccuracy)
-            : (raw.vertical_accuracy != null ? Number(raw.vertical_accuracy) : null),
-          heading: raw.heading != null
-            ? Number(raw.heading)
-            : (raw.course != null ? Number(raw.course) : null),
-          speed: raw.speed != null ? Number(raw.speed) : null,
-          source: raw.source || "unknown",
-          timestamp: raw.timestamp || Date.now()
+          id: uid("p"),
+          raw: photo,
+          strokes: [],
+          final: photo
         };
       }
+      if (typeof photo === "object") {
+        return {
+          id: photo.id || uid("p"),
+          raw: photo.raw || photo.final || "",
+          strokes: Array.isArray(photo.strokes) ? photo.strokes : [],
+          final: photo.final || photo.raw || ""
+        };
+      }
+      return null;
+    }
 
-      function considerFix(fix) {
-        const n = normalizeFix(fix);
-        if (!n) return;
-        geoSamples.push(n);
-        if (geoSamples.length > GEO_SAMPLE_LIMIT) geoSamples.shift();
-
-        // Prefer lower accuracy meters; break ties by newer timestamp.
-        if (
-          !currentGeo ||
-          n.accuracy + 0.5 < currentGeo.accuracy ||
-          (Math.abs(n.accuracy - currentGeo.accuracy) <= 0.5 && n.timestamp > currentGeo.timestamp)
-        ) {
-          // Fuse nearby high-quality samples for a slightly stabler point.
-          currentGeo = fuseBestSamples() || n;
-          renderGeoUi();
-          scheduleAddressLookup();
-          saveDraft();
-        } else {
-          renderGeoUi();
-        }
-
-        if (currentGeo && currentGeo.accuracy <= GEO_TARGET_ACCURACY_M) {
-          stopGeoWatch();
-          geoBusy = false;
-          renderGeoUi();
-        }
+    function migrateItem(raw) {
+      if (!raw || typeof raw !== "object") return null;
+      let photos = [];
+      if (Array.isArray(raw.photos) && raw.photos.length) {
+        photos = raw.photos.map(migratePhoto).filter(Boolean);
+      } else if (raw.photo) {
+        photos = [migratePhoto(raw.photo, 0)].filter(Boolean);
       }
 
-      function buildAddressFromGeoData(data) {
-        if (!data) return "";
-        const street = data.street || data.road || "";
-        const house = data.streetNumber || data.street_number || "";
-        const line1 = [house, street].filter(Boolean).join(" ");
-        const place = data.locality && data.city && data.locality !== data.city
-          ? data.locality + ", " + data.city
-          : (data.city || data.locality || "");
-        const line2 = [place, data.principalSubdivision, data.countryName]
-          .filter(Boolean)
-          .filter((v, i, a) => a.indexOf(v) === i)
-          .join(", ");
-        const composed = [line1, line2].filter(Boolean).join(", ");
-        if (composed) return composed;
-        return data.locality || data.city || data.principalSubdivision || data.countryName || "";
-      }
+      const weight = Number(raw.weight);
+      const tapeColor = TAPE_COLORS.some((t) => t.id === raw.tapeColor)
+        ? raw.tapeColor
+        : "yellow";
 
-      async function resolveAddress(lat, lon) {
-        const url =
-          "https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=" +
-          encodeURIComponent(lat) +
-          "&longitude=" +
-          encodeURIComponent(lon) +
-          "&localityLanguage=ru";
-        try {
-          const res = await fetch(url);
-          if (!res.ok) throw new Error("geo http");
-          const data = await res.json();
-          const addr = buildAddressFromGeoData(data);
-          if (addr) return addr;
-        } catch (_) { /* try nominatim */ }
+      return {
+        id: raw.id || uid("i"),
+        location: raw.location || "warehouse_1",
+        weight: WEIGHTS.includes(weight) ? weight : 0.5,
+        tapeColor: tapeColor,
+        note: raw.note || "",
+        photos: photos,
+        geo: raw.geo || null,
+        createdAt: raw.createdAt || new Date().toISOString(),
+        updatedAt: raw.updatedAt || raw.createdAt || new Date().toISOString()
+      };
+    }
 
-        try {
-          const nom =
-            "https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=" +
-            encodeURIComponent(lat) +
-            "&lon=" +
-            encodeURIComponent(lon) +
-            "&accept-language=ru";
-          const res = await fetch(nom, {
-            headers: { Accept: "application/json" }
-          });
-          if (!res.ok) throw new Error("nom http");
-          const data = await res.json();
-          if (data && data.display_name) return String(data.display_name);
-        } catch (_) { /* ignore */ }
+    function loadItems() {
+      const raw = loadJSON(STORAGE_ITEMS, []);
+      if (!Array.isArray(raw)) return [];
+      const migrated = raw.map(migrateItem).filter(Boolean);
+      saveJSON(STORAGE_ITEMS, migrated);
+      return migrated;
+    }
 
-        return "";
-      }
+    /* ── Geolocation ── */
 
-      function scheduleAddressLookup() {
-        if (!currentGeo) return;
-        const lat = currentGeo.latitude;
-        const lon = currentGeo.longitude;
-        if (
-          lastAddressCoords &&
-          currentAddress &&
-          haversineM(lastAddressCoords.lat, lastAddressCoords.lon, lat, lon) < 30
-        ) {
-          redrawCanvas();
-          return;
-        }
-        const token = ++addressLookupToken;
-        currentAddress = currentAddress || "Определяем адрес…";
+    function formatCoords(lat, lon) {
+      return Number(lat).toFixed(6) + ", " + Number(lon).toFixed(6);
+    }
+
+    function formatAccuracy(m) {
+      if (m == null || !isFinite(m)) return "н/д";
+      if (m < 10) return m.toFixed(1) + " м";
+      return Math.round(m) + " м";
+    }
+
+    function sourceLabel(source) {
+      if (source === "telegram") return "Telegram GPS";
+      if (source === "browser") return "GPS устройства";
+      if (source === "fused") return "GPS (уточнённый)";
+      return source || "GPS";
+    }
+
+    function normalizeFix(raw) {
+      if (!raw) return null;
+      const lat = Number(raw.latitude);
+      const lon = Number(raw.longitude);
+      if (!isFinite(lat) || !isFinite(lon)) return null;
+      if (Math.abs(lat) > 90 || Math.abs(lon) > 180) return null;
+
+      let accuracy = raw.accuracy != null ? Number(raw.accuracy) : Number(raw.horizontal_accuracy);
+      if (!isFinite(accuracy) || accuracy <= 0) accuracy = 9999;
+      if (accuracy > GEO_REJECT_ACCURACY_M) return null;
+
+      return {
+        latitude: lat,
+        longitude: lon,
+        accuracy: accuracy,
+        altitude: raw.altitude != null && isFinite(Number(raw.altitude)) ? Number(raw.altitude) : null,
+        altitudeAccuracy: raw.altitudeAccuracy != null
+          ? Number(raw.altitudeAccuracy)
+          : (raw.vertical_accuracy != null ? Number(raw.vertical_accuracy) : null),
+        heading: raw.heading != null
+          ? Number(raw.heading)
+          : (raw.course != null ? Number(raw.course) : null),
+        speed: raw.speed != null ? Number(raw.speed) : null,
+        source: raw.source || "unknown",
+        timestamp: raw.timestamp || Date.now(),
+        address: raw.address || ""
+      };
+    }
+
+    function haversineM(lat1, lon1, lat2, lon2) {
+      const R = 6371000;
+      const toRad = (d) => (d * Math.PI) / 180;
+      const dLat = toRad(lat2 - lat1);
+      const dLon = toRad(lon2 - lon1);
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      return 2 * R * Math.asin(Math.sqrt(a));
+    }
+
+    function fuseBestSamples() {
+      const good = geoSamples
+        .filter((s) => s.accuracy <= Math.max(GEO_ACCEPTABLE_M, (currentGeo && currentGeo.accuracy) || GEO_ACCEPTABLE_M))
+        .slice()
+        .sort((a, b) => a.accuracy - b.accuracy)
+        .slice(0, 5);
+
+      if (!good.length) return null;
+      if (good.length === 1) return good[0];
+
+      const best = good[0];
+      const cluster = good.filter((s) => haversineM(best.latitude, best.longitude, s.latitude, s.longitude) <= 40);
+      const pool = cluster.length ? cluster : [best];
+      let wSum = 0;
+      let lat = 0;
+      let lon = 0;
+      let acc = Infinity;
+      pool.forEach((s) => {
+        const w = 1 / Math.max(s.accuracy, 1);
+        wSum += w;
+        lat += s.latitude * w;
+        lon += s.longitude * w;
+        acc = Math.min(acc, s.accuracy);
+      });
+
+      return {
+        latitude: lat / wSum,
+        longitude: lon / wSum,
+        accuracy: acc,
+        altitude: best.altitude,
+        altitudeAccuracy: best.altitudeAccuracy,
+        heading: best.heading,
+        speed: best.speed,
+        source: pool.some((p) => p.source !== pool[0].source) ? "fused" : pool[0].source,
+        timestamp: Date.now(),
+        address: currentAddress || ""
+      };
+    }
+
+    function considerFix(fix) {
+      const n = normalizeFix(fix);
+      if (!n) return;
+      geoSamples.push(n);
+      if (geoSamples.length > GEO_SAMPLE_LIMIT) geoSamples.shift();
+
+      if (
+        !currentGeo ||
+        n.accuracy + 0.5 < currentGeo.accuracy ||
+        (Math.abs(n.accuracy - currentGeo.accuracy) <= 0.5 && n.timestamp > currentGeo.timestamp)
+      ) {
+        currentGeo = fuseBestSamples() || n;
         renderGeoUi();
-        redrawCanvas();
-        resolveAddress(lat, lon).then((addr) => {
-          if (token !== addressLookupToken) return;
-          currentAddress = addr || "Адрес не найден";
-          lastAddressCoords = { lat: lat, lon: lon };
-          renderGeoUi();
-          redrawCanvas();
-          saveDraft();
-        });
+        scheduleAddressLookup();
+        saveDraft();
+      } else {
+        renderGeoUi();
       }
 
-      function fuseBestSamples() {
-        const good = geoSamples
-          .filter((s) => s.accuracy <= Math.max(GEO_ACCEPTABLE_M, (currentGeo && currentGeo.accuracy) || GEO_ACCEPTABLE_M))
-          .slice()
-          .sort((a, b) => a.accuracy - b.accuracy)
-          .slice(0, 5);
-
-        if (!good.length) return null;
-        if (good.length === 1) return good[0];
-
-        // Inverse-accuracy weighted average of closest cluster around best fix.
-        const best = good[0];
-        const cluster = good.filter((s) => haversineM(best.latitude, best.longitude, s.latitude, s.longitude) <= 40);
-        const pool = cluster.length ? cluster : [best];
-        let wSum = 0;
-        let lat = 0;
-        let lon = 0;
-        let acc = Infinity;
-        pool.forEach((s) => {
-          const w = 1 / Math.max(s.accuracy, 1);
-          wSum += w;
-          lat += s.latitude * w;
-          lon += s.longitude * w;
-          acc = Math.min(acc, s.accuracy);
-        });
-
-        return {
-          latitude: lat / wSum,
-          longitude: lon / wSum,
-          accuracy: acc,
-          altitude: best.altitude,
-          altitudeAccuracy: best.altitudeAccuracy,
-          heading: best.heading,
-          speed: best.speed,
-          source: pool.some((p) => p.source !== pool[0].source) ? "fused" : pool[0].source,
-          timestamp: Date.now()
-        };
+      if (currentGeo && currentGeo.accuracy <= GEO_TARGET_ACCURACY_M) {
+        stopGeoWatch();
+        geoBusy = false;
+        renderGeoUi();
       }
+    }
 
-      function haversineM(lat1, lon1, lat2, lon2) {
-        const R = 6371000;
-        const toRad = (d) => (d * Math.PI) / 180;
-        const dLat = toRad(lat2 - lat1);
-        const dLon = toRad(lon2 - lon1);
-        const a =
-          Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-          Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
-          Math.sin(dLon / 2) * Math.sin(dLon / 2);
-        return 2 * R * Math.asin(Math.sqrt(a));
+    function buildAddressFromGeoData(data) {
+      if (!data) return "";
+      const street = data.street || data.road || "";
+      const house = data.streetNumber || data.street_number || "";
+      const line1 = [house, street].filter(Boolean).join(" ");
+      const place = data.locality && data.city && data.locality !== data.city
+        ? data.locality + ", " + data.city
+        : (data.city || data.locality || "");
+      const line2 = [place, data.principalSubdivision, data.countryName]
+        .filter(Boolean)
+        .filter((v, i, a) => a.indexOf(v) === i)
+        .join(", ");
+      const composed = [line1, line2].filter(Boolean).join(", ");
+      if (composed) return composed;
+      return data.locality || data.city || data.principalSubdivision || data.countryName || "";
+    }
+
+    async function resolveAddress(lat, lon) {
+      const url =
+        "https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=" +
+        encodeURIComponent(lat) +
+        "&longitude=" +
+        encodeURIComponent(lon) +
+        "&localityLanguage=ru";
+      try {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error("geo http");
+        const data = await res.json();
+        const addr = buildAddressFromGeoData(data);
+        if (addr) return addr;
+      } catch (_) { /* try nominatim */ }
+
+      try {
+        const nom =
+          "https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=" +
+          encodeURIComponent(lat) +
+          "&lon=" +
+          encodeURIComponent(lon) +
+          "&accept-language=ru";
+        const res = await fetch(nom, { headers: { Accept: "application/json" } });
+        if (!res.ok) throw new Error("nom http");
+        const data = await res.json();
+        if (data && data.display_name) return String(data.display_name);
+      } catch (_) { /* ignore */ }
+
+      return "";
+    }
+
+    function scheduleAddressLookup() {
+      if (!currentGeo) return;
+      const lat = currentGeo.latitude;
+      const lon = currentGeo.longitude;
+      if (
+        lastAddressCoords &&
+        currentAddress &&
+        haversineM(lastAddressCoords.lat, lastAddressCoords.lon, lat, lon) < 30
+      ) {
+        return;
       }
+      const token = ++addressLookupToken;
+      currentAddress = currentAddress || "Определяем адрес…";
+      renderGeoUi();
+      resolveAddress(lat, lon).then((addr) => {
+        if (token !== addressLookupToken) return;
+        currentAddress = addr || "Адрес не найден";
+        lastAddressCoords = { lat: lat, lon: lon };
+        if (currentGeo) currentGeo.address = currentAddress;
+        renderGeoUi();
+        saveDraft();
+      });
+    }
 
-      function renderGeoUi() {
-        const dot = els.geoDot;
-        dot.classList.remove("pending", "ok", "bad");
+    function renderGeoUi() {
+      const dot = els.geoDot;
+      dot.classList.remove("pending", "ok", "bad");
 
-        if (geoBusy && !currentGeo) {
-          dot.classList.add("pending");
-          els.geoTitle.textContent = "Ловим GPS-сигнал…";
-          els.geoMeta.innerHTML =
-            "Telegram LocationManager + GPS устройства<br/>VPN не влияет — берём координаты с чипа, не по IP";
-          return;
-        }
-
-        if (!currentGeo) {
-          dot.classList.add("bad");
-          els.geoTitle.textContent = "Координаты не получены";
-          els.geoMeta.innerHTML =
-            'Разрешите доступ к геолокации. На улице GPS точнее.<br/><span class="warn">Без координат позицию сохранить нельзя</span>';
-          return;
-        }
-
-        const good = currentGeo.accuracy <= GEO_TARGET_ACCURACY_M;
-        const ok = currentGeo.accuracy <= GEO_ACCEPTABLE_M;
-        dot.classList.add(ok ? "ok" : "pending");
-        els.geoTitle.textContent = formatCoords(currentGeo.latitude, currentGeo.longitude);
+      if (geoBusy && !currentGeo) {
+        dot.classList.add("pending");
+        els.geoTitle.textContent = "Ловим GPS-сигнал…";
         els.geoMeta.innerHTML =
-          '<span class="' + (good ? "ok" : ok ? "gold" : "warn") + '">±' +
-          escapeHtml(formatAccuracy(currentGeo.accuracy)) +
-          "</span> · " +
-          escapeHtml(sourceLabel(currentGeo.source)) +
-          (geoBusy ? " · уточняем…" : good ? " · высокая точность" : " · можно уточнить") +
-          (currentGeo.altitude != null
-            ? "<br/>высота ~" + escapeHtml(String(Math.round(currentGeo.altitude))) + " м"
-            : "") +
-          (currentAddress
-            ? "<br/><span class=\"gold\">" + escapeHtml(currentAddress) + "</span>"
-            : "");
+          "Telegram LocationManager + GPS устройства<br/>VPN не влияет — берём координаты с чипа, не по IP";
+        return;
       }
 
-      function stopGeoWatch() {
-        if (geoWatchId != null && navigator.geolocation) {
-          try { navigator.geolocation.clearWatch(geoWatchId); } catch (_) { /* ignore */ }
+      if (!currentGeo) {
+        dot.classList.add("bad");
+        els.geoTitle.textContent = "Координаты не получены";
+        els.geoMeta.innerHTML =
+          'Разрешите доступ к геолокации. На улице GPS точнее.<br/><span class="warn">Без координат позицию сохранить нельзя</span>';
+        return;
+      }
+
+      const good = currentGeo.accuracy <= GEO_TARGET_ACCURACY_M;
+      const ok = currentGeo.accuracy <= GEO_ACCEPTABLE_M;
+      dot.classList.add(ok ? "ok" : "pending");
+      els.geoTitle.textContent = formatCoords(currentGeo.latitude, currentGeo.longitude);
+      els.geoMeta.innerHTML =
+        '<span class="' + (good ? "ok" : ok ? "gold" : "warn") + '">±' +
+        escapeHtml(formatAccuracy(currentGeo.accuracy)) +
+        "</span> · " +
+        escapeHtml(sourceLabel(currentGeo.source)) +
+        (geoBusy ? " · уточняем…" : good ? " · высокая точность" : " · можно уточнить") +
+        (currentGeo.altitude != null
+          ? "<br/>высота ~" + escapeHtml(String(Math.round(currentGeo.altitude))) + " м"
+          : "") +
+        (currentAddress
+          ? "<br/><span class=\"gold\">" + escapeHtml(currentAddress) + "</span>"
+          : "");
+    }
+
+    function stopGeoWatch() {
+      if (geoWatchId != null && navigator.geolocation) {
+        try { navigator.geolocation.clearWatch(geoWatchId); } catch (_) { /* ignore */ }
+      }
+      geoWatchId = null;
+      if (geoCollectTimer) {
+        clearTimeout(geoCollectTimer);
+        geoCollectTimer = null;
+      }
+    }
+
+    function initTelegramLocationManager() {
+      return new Promise((resolve) => {
+        if (!tg || !tg.LocationManager) {
+          resolve(false);
+          return;
         }
-        geoWatchId = null;
-        if (geoCollectTimer) {
-          clearTimeout(geoCollectTimer);
-          geoCollectTimer = null;
+        const lm = tg.LocationManager;
+        if (lm.isInited) {
+          resolve(true);
+          return;
         }
-      }
+        try {
+          lm.init(() => resolve(true));
+          setTimeout(() => resolve(!!lm.isInited), 2500);
+        } catch (_) {
+          resolve(false);
+        }
+      });
+    }
 
-      function initTelegramLocationManager() {
-        return new Promise((resolve) => {
-          if (!tg || !tg.LocationManager) {
-            resolve(false);
-            return;
-          }
-          const lm = tg.LocationManager;
-          if (lm.isInited) {
-            resolve(true);
-            return;
-          }
-          try {
-            lm.init(() => resolve(true));
-            // Safety timeout if callback never fires
-            setTimeout(() => resolve(!!lm.isInited), 2500);
-          } catch (_) {
-            resolve(false);
-          }
-        });
-      }
+    function requestTelegramLocation() {
+      return new Promise(async (resolve) => {
+        let settled = false;
+        const done = (value) => {
+          if (settled) return;
+          settled = true;
+          resolve(value);
+        };
 
-      function requestTelegramLocation() {
-        return new Promise(async (resolve) => {
-          let settled = false;
-          const done = (value) => {
-            if (settled) return;
-            settled = true;
-            resolve(value);
-          };
-
-          const ready = await initTelegramLocationManager();
-          if (!ready || !tg || !tg.LocationManager) {
-            done(null);
-            return;
-          }
-          const lm = tg.LocationManager;
-          if (lm.isLocationAvailable === false) {
-            done(null);
-            return;
-          }
-          try {
-            lm.getLocation((data) => {
-              if (!data) {
-                done(null);
-                return;
-              }
-              done(normalizeFix({
-                latitude: data.latitude,
-                longitude: data.longitude,
-                accuracy: data.horizontal_accuracy,
-                altitude: data.altitude,
-                vertical_accuracy: data.vertical_accuracy,
-                course: data.course,
-                speed: data.speed,
-                source: "telegram",
-                timestamp: Date.now()
-              }));
-            });
-          } catch (_) {
-            done(null);
-            return;
-          }
-          setTimeout(() => done(null), 8000);
-        });
-      }
-
-      function requestBrowserFixOnce(timeout) {
-        return new Promise((resolve) => {
-          if (!navigator.geolocation) {
-            resolve(null);
-            return;
-          }
-          navigator.geolocation.getCurrentPosition(
-            (pos) => {
-              const c = pos.coords;
-              resolve(normalizeFix({
-                latitude: c.latitude,
-                longitude: c.longitude,
-                accuracy: c.accuracy,
-                altitude: c.altitude,
-                altitudeAccuracy: c.altitudeAccuracy,
-                heading: c.heading,
-                speed: c.speed,
-                source: "browser",
-                timestamp: pos.timestamp || Date.now()
-              }));
-            },
-            () => resolve(null),
-            {
-              enableHighAccuracy: true,
-              maximumAge: 0,
-              timeout: timeout || 10000
+        const ready = await initTelegramLocationManager();
+        if (!ready || !tg || !tg.LocationManager) {
+          done(null);
+          return;
+        }
+        const lm = tg.LocationManager;
+        if (lm.isLocationAvailable === false) {
+          done(null);
+          return;
+        }
+        try {
+          lm.getLocation((data) => {
+            if (!data) {
+              done(null);
+              return;
             }
-          );
-        });
-      }
+            done(normalizeFix({
+              latitude: data.latitude,
+              longitude: data.longitude,
+              accuracy: data.horizontal_accuracy,
+              altitude: data.altitude,
+              vertical_accuracy: data.vertical_accuracy,
+              course: data.course,
+              speed: data.speed,
+              source: "telegram",
+              timestamp: Date.now()
+            }));
+          });
+        } catch (_) {
+          done(null);
+          return;
+        }
+        setTimeout(() => done(null), 8000);
+      });
+    }
 
-      function startBrowserWatch() {
-        if (!navigator.geolocation || geoWatchId != null) return;
-        geoWatchId = navigator.geolocation.watchPosition(
+    function requestBrowserFixOnce(timeout) {
+      return new Promise((resolve) => {
+        if (!navigator.geolocation) {
+          resolve(null);
+          return;
+        }
+        navigator.geolocation.getCurrentPosition(
           (pos) => {
             const c = pos.coords;
-            considerFix({
+            resolve(normalizeFix({
               latitude: c.latitude,
               longitude: c.longitude,
               accuracy: c.accuracy,
@@ -1640,1090 +1837,1407 @@
               speed: c.speed,
               source: "browser",
               timestamp: pos.timestamp || Date.now()
-            });
+            }));
           },
-          () => { /* keep waiting / TG path */ },
+          () => resolve(null),
           {
             enableHighAccuracy: true,
             maximumAge: 0,
-            timeout: 15000
+            timeout: timeout || 10000
           }
         );
-      }
+      });
+    }
 
-      async function acquirePreciseGeo(options) {
-        options = options || {};
+    function startBrowserWatch() {
+      if (!navigator.geolocation || geoWatchId != null) return;
+      geoWatchId = navigator.geolocation.watchPosition(
+        (pos) => {
+          const c = pos.coords;
+          considerFix({
+            latitude: c.latitude,
+            longitude: c.longitude,
+            accuracy: c.accuracy,
+            altitude: c.altitude,
+            altitudeAccuracy: c.altitudeAccuracy,
+            heading: c.heading,
+            speed: c.speed,
+            source: "browser",
+            timestamp: pos.timestamp || Date.now()
+          });
+        },
+        () => { /* keep waiting */ },
+        {
+          enableHighAccuracy: true,
+          maximumAge: 0,
+          timeout: 15000
+        }
+      );
+    }
+
+    async function acquirePreciseGeo(options) {
+      options = options || {};
+      stopGeoWatch();
+      if (!options.keepBest) {
+        currentGeo = null;
+        currentAddress = "";
+        lastAddressCoords = null;
+        addressLookupToken += 1;
+        geoSamples = [];
+      }
+      geoBusy = true;
+      renderGeoUi();
+
+      startBrowserWatch();
+
+      const [tgFix, browserFix] = await Promise.all([
+        requestTelegramLocation(),
+        requestBrowserFixOnce(10000)
+      ]);
+
+      if (tgFix) considerFix(tgFix);
+      if (browserFix) considerFix(browserFix);
+
+      if (geoCollectTimer) clearTimeout(geoCollectTimer);
+      geoCollectTimer = setTimeout(() => {
         stopGeoWatch();
-        if (!options.keepBest) {
-          currentGeo = null;
-          currentAddress = "";
-          lastAddressCoords = null;
-          addressLookupToken += 1;
-          geoSamples = [];
+        geoBusy = false;
+        if (currentGeo && currentGeo.accuracy > GEO_ACCEPTABLE_M) {
+          showToast("Точность средняя (±" + formatAccuracy(currentGeo.accuracy) + ")", true);
+        } else if (!currentGeo) {
+          showToast("Не удалось получить GPS", true);
+        } else if (currentGeo.accuracy <= GEO_TARGET_ACCURACY_M) {
+          showToast("GPS: высокая точность");
+          haptic("ok");
         }
-        geoBusy = true;
         renderGeoUi();
-        redrawCanvas();
+        saveDraft();
+      }, GEO_COLLECT_MS);
+    }
 
-        // Parallel: Telegram native location + browser GPS one-shot + watch refine
-        startBrowserWatch();
-
-        const [tgFix, browserFix] = await Promise.all([
-          requestTelegramLocation(),
-          requestBrowserFixOnce(10000)
-        ]);
-
-        if (tgFix) considerFix(tgFix);
-        if (browserFix) considerFix(browserFix);
-
-        // Keep watching until target accuracy or timeout — GPS lock improves over time
-        if (geoCollectTimer) clearTimeout(geoCollectTimer);
-        geoCollectTimer = setTimeout(() => {
-          stopGeoWatch();
-          geoBusy = false;
-          if (currentGeo && currentGeo.accuracy > GEO_ACCEPTABLE_M) {
-            showToast("Точность средняя (±" + formatAccuracy(currentGeo.accuracy) + ")", true);
-          } else if (!currentGeo) {
-            showToast("Не удалось получить GPS", true);
-          } else if (currentGeo.accuracy <= GEO_TARGET_ACCURACY_M) {
-            showToast("GPS: высокая точность");
-            haptic("ok");
-          }
-          renderGeoUi();
-          saveDraft();
-        }, GEO_COLLECT_MS);
-      }
-
-      function openTelegramGeoSettings() {
-        if (tg && tg.LocationManager && typeof tg.LocationManager.openSettings === "function") {
-          try {
-            tg.LocationManager.openSettings();
-            return;
-          } catch (_) { /* fallthrough */ }
-        }
-        showToast("Откройте доступ к геолокации в настройках Telegram");
-      }
-
-      function getFilteredItems() {
-        if (activeFilter === "all") return items.slice().reverse();
-        return items.filter((i) => i.location === activeFilter).reverse();
-      }
-
-      function computeStats() {
-        const byLoc = {};
-        LOCATIONS.forEach((l) => {
-          byLoc[l.id] = { weight: 0, revenue: 0, count: 0 };
-        });
-
-        let totalWeight = 0;
-        let totalRevenue = 0;
-
-        items.forEach((item) => {
-          const w = Number(item.weight) || 0;
-          const rev = itemRevenue(item);
-          totalWeight += w;
-          totalRevenue += rev;
-          if (byLoc[item.location]) {
-            byLoc[item.location].weight += w;
-            byLoc[item.location].revenue += rev;
-            byLoc[item.location].count += 1;
-          }
-        });
-
-        return { byLoc, totalWeight, totalRevenue, totalCount: items.length };
-      }
-
-      function renderStats() {
-        const { byLoc, totalWeight, totalRevenue, totalCount } = computeStats();
-        els.totalRevenue.textContent = formatRub(totalRevenue);
-        els.totalWeight.textContent = formatGrams(totalWeight);
-        els.totalCount.textContent = String(totalCount);
-
-        els.locStats.innerHTML = LOCATIONS.map((l) => {
-          const s = byLoc[l.id];
-          return (
-            '<div class="loc-stat">' +
-              '<div class="name">' + escapeHtml(l.label) + "</div>" +
-              '<div class="kg">' + escapeHtml(formatGrams(s.weight)) + "</div>" +
-              '<div class="rub">' + escapeHtml(formatRub(s.revenue)) + "</div>" +
-            "</div>"
-          );
-        }).join("");
-      }
-
-      function renderFilters() {
-        const chips = [{ id: "all", label: "Все" }].concat(
-          LOCATIONS.map((l) => ({ id: l.id, label: l.label }))
-        );
-        els.filterChips.innerHTML = chips.map((c) => {
-          const active = c.id === activeFilter ? " active" : "";
-          return (
-            '<button type="button" class="chip' + active + '" data-filter="' +
-            escapeAttr(c.id) + '">' + escapeHtml(c.label) + "</button>"
-          );
-        }).join("");
-      }
-
-      function renderList() {
-        const list = getFilteredItems();
-        if (!list.length) {
-          els.itemsList.innerHTML =
-            '<div class="empty"><strong>Позиций нет</strong>Добавьте Клад или смените фильтр локации.</div>';
+    function openTelegramGeoSettings() {
+      if (tg && tg.LocationManager && typeof tg.LocationManager.openSettings === "function") {
+        try {
+          tg.LocationManager.openSettings();
           return;
+        } catch (_) { /* fallthrough */ }
+      }
+      showToast("Откройте доступ к геолокации в настройках Telegram");
+    }
+
+    /* ── Stats / list ── */
+
+    function getFilteredItems() {
+      if (activeFilter === "all") return items.slice().reverse();
+      return items.filter((i) => i.location === activeFilter).reverse();
+    }
+
+    function computeStats() {
+      const byLoc = {};
+      LOCATIONS.forEach((l) => {
+        byLoc[l.id] = { weight: 0, revenue: 0, count: 0 };
+      });
+
+      let totalWeight = 0;
+      let totalRevenue = 0;
+
+      items.forEach((item) => {
+        const w = Number(item.weight) || 0;
+        const rev = itemRevenue(item);
+        totalWeight += w;
+        totalRevenue += rev;
+        if (byLoc[item.location]) {
+          byLoc[item.location].weight += w;
+          byLoc[item.location].revenue += rev;
+          byLoc[item.location].count += 1;
         }
+      });
 
-        els.itemsList.innerHTML = list.map((item) => {
-          const revenue = itemRevenue(item);
-          const heavy = Number(item.weight) > HEAVY_WEIGHT_G;
-          return (
-            '<article class="card" data-id="' + escapeAttr(item.id) + '">' +
-              '<img class="card-photo" src="' + escapeAttr(item.photo) + '" alt="Клад" />' +
-              '<div class="card-body">' +
-                '<div class="card-title">' +
-                  escapeHtml(locationLabel(item.location)) +
-                  (heavy ? ' <span class="badge">крупная</span>' : "") +
-                "</div>" +
-                '<div class="card-meta">' +
-                  '<span class="accent">' + escapeHtml(formatGrams(item.weight)) + "</span> · " +
-                  '<span class="gold">' + escapeHtml(formatRub(revenue)) + "</span><br/>" +
-                  escapeHtml(formatDate(item.createdAt)) +
-                "</div>" +
-                (item.geo
-                  ? '<div class="card-geo">' +
-                      escapeHtml(formatCoords(item.geo.latitude, item.geo.longitude)) +
-                      " · ±" + escapeHtml(formatAccuracy(item.geo.accuracy)) +
-                      (item.geo.address
-                        ? "<br/>" + escapeHtml(item.geo.address)
-                        : "") +
-                    "</div>"
-                  : "") +
-                (item.note
-                  ? '<div class="card-note">' + escapeHtml(item.note) + "</div>"
-                  : "") +
-              "</div>" +
-              '<div class="card-actions">' +
-                '<button type="button" class="mini-btn" data-action="delete" title="Удалить" aria-label="Удалить">' +
-                  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' +
-                    '<path d="M5 7h14M10 11v6M14 11v6M9 7l1-2h4l1 2M8 7v12a1 1 0 001 1h6a1 1 0 001-1V7" stroke-linecap="round" stroke-linejoin="round"/>' +
-                  "</svg>" +
-                "</button>" +
-              "</div>" +
-            "</article>"
-          );
-        }).join("");
-      }
+      return { byLoc, totalWeight, totalRevenue, totalCount: items.length };
+    }
 
-      function renderAll() {
-        renderStats();
-        renderFilters();
-        renderList();
-        updateRepeatButton();
-      }
+    function renderStats() {
+      const { byLoc, totalWeight, totalRevenue, totalCount } = computeStats();
+      els.totalRevenue.textContent = formatRub(totalRevenue);
+      els.totalWeight.textContent = formatGrams(totalWeight);
+      els.totalCount.textContent = String(totalCount);
 
-      function updateRepeatButton() {
-        const last = loadJSON(STORAGE_LAST, null);
-        els.btnRepeat.disabled = !last;
-      }
-
-      function escapeHtml(str) {
-        return String(str)
-          .replace(/&/g, "&amp;")
-          .replace(/</g, "&lt;")
-          .replace(/>/g, "&gt;")
-          .replace(/"/g, "&quot;");
-      }
-
-      function escapeAttr(str) {
-        return escapeHtml(str).replace(/'/g, "&#39;");
-      }
-
-      function openOverlay(el) {
-        el.classList.add("open");
-        if (tg && tg.BackButton) {
-          tg.BackButton.show();
-        }
-      }
-
-      function closeOverlay(el) {
-        el.classList.remove("open");
-        if (
-          tg &&
-          tg.BackButton &&
-          !els.formOverlay.classList.contains("open") &&
-          !els.menuOverlay.classList.contains("open") &&
-          !els.settingsOverlay.classList.contains("open")
-        ) {
-          tg.BackButton.hide();
-        }
-      }
-
-      function anyOverlayOpen() {
+      els.locStats.innerHTML = LOCATIONS.map((l) => {
+        const s = byLoc[l.id];
         return (
-          els.formOverlay.classList.contains("open") ||
-          els.menuOverlay.classList.contains("open") ||
-          els.settingsOverlay.classList.contains("open")
+          '<div class="loc-stat">' +
+            '<div class="name">' + escapeHtml(l.label) + "</div>" +
+            '<div class="kg">' + escapeHtml(formatGrams(s.weight)) + "</div>" +
+            '<div class="rub">' + escapeHtml(formatRub(s.revenue)) + "</div>" +
+          "</div>"
         );
+      }).join("");
+    }
+
+    function renderFilters() {
+      const chips = [{ id: "all", label: "Все" }].concat(
+        LOCATIONS.map((l) => ({ id: l.id, label: l.label }))
+      );
+      els.filterChips.innerHTML = chips.map((c) => {
+        const active = c.id === activeFilter ? " active" : "";
+        return (
+          '<button type="button" class="chip' + active + '" data-filter="' +
+          escapeAttr(c.id) + '">' + escapeHtml(c.label) + "</button>"
+        );
+      }).join("");
+    }
+
+    function firstPhotoSrc(item) {
+      if (!item.photos || !item.photos.length) return "";
+      return item.photos[0].final || item.photos[0].raw || "";
+    }
+
+    function renderList() {
+      const list = getFilteredItems();
+      if (!list.length) {
+        els.itemsList.innerHTML =
+          '<div class="empty"><strong>Позиций нет</strong>Добавьте Клад или смените фильтр локации.</div>';
+        return;
       }
 
-      function readFileAsDataURL(file) {
-        return new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(String(reader.result || ""));
-          reader.onerror = () => reject(reader.error);
-          reader.readAsDataURL(file);
-        });
-      }
+      els.itemsList.innerHTML = list.map((item) => {
+        const revenue = itemRevenue(item);
+        const heavy = Number(item.weight) > HEAVY_WEIGHT_G;
+        const thumb = firstPhotoSrc(item);
+        const photoCount = (item.photos && item.photos.length) || 0;
+        const note = (item.note || "").trim();
+        const noteSnippet = note.length > 80 ? note.slice(0, 80) + "…" : note;
 
-      function compressImage(dataUrl, maxSide, quality) {
-        return new Promise((resolve) => {
-          const img = new Image();
-          img.onload = () => {
-            let { width, height } = img;
-            const scale = Math.min(1, maxSide / Math.max(width, height));
-            width = Math.round(width * scale);
-            height = Math.round(height * scale);
-            const canvas = document.createElement("canvas");
-            canvas.width = width;
-            canvas.height = height;
-            const ctx = canvas.getContext("2d");
-            ctx.drawImage(img, 0, 0, width, height);
-            try {
-              resolve(canvas.toDataURL("image/jpeg", quality));
-            } catch (_) {
-              resolve(dataUrl);
-            }
-          };
-          img.onerror = () => resolve(dataUrl);
-          img.src = dataUrl;
-        });
-      }
+        return (
+          '<article class="card" data-id="' + escapeAttr(item.id) + '">' +
+            (thumb
+              ? '<img class="card-photo" src="' + escapeAttr(thumb) + '" alt="Клад" />'
+              : '<div class="card-photo placeholder">нет фото</div>') +
+            '<div class="card-body">' +
+              '<div class="card-title">' +
+                escapeHtml(locationLabel(item.location)) +
+                (heavy ? ' <span class="badge">крупная</span>' : "") +
+              "</div>" +
+              '<div class="card-meta">' +
+                '<span class="accent">' + escapeHtml(formatGrams(item.weight)) + "</span> · " +
+                '<span class="gold">' + escapeHtml(formatRub(revenue)) + "</span><br/>' +
+                '<span class="tape-swatch" style="background:' + escapeAttr(tapeHex(item.tapeColor)) + '"></span>' +
+                "Изолента: " + escapeHtml(tapeLabel(item.tapeColor)) + "<br/>" +
+                "Фото: " + photoCount + " · " + escapeHtml(formatDate(item.updatedAt || item.createdAt)) +
+              "</div>" +
+              (noteSnippet
+                ? '<div class="card-note">' + escapeHtml(noteSnippet) + "</div>"
+                : "") +
+            "</div>" +
+            '<div class="card-actions">' +
+              '<button type="button" class="mini-btn" data-action="edit" title="Изменить" aria-label="Изменить">' +
+                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' +
+                  '<path d="M4 20h4l10-10-4-4L4 16v4zM14 6l4 4" stroke-linecap="round" stroke-linejoin="round"/>' +
+                "</svg>" +
+              "</button>" +
+              '<button type="button" class="mini-btn danger" data-action="delete" title="Удалить" aria-label="Удалить">' +
+                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' +
+                  '<path d="M5 7h14M10 11v6M14 11v6M9 7l1-2h4l1 2M8 7v12a1 1 0 001 1h6a1 1 0 001-1V7" stroke-linecap="round" stroke-linejoin="round"/>' +
+                "</svg>" +
+              "</button>" +
+            "</div>" +
+          "</article>"
+        );
+      }).join("");
+    }
 
-      function stopCamera() {
-        if (mediaStream) {
-          mediaStream.getTracks().forEach((t) => t.stop());
-          mediaStream = null;
+    function renderAll() {
+      renderStats();
+      renderFilters();
+      renderList();
+      updateRepeatButton();
+    }
+
+    function updateRepeatButton() {
+      const last = loadJSON(STORAGE_LAST, null);
+      els.btnRepeat.disabled = !last;
+    }
+
+    /* ── Overlays ── */
+
+    function openOverlay(el) {
+      el.classList.add("open");
+      if (tg && tg.BackButton) tg.BackButton.show();
+    }
+
+    function closeOverlay(el) {
+      el.classList.remove("open");
+      if (
+        tg &&
+        tg.BackButton &&
+        !els.formOverlay.classList.contains("open") &&
+        !els.menuOverlay.classList.contains("open") &&
+        !els.settingsOverlay.classList.contains("open") &&
+        !stageOpen
+      ) {
+        tg.BackButton.hide();
+      }
+    }
+
+    /* ── Image helpers ── */
+
+    function loadImageElement(src) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = reject;
+        img.src = src;
+      });
+    }
+
+    function compressImage(dataUrl, maxSide, quality) {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+          let { width, height } = img;
+          const scale = Math.min(1, maxSide / Math.max(width, height));
+          width = Math.round(width * scale);
+          height = Math.round(height * scale);
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, width, height);
+          try {
+            resolve(canvas.toDataURL("image/jpeg", quality));
+          } catch (_) {
+            resolve(dataUrl);
+          }
+        };
+        img.onerror = () => resolve(dataUrl);
+        img.src = dataUrl;
+      });
+    }
+
+    function readFileAsDataURL(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ""));
+        reader.onerror = () => reject(reader.error);
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function getContainRect(imgW, imgH, viewW, viewH) {
+      const scale = Math.min(viewW / imgW, viewH / imgH);
+      const drawnW = imgW * scale;
+      const drawnH = imgH * scale;
+      return {
+        scale: scale,
+        offsetX: (viewW - drawnW) / 2,
+        offsetY: (viewH - drawnH) / 2,
+        drawnW: drawnW,
+        drawnH: drawnH
+      };
+    }
+
+    function mapContainPoint(nx, ny, imgW, imgH, viewW, viewH) {
+      const r = getContainRect(imgW, imgH, viewW, viewH);
+      const vx = nx * viewW;
+      const vy = ny * viewH;
+      return {
+        x: (vx - r.offsetX) / r.scale,
+        y: (vy - r.offsetY) / r.scale
+      };
+    }
+
+    function wrapTextLines(ctx, text, maxWidth) {
+      const words = String(text || "").split(/\s+/).filter(Boolean);
+      if (!words.length) return [""];
+      const lines = [];
+      let line = "";
+      words.forEach((word) => {
+        const test = line ? line + " " + word : word;
+        if (ctx.measureText(test).width > maxWidth && line) {
+          lines.push(line);
+          line = word;
+        } else {
+          line = test;
         }
-        els.cameraVideo.srcObject = null;
-        els.cameraVideo.classList.add("hidden");
-        els.cameraBox.classList.remove("streaming");
-        els.btnCapture.disabled = true;
-      }
+      });
+      if (line) lines.push(line);
+      return lines;
+    }
 
-      function updateDrawButtons() {
-        const has = drawStrokes.length > 0;
-        els.btnUndoDraw.disabled = !has;
-        els.btnClearDraw.disabled = !has;
+    function buildStampMeta(meta) {
+      meta = meta || {};
+      const note = (meta.note || "").trim();
+      const lines = [
+        "Изолента: " + tapeLabel(meta.tapeColor),
+        "Место: " + locationLabel(meta.location),
+        "Время: " + formatDateStamp(meta.time || new Date().toISOString()),
+        "Описание: " + (note || "—")
+      ];
+      const geo = meta.geo;
+      if (geo && geo.latitude != null && geo.longitude != null) {
+        lines.push(
+          formatCoords(geo.latitude, geo.longitude) +
+          (geo.accuracy != null ? "  ±" + formatAccuracy(geo.accuracy) : "")
+        );
+        const addr = meta.address || geo.address || "";
+        if (addr) lines.push(addr);
       }
+      return lines;
+    }
 
-      function clearDrawings() {
-        drawStrokes = [];
-        drawCurrent = null;
-        isDrawing = false;
-        redrawCanvas();
-        updateDrawButtons();
-      }
+    function paintStamp(ctx, width, height, meta) {
+      const pad = Math.max(10, Math.round(width * 0.025));
+      const fontSize = Math.max(13, Math.round(width * 0.028));
+      const lineH = Math.round(fontSize * 1.28);
+      ctx.save();
+      ctx.font = "600 " + fontSize + "px Segoe UI, system-ui, sans-serif";
+      ctx.textBaseline = "top";
 
-      function resizeDrawCanvas() {
-        const canvas = els.drawCanvas;
-        const viewport = canvas.parentElement;
-        if (!viewport) return;
-        const rect = viewport.getBoundingClientRect();
-        const dpr = Math.min(window.devicePixelRatio || 1, 2);
-        const w = Math.max(1, Math.round(rect.width * dpr));
-        const h = Math.max(1, Math.round(rect.height * dpr));
-        if (canvas.width !== w || canvas.height !== h) {
-          canvas.width = w;
-          canvas.height = h;
+      const maxTextW = width - pad * 2;
+      const wrapped = [];
+      buildStampMeta(meta).forEach((l, idx) => {
+        if (idx === 3 || idx >= 5) {
+          wrapTextLines(ctx, l, maxTextW).slice(0, 3).forEach((w) => wrapped.push(w));
+        } else {
+          wrapped.push(l);
         }
-        canvas.style.width = rect.width + "px";
-        canvas.style.height = rect.height + "px";
-        redrawCanvas();
-      }
+      });
 
-      function strokeLineWidth(stroke) {
-        const canvas = els.drawCanvas;
-        const base = Math.min(canvas.width, canvas.height);
-        // stroke.width is "logical" px on ~360 CSS width; scale to canvas
-        const cssW = canvas.getBoundingClientRect().width || 360;
-        return (stroke.width || 5) * (base / Math.max(cssW, 1));
-      }
+      const boxH = pad + wrapped.length * lineH + pad;
+      const boxY = height - boxH;
 
-      function paintStroke(ctx, stroke) {
-        if (!stroke || !stroke.points || stroke.points.length < 1) return;
-        const w = els.drawCanvas.width;
-        const h = els.drawCanvas.height;
+      ctx.fillStyle = "rgba(0, 0, 0, 0.66)";
+      ctx.fillRect(0, boxY, width, boxH);
+
+      const grad = ctx.createLinearGradient(0, boxY, width, boxY);
+      grad.addColorStop(0, "#3dcf7a");
+      grad.addColorStop(1, "#d4af37");
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, boxY, width, Math.max(2, Math.round(fontSize * 0.18)));
+
+      wrapped.forEach((text, i) => {
+        const y = boxY + pad + i * lineH;
+        ctx.fillStyle = i === 0 ? "#f0d000" : i < 4 ? "#e8efe9" : "#cfcfcf";
+        if (text.indexOf("Место:") === 0) ctx.fillStyle = "#3dcf7a";
+        if (text.indexOf("Время:") === 0) ctx.fillStyle = "#d4af37";
+        ctx.fillText(text, pad, y, maxTextW);
+      });
+      ctx.restore();
+    }
+
+    function currentStampMeta(overrides) {
+      const base = {
+        tapeColor: els.tapeSelect.value,
+        location: els.locationSelect.value,
+        note: els.noteInput.value,
+        time: new Date().toISOString(),
+        geo: currentGeo,
+        address: currentAddress
+      };
+      return Object.assign(base, overrides || {});
+    }
+
+    async function bakePhoto(raw, strokes, meta, viewW, viewH) {
+      if (!raw) return "";
+      const img = await loadImageElement(raw);
+      const imgW = img.naturalWidth || img.width;
+      const imgH = img.naturalHeight || img.height;
+      const canvas = document.createElement("canvas");
+      canvas.width = imgW;
+      canvas.height = imgH;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0, imgW, imgH);
+
+      const vw = viewW || imgW;
+      const vh = viewH || imgH;
+      const contain = getContainRect(imgW, imgH, vw, vh);
+
+      (strokes || []).forEach((stroke) => {
+        if (!stroke.points || !stroke.points.length) return;
+        const mapped = stroke.points.map((p) => mapContainPoint(p.x, p.y, imgW, imgH, vw, vh));
         ctx.save();
         ctx.lineCap = "round";
         ctx.lineJoin = "round";
         ctx.strokeStyle = stroke.color || "#3dcf7a";
-        ctx.lineWidth = strokeLineWidth(stroke);
+        ctx.lineWidth = Math.max(2, (stroke.width || 5) / Math.max(contain.scale, 0.0001));
         ctx.beginPath();
-        ctx.moveTo(stroke.points[0].x * w, stroke.points[0].y * h);
-        for (let i = 1; i < stroke.points.length; i++) {
-          ctx.lineTo(stroke.points[i].x * w, stroke.points[i].y * h);
-        }
-        if (stroke.points.length === 1) {
-          ctx.lineTo(stroke.points[0].x * w + 0.01, stroke.points[0].y * h);
-        }
+        ctx.moveTo(mapped[0].x, mapped[0].y);
+        for (let i = 1; i < mapped.length; i++) ctx.lineTo(mapped[i].x, mapped[i].y);
+        if (mapped.length === 1) ctx.lineTo(mapped[0].x + 0.5, mapped[0].y);
         ctx.stroke();
         ctx.restore();
-      }
+      });
 
-      function wrapTextLines(ctx, text, maxWidth) {
-        const words = String(text || "").split(/\s+/).filter(Boolean);
-        const lines = [];
-        let line = "";
-        words.forEach((word) => {
-          const test = line ? line + " " + word : word;
-          if (ctx.measureText(test).width > maxWidth && line) {
-            lines.push(line);
-            line = word;
-          } else {
-            line = test;
+      paintStamp(ctx, imgW, imgH, meta);
+
+      try {
+        return canvas.toDataURL("image/jpeg", 0.85);
+      } catch (_) {
+        return raw;
+      }
+    }
+
+    async function rebakeAllPhotos(photos, meta) {
+      const out = [];
+      for (let i = 0; i < photos.length; i++) {
+        const p = photos[i];
+        const raw = p.raw || p.final || "";
+        if (!raw) continue;
+        const final = await bakePhoto(raw, p.strokes || [], meta, 720, 960);
+        out.push({
+          id: p.id || uid("p"),
+          raw: raw,
+          strokes: Array.isArray(p.strokes) ? p.strokes : [],
+          final: final
+        });
+      }
+      return out;
+    }
+
+    /* ── Stage (fullscreen static camera + draw) ── */
+
+    function lockBodyScroll() {
+      bodyScrollY = window.scrollY || window.pageYOffset || 0;
+      document.body.classList.add("stage-lock");
+      document.body.style.top = "-" + bodyScrollY + "px";
+    }
+
+    function unlockBodyScroll() {
+      document.body.classList.remove("stage-lock");
+      document.body.style.top = "";
+      window.scrollTo(0, bodyScrollY || 0);
+    }
+
+    function setStageMode(mode) {
+      els.stage.classList.toggle("mode-camera", mode === "camera");
+      els.stage.classList.toggle("mode-draw", mode === "draw");
+      els.stageHint.textContent = mode === "camera"
+        ? "Наведите камеру и нажмите «Снять»"
+        : "Обведите Клад · затем «Готово»";
+    }
+
+    function stopCamera() {
+      if (mediaStream) {
+        mediaStream.getTracks().forEach((t) => t.stop());
+        mediaStream = null;
+      }
+      els.stageVideo.srcObject = null;
+      els.stageVideo.classList.add("hidden");
+      els.stage.classList.remove("streaming");
+    }
+
+    function updateDrawButtons() {
+      const has = stageStrokes.length > 0;
+      els.btnUndoDraw.disabled = !has;
+      els.btnClearDraw.disabled = !has;
+    }
+
+    function paintStrokeOnCtx(ctx, stroke, w, h) {
+      if (!stroke || !stroke.points || !stroke.points.length) return;
+      ctx.save();
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.strokeStyle = stroke.color || "#3dcf7a";
+      const cssW = els.stageCanvas.getBoundingClientRect().width || 360;
+      const base = Math.min(w, h);
+      ctx.lineWidth = (stroke.width || 5) * (base / Math.max(cssW, 1));
+      ctx.beginPath();
+      ctx.moveTo(stroke.points[0].x * w, stroke.points[0].y * h);
+      for (let i = 1; i < stroke.points.length; i++) {
+        ctx.lineTo(stroke.points[i].x * w, stroke.points[i].y * h);
+      }
+      if (stroke.points.length === 1) {
+        ctx.lineTo(stroke.points[0].x * w + 0.01, stroke.points[0].y * h);
+      }
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function redrawStageCanvas() {
+      const canvas = els.stageCanvas;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      stageStrokes.forEach((s) => paintStrokeOnCtx(ctx, s, canvas.width, canvas.height));
+      if (stageCurrent) paintStrokeOnCtx(ctx, stageCurrent, canvas.width, canvas.height);
+      if (stageRaw) {
+        paintStamp(ctx, canvas.width, canvas.height, currentStampMeta());
+      }
+    }
+
+    function resizeStageCanvas() {
+      const canvas = els.stageCanvas;
+      const viewport = els.stageViewport;
+      if (!viewport) return;
+      const rect = viewport.getBoundingClientRect();
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const w = Math.max(1, Math.round(rect.width * dpr));
+      const h = Math.max(1, Math.round(rect.height * dpr));
+      if (canvas.width !== w || canvas.height !== h) {
+        canvas.width = w;
+        canvas.height = h;
+      }
+      canvas.style.width = rect.width + "px";
+      canvas.style.height = rect.height + "px";
+      redrawStageCanvas();
+    }
+
+    function pointerToNorm(e) {
+      const rect = els.stageCanvas.getBoundingClientRect();
+      const clientX = e.clientX != null ? e.clientX : (e.touches && e.touches[0] && e.touches[0].clientX);
+      const clientY = e.clientY != null ? e.clientY : (e.touches && e.touches[0] && e.touches[0].clientY);
+      if (clientX == null || clientY == null || !rect.width || !rect.height) return null;
+      return {
+        x: Math.min(1, Math.max(0, (clientX - rect.left) / rect.width)),
+        y: Math.min(1, Math.max(0, (clientY - rect.top) / rect.height))
+      };
+    }
+
+    function onDrawStart(e) {
+      if (!stageRaw || !stageOpen) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const p = pointerToNorm(e);
+      if (!p) return;
+      isDrawing = true;
+      stageCurrent = { color: drawColor, width: drawWidthPx, points: [p] };
+      try { els.stageCanvas.setPointerCapture(e.pointerId); } catch (_) { /* ignore */ }
+      redrawStageCanvas();
+    }
+
+    function onDrawMove(e) {
+      if (!isDrawing || !stageCurrent) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const p = pointerToNorm(e);
+      if (!p) return;
+      const last = stageCurrent.points[stageCurrent.points.length - 1];
+      const dx = p.x - last.x;
+      const dy = p.y - last.y;
+      if (dx * dx + dy * dy < 0.00002) return;
+      stageCurrent.points.push(p);
+      redrawStageCanvas();
+    }
+
+    function onDrawEnd(e) {
+      if (!isDrawing) return;
+      e.preventDefault();
+      e.stopPropagation();
+      isDrawing = false;
+      if (stageCurrent && stageCurrent.points.length) stageStrokes.push(stageCurrent);
+      stageCurrent = null;
+      redrawStageCanvas();
+      updateDrawButtons();
+      haptic("light");
+    }
+
+    function preventStageScroll(e) {
+      if (!stageOpen) return;
+      e.preventDefault();
+    }
+
+    async function openStage() {
+      if (formPhotos.length >= MAX_PHOTOS) {
+        showToast("Максимум " + MAX_PHOTOS + " фото");
+        return;
+      }
+      stageOpen = true;
+      stageRaw = "";
+      stageStrokes = [];
+      stageCurrent = null;
+      isDrawing = false;
+      lockBodyScroll();
+      setVerticalSwipes(false);
+      requestStageFullscreen();
+      els.stage.classList.add("open");
+      els.stage.setAttribute("aria-hidden", "false");
+      setStageMode("camera");
+      els.stageImage.classList.add("hidden");
+      els.stageIdle.classList.remove("hidden");
+      updateDrawButtons();
+      if (tg && tg.BackButton) tg.BackButton.show();
+      await startCamera();
+    }
+
+    function closeStage() {
+      stopCamera();
+      stageOpen = false;
+      stageRaw = "";
+      stageStrokes = [];
+      stageCurrent = null;
+      isDrawing = false;
+      els.stage.classList.remove("open", "streaming");
+      els.stage.setAttribute("aria-hidden", "true");
+      els.stageImage.removeAttribute("src");
+      els.stageImage.classList.add("hidden");
+      setVerticalSwipes(true);
+      exitStageFullscreen();
+      unlockBodyScroll();
+      if (
+        tg &&
+        tg.BackButton &&
+        !els.formOverlay.classList.contains("open") &&
+        !els.menuOverlay.classList.contains("open") &&
+        !els.settingsOverlay.classList.contains("open")
+      ) {
+        tg.BackButton.hide();
+      }
+    }
+
+    async function startCamera() {
+      setStageMode("camera");
+      els.stageImage.classList.add("hidden");
+      els.stageIdle.classList.remove("hidden");
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        els.photoInput.click();
+        return;
+      }
+      try {
+        stopCamera();
+        mediaStream = await navigator.mediaDevices.getUserMedia({
+          audio: false,
+          video: {
+            facingMode: { ideal: "environment" },
+            width: { ideal: 1280 },
+            height: { ideal: 960 }
           }
         });
-        if (line) lines.push(line);
-        return lines;
-      }
-
-      function paintGeoStamp(ctx, width, height, geo, address) {
-        if (!geo) return;
-        const pad = Math.max(10, Math.round(width * 0.025));
-        const fontSize = Math.max(14, Math.round(width * 0.032));
-        const lineH = Math.round(fontSize * 1.25);
-        ctx.save();
-        ctx.font = "600 " + fontSize + "px Segoe UI, system-ui, sans-serif";
-        ctx.textBaseline = "top";
-
-        const lines = [
-          formatCoords(geo.latitude, geo.longitude) + "  ±" + formatAccuracy(geo.accuracy),
-          address || "Адрес уточняется…",
-          formatDate(new Date(geo.timestamp || Date.now()).toISOString())
-        ];
-
-        const maxTextW = width - pad * 2;
-        const wrapped = [];
-        lines.forEach((l, idx) => {
-          if (idx === 1) {
-            wrapTextLines(ctx, l, maxTextW).slice(0, 3).forEach((w) => wrapped.push(w));
-          } else {
-            wrapped.push(l);
-          }
-        });
-
-        const boxH = pad + wrapped.length * lineH + pad;
-        const boxY = height - boxH;
-
-        ctx.fillStyle = "rgba(0, 0, 0, 0.62)";
-        ctx.fillRect(0, boxY, width, boxH);
-
-        // accent bar
-        const grad = ctx.createLinearGradient(0, boxY, width, boxY);
-        grad.addColorStop(0, "#3dcf7a");
-        grad.addColorStop(1, "#d4af37");
-        ctx.fillStyle = grad;
-        ctx.fillRect(0, boxY, width, Math.max(2, Math.round(fontSize * 0.18)));
-
-        wrapped.forEach((text, i) => {
-          const y = boxY + pad + i * lineH;
-          ctx.fillStyle = i === 0 ? "#3dcf7a" : i === wrapped.length - 1 ? "#cfcfcf" : "#f2e6b8";
-          ctx.fillText(text, pad, y, maxTextW);
-        });
-        ctx.restore();
-      }
-
-      function redrawCanvas() {
-        const canvas = els.drawCanvas;
-        const ctx = canvas.getContext("2d");
-        if (!ctx) return;
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        drawStrokes.forEach((s) => paintStroke(ctx, s));
-        if (drawCurrent) paintStroke(ctx, drawCurrent);
-        if (draftPhotoDataUrl && currentGeo) {
-          paintGeoStamp(ctx, canvas.width, canvas.height, currentGeo, currentAddress);
-        }
-      }
-
-      function pointerToNorm(e) {
-        const rect = els.drawCanvas.getBoundingClientRect();
-        const clientX = e.clientX != null ? e.clientX : (e.touches && e.touches[0] && e.touches[0].clientX);
-        const clientY = e.clientY != null ? e.clientY : (e.touches && e.touches[0] && e.touches[0].clientY);
-        if (clientX == null || clientY == null || !rect.width || !rect.height) return null;
-        return {
-          x: Math.min(1, Math.max(0, (clientX - rect.left) / rect.width)),
-          y: Math.min(1, Math.max(0, (clientY - rect.top) / rect.height))
-        };
-      }
-
-      function onDrawStart(e) {
-        if (!draftPhotoDataUrl) return;
-        e.preventDefault();
-        const p = pointerToNorm(e);
-        if (!p) return;
-        isDrawing = true;
-        drawCurrent = {
-          color: drawColor,
-          width: drawWidthPx,
-          points: [p]
-        };
-        try { els.drawCanvas.setPointerCapture(e.pointerId); } catch (_) { /* ignore */ }
-        redrawCanvas();
-      }
-
-      function onDrawMove(e) {
-        if (!isDrawing || !drawCurrent) return;
-        e.preventDefault();
-        const p = pointerToNorm(e);
-        if (!p) return;
-        const last = drawCurrent.points[drawCurrent.points.length - 1];
-        const dx = p.x - last.x;
-        const dy = p.y - last.y;
-        // Skip micro-moves (normalized)
-        if (dx * dx + dy * dy < 0.00002) return;
-        drawCurrent.points.push(p);
-        redrawCanvas();
-      }
-
-      function onDrawEnd(e) {
-        if (!isDrawing) return;
-        e.preventDefault();
-        isDrawing = false;
-        if (drawCurrent && drawCurrent.points.length) {
-          drawStrokes.push(drawCurrent);
-        }
-        drawCurrent = null;
-        redrawCanvas();
-        updateDrawButtons();
-        saveDraft();
+        els.stageVideo.srcObject = mediaStream;
+        await els.stageVideo.play();
+        els.stage.classList.add("streaming");
+        els.stageVideo.classList.remove("hidden");
+        els.stageIdle.classList.add("hidden");
         haptic("light");
+      } catch (_) {
+        showToast("Камера недоступна — откроем съёмку");
+        els.photoInput.click();
+      }
+    }
+
+    function enterDrawMode(dataUrl) {
+      stageRaw = dataUrl;
+      stageStrokes = [];
+      stageCurrent = null;
+      stopCamera();
+      els.stageVideo.classList.add("hidden");
+      els.stageIdle.classList.add("hidden");
+      els.stageImage.src = dataUrl;
+      els.stageImage.classList.remove("hidden");
+      setStageMode("draw");
+      updateDrawButtons();
+      requestAnimationFrame(() => {
+        resizeStageCanvas();
+        redrawStageCanvas();
+      });
+    }
+
+    function capturePhoto() {
+      const video = els.stageVideo;
+      if (!mediaStream || !video.videoWidth) {
+        showToast("Сначала дождитесь камеры");
+        return;
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      let dataUrl;
+      try {
+        dataUrl = canvas.toDataURL("image/jpeg", 0.82);
+      } catch (_) {
+        showToast("Не удалось сделать снимок");
+        return;
+      }
+      compressImage(dataUrl, 1280, 0.78).then((compressed) => {
+        enterDrawMode(compressed);
+        showToast("Снимок готов — обведите Клад");
+        haptic("ok");
+      });
+    }
+
+    async function finishStagePhoto() {
+      if (!stageRaw) {
+        showToast("Сначала сделайте снимок");
+        return;
+      }
+      const viewRect = els.stageViewport.getBoundingClientRect();
+      const meta = currentStampMeta();
+      let finalUrl = stageRaw;
+      try {
+        finalUrl = await bakePhoto(
+          stageRaw,
+          stageStrokes,
+          meta,
+          viewRect.width || 720,
+          viewRect.height || 960
+        );
+      } catch (_) {
+        finalUrl = stageRaw;
       }
 
-      function loadImageElement(src) {
-        return new Promise((resolve, reject) => {
-          const img = new Image();
-          img.onload = () => resolve(img);
-          img.onerror = reject;
-          img.src = src;
-        });
+      formPhotos.push({
+        id: uid("p"),
+        raw: stageRaw,
+        strokes: stageStrokes.slice(),
+        final: finalUrl
+      });
+
+      closeStage();
+      renderPhotosGrid();
+      saveDraft();
+      showToast("Фото добавлено (" + formPhotos.length + "/" + MAX_PHOTOS + ")");
+      haptic("ok");
+    }
+
+    /* ── Form photos UI ── */
+
+    function renderPhotosGrid() {
+      els.photosGrid.innerHTML = formPhotos.map((p, idx) => {
+        const src = p.final || p.raw || "";
+        return (
+          '<div class="photo-thumb" data-idx="' + idx + '">' +
+            '<img src="' + escapeAttr(src) + '" alt="Фото ' + (idx + 1) + '" />' +
+            '<button type="button" class="btn-remove-photo" data-remove="' + idx + '" aria-label="Удалить">×</button>' +
+          "</div>"
+        );
+      }).join("");
+      els.btnAddPhoto.disabled = formPhotos.length >= MAX_PHOTOS;
+      els.photosHint.textContent =
+        formPhotos.length + " / " + MAX_PHOTOS + " фото · камера и обводка";
+    }
+
+    function updateHeavyAlert() {
+      const w = Number(els.weightSelect.value);
+      els.heavyAlert.classList.toggle("show", w > HEAVY_WEIGHT_G);
+    }
+
+    /* ── Draft ── */
+
+    function saveDraft() {
+      if (suppressDraft) return;
+      if (!els.formOverlay.classList.contains("open")) return;
+      const draft = {
+        editingId: editingId,
+        location: els.locationSelect.value,
+        weight: els.weightSelect.value,
+        tapeColor: els.tapeSelect.value,
+        note: els.noteInput.value,
+        photos: formPhotos,
+        geo: currentGeo,
+        address: currentAddress
+      };
+      saveJSON(STORAGE_DRAFT, draft);
+    }
+
+    function clearDraft() {
+      localStorage.removeItem(STORAGE_DRAFT);
+    }
+
+    function loadDraftIntoForm() {
+      const draft = loadJSON(STORAGE_DRAFT, null);
+      if (!draft) return false;
+      editingId = draft.editingId || null;
+      els.locationSelect.value = draft.location || "warehouse_1";
+      els.weightSelect.value = draft.weight != null ? String(draft.weight) : "0.5";
+      els.tapeSelect.value = draft.tapeColor || "yellow";
+      els.noteInput.value = draft.note || "";
+      formPhotos = Array.isArray(draft.photos)
+        ? draft.photos.map(migratePhoto).filter(Boolean)
+        : [];
+      if (draft.geo) {
+        currentGeo = normalizeFix(Object.assign({}, draft.geo, { source: draft.geo.source || "browser" }));
+        if (currentGeo) geoSamples = [currentGeo];
       }
-
-      function mapCoverPoint(nx, ny, imgW, imgH, viewW, viewH) {
-        // Inverse of CSS object-fit: cover — viewport normalized -> image pixels
-        const scale = Math.max(viewW / imgW, viewH / imgH);
-        const drawnW = imgW * scale;
-        const drawnH = imgH * scale;
-        const offsetX = (viewW - drawnW) / 2;
-        const offsetY = (viewH - drawnH) / 2;
-        const vx = nx * viewW;
-        const vy = ny * viewH;
-        return {
-          x: (vx - offsetX) / scale,
-          y: (vy - offsetY) / scale
-        };
+      currentAddress = draft.address || (currentGeo && currentGeo.address) || "";
+      if (currentGeo && currentAddress) {
+        lastAddressCoords = { lat: currentGeo.latitude, lon: currentGeo.longitude };
       }
+      els.formTitle.textContent = editingId ? "Редактирование" : "Новая позиция";
+      updateHeavyAlert();
+      renderGeoUi();
+      renderPhotosGrid();
+      return true;
+    }
 
-      async function getPhotoWithDrawings() {
-        if (!draftPhotoDataUrl) return "";
-        if (!drawStrokes.length && !currentGeo) return draftPhotoDataUrl;
-        const img = await loadImageElement(draftPhotoDataUrl);
-        const canvas = document.createElement("canvas");
-        const imgW = img.naturalWidth || img.width;
-        const imgH = img.naturalHeight || img.height;
-        canvas.width = imgW;
-        canvas.height = imgH;
-        const ctx = canvas.getContext("2d");
-        ctx.drawImage(img, 0, 0, imgW, imgH);
-
-        const viewRect = els.drawCanvas.getBoundingClientRect();
-        const viewW = viewRect.width || 1;
-        const viewH = viewRect.height || 1;
-
-        drawStrokes.forEach((stroke) => {
-          if (!stroke.points || !stroke.points.length) return;
-          const mapped = stroke.points.map((p) => mapCoverPoint(p.x, p.y, imgW, imgH, viewW, viewH));
-          ctx.save();
-          ctx.lineCap = "round";
-          ctx.lineJoin = "round";
-          ctx.strokeStyle = stroke.color || "#3dcf7a";
-          const scale = Math.max(viewW / imgW, viewH / imgH);
-          ctx.lineWidth = Math.max(2, (stroke.width || 5) / scale);
-          ctx.beginPath();
-          ctx.moveTo(mapped[0].x, mapped[0].y);
-          for (let i = 1; i < mapped.length; i++) {
-            ctx.lineTo(mapped[i].x, mapped[i].y);
-          }
-          if (mapped.length === 1) {
-            ctx.lineTo(mapped[0].x + 0.5, mapped[0].y);
-          }
-          ctx.stroke();
-          ctx.restore();
-        });
-
-        if (currentGeo) {
-          paintGeoStamp(ctx, imgW, imgH, currentGeo, currentAddress);
-        }
-
-        try {
-          return canvas.toDataURL("image/jpeg", 0.85);
-        } catch (_) {
-          return draftPhotoDataUrl;
-        }
+    function resetForm(defaults) {
+      els.itemForm.reset();
+      els.photoInput.value = "";
+      formPhotos = [];
+      editingId = null;
+      stopGeoWatch();
+      currentGeo = null;
+      geoSamples = [];
+      geoBusy = false;
+      currentAddress = "";
+      lastAddressCoords = null;
+      renderGeoUi();
+      renderPhotosGrid();
+      els.formTitle.textContent = "Новая позиция";
+      if (defaults) {
+        if (defaults.location) els.locationSelect.value = defaults.location;
+        if (defaults.weight != null) els.weightSelect.value = String(defaults.weight);
+        if (defaults.tapeColor) els.tapeSelect.value = defaults.tapeColor;
+        if (defaults.note != null) els.noteInput.value = defaults.note;
       }
+      updateHeavyAlert();
+    }
 
-      function setCameraUiState() {
-        const hasShot = !!draftPhotoDataUrl;
-        els.cameraBox.classList.toggle("has-shot", hasShot);
-        els.cameraIdle.classList.toggle("hidden", hasShot || els.cameraBox.classList.contains("streaming"));
-        els.photoPreview.classList.toggle("hidden", !hasShot);
-        els.cameraVideo.classList.toggle("hidden", hasShot || !els.cameraBox.classList.contains("streaming"));
-        if (hasShot) {
-          requestAnimationFrame(() => resizeDrawCanvas());
-        }
-        updateDrawButtons();
-      }
+    function openForm(options) {
+      options = options || {};
+      suppressDraft = true;
+      resetForm();
 
-      function setPhotoPreview(dataUrl, options) {
-        options = options || {};
-        draftPhotoDataUrl = dataUrl || "";
-        if (!options.keepStrokes) {
-          drawStrokes = [];
-          drawCurrent = null;
-          isDrawing = false;
-        }
-        if (dataUrl) {
-          els.photoPreview.src = dataUrl;
-          stopCamera();
-          els.photoPreview.onload = () => {
-            resizeDrawCanvas();
-            els.photoPreview.onload = null;
-          };
-        } else {
-          els.photoPreview.removeAttribute("src");
-          const ctx = els.drawCanvas.getContext("2d");
-          if (ctx) ctx.clearRect(0, 0, els.drawCanvas.width, els.drawCanvas.height);
-        }
-        setCameraUiState();
-      }
-
-      async function startCamera() {
-        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-          els.photoInput.click();
-          return;
-        }
-        try {
-          stopCamera();
-          mediaStream = await navigator.mediaDevices.getUserMedia({
-            audio: false,
-            video: {
-              facingMode: { ideal: "environment" },
-              width: { ideal: 1280 },
-              height: { ideal: 960 }
+      if (options.editItem) {
+        const item = options.editItem;
+        editingId = item.id;
+        els.formTitle.textContent = "Редактирование";
+        els.locationSelect.value = item.location || "warehouse_1";
+        els.weightSelect.value = String(item.weight != null ? item.weight : "0.5");
+        els.tapeSelect.value = item.tapeColor || "yellow";
+        els.noteInput.value = item.note || "";
+        formPhotos = (item.photos || []).map(migratePhoto).filter(Boolean);
+        if (item.geo) {
+          currentGeo = normalizeFix(Object.assign({}, item.geo, { source: item.geo.source || "browser" }));
+          if (currentGeo) {
+            geoSamples = [currentGeo];
+            currentAddress = item.geo.address || "";
+            if (currentAddress) {
+              lastAddressCoords = { lat: currentGeo.latitude, lon: currentGeo.longitude };
             }
-          });
-          els.cameraVideo.srcObject = mediaStream;
-          await els.cameraVideo.play();
-          els.cameraBox.classList.add("streaming");
-          els.cameraBox.classList.remove("has-shot");
-          draftPhotoDataUrl = "";
-          drawStrokes = [];
-          els.photoPreview.removeAttribute("src");
-          els.btnCapture.disabled = false;
-          setCameraUiState();
-          haptic("light");
-        } catch (_) {
-          showToast("Камера недоступна — откроем съёмку");
-          els.photoInput.click();
-        }
-      }
-
-      function capturePhoto() {
-        const video = els.cameraVideo;
-        if (!mediaStream || !video.videoWidth) {
-          showToast("Сначала включите камеру");
-          return;
-        }
-        const canvas = document.createElement("canvas");
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        const ctx = canvas.getContext("2d");
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        let dataUrl;
-        try {
-          dataUrl = canvas.toDataURL("image/jpeg", 0.82);
-        } catch (_) {
-          showToast("Не удалось сделать снимок");
-          return;
-        }
-        compressImage(dataUrl, 960, 0.72).then((compressed) => {
-          setPhotoPreview(compressed);
-          saveDraft();
-          showToast("Снимок готов — обведите Клад");
-          haptic("ok");
-        });
-      }
-
-      function updateHeavyAlert() {
-        const w = Number(els.weightSelect.value);
-        els.heavyAlert.classList.toggle("show", w > HEAVY_WEIGHT_G);
-      }
-
-      function renderPriceSettings() {
-        const host = $("priceRows");
-        if (!host) return;
-        host.innerHTML = WEIGHTS.map((w) => {
-          const key = weightKey(w);
-          return (
-            '<div class="price-row">' +
-              "<span>" + escapeHtml(formatGrams(w)) + "</span>" +
-              '<input type="number" id="price_' + escapeAttr(key) +
-              '" min="0" step="1" inputmode="numeric" value="' +
-              escapeAttr(String(itemPrice(w))) + '" />' +
-            "</div>"
-          );
-        }).join("");
-      }
-
-      function saveDraft() {
-        if (suppressDraft) return;
-        if (!els.formOverlay.classList.contains("open")) return;
-        const draft = {
-          location: els.locationSelect.value,
-          weight: els.weightSelect.value,
-          note: els.noteInput.value,
-          photo: draftPhotoDataUrl,
-          strokes: drawStrokes,
-          geo: currentGeo,
-          address: currentAddress
-        };
-        saveJSON(STORAGE_DRAFT, draft);
-      }
-
-      function clearDraft() {
-        localStorage.removeItem(STORAGE_DRAFT);
-      }
-
-      function loadDraftIntoForm() {
-        const draft = loadJSON(STORAGE_DRAFT, null);
-        if (!draft) return false;
-        els.locationSelect.value = draft.location || "warehouse_1";
-        els.weightSelect.value = draft.weight != null ? String(draft.weight) : "0.5";
-        els.noteInput.value = draft.note || "";
-        drawStrokes = Array.isArray(draft.strokes) ? draft.strokes : [];
-        setPhotoPreview(draft.photo || "", { keepStrokes: true });
-        if (draft.geo) {
-          currentGeo = normalizeFix(Object.assign({}, draft.geo, { source: draft.geo.source || "browser" }));
-          if (currentGeo) geoSamples = [currentGeo];
-        }
-        currentAddress = draft.address || "";
-        if (currentGeo && currentAddress) {
-          lastAddressCoords = { lat: currentGeo.latitude, lon: currentGeo.longitude };
-        }
-        updateHeavyAlert();
-        renderGeoUi();
-        updateDrawButtons();
-        redrawCanvas();
-        return true;
-      }
-
-      function resetForm(defaults) {
-        els.itemForm.reset();
-        els.photoInput.value = "";
-        stopCamera();
-        drawStrokes = [];
-        setPhotoPreview("");
-        stopGeoWatch();
-        currentGeo = null;
-        geoSamples = [];
-        geoBusy = false;
-        renderGeoUi();
-        if (defaults) {
-          if (defaults.location) els.locationSelect.value = defaults.location;
-          if (defaults.weight != null) els.weightSelect.value = String(defaults.weight);
-          if (defaults.note != null) els.noteInput.value = defaults.note;
-        }
-        updateHeavyAlert();
-      }
-
-      function openForm(options) {
-        options = options || {};
-        suppressDraft = true;
-        resetForm();
-
-        if (options.repeatLast) {
-          const last = loadJSON(STORAGE_LAST, null);
-          if (last) {
-            resetForm({
-              location: last.location,
-              weight: last.weight,
-              note: last.note
-            });
-            showToast("Параметры скопированы — сделайте снимок");
           }
-        } else if (options.useDraft !== false) {
-          const restored = loadDraftIntoForm();
-          if (restored) showToast("Черновик восстановлен");
         }
-
-        suppressDraft = false;
-        openOverlay(els.formOverlay);
-        haptic("light");
-        if (!draftPhotoDataUrl) {
-          startCamera();
+        renderPhotosGrid();
+        updateHeavyAlert();
+        renderGeoUi();
+      } else if (options.repeatLast) {
+        const last = loadJSON(STORAGE_LAST, null);
+        if (last) {
+          resetForm({
+            location: last.location,
+            weight: last.weight,
+            tapeColor: last.tapeColor,
+            note: last.note
+          });
+          showToast("Параметры скопированы — сделайте снимок");
         }
-        // Always refine GPS on open; keep draft coords as starting best if present
-        acquirePreciseGeo({ keepBest: !!currentGeo });
+      } else if (options.useDraft !== false) {
+        const restored = loadDraftIntoForm();
+        if (restored) showToast("Черновик восстановлен");
       }
 
-      function closeForm(saveDraftFlag) {
-        if (saveDraftFlag) saveDraft();
-        stopCamera();
-        stopGeoWatch();
-        geoBusy = false;
-        closeOverlay(els.formOverlay);
+      suppressDraft = false;
+      openOverlay(els.formOverlay);
+      haptic("light");
+      acquirePreciseGeo({ keepBest: !!currentGeo });
+    }
+
+    function closeForm(saveDraftFlag) {
+      if (saveDraftFlag) saveDraft();
+      if (stageOpen) closeStage();
+      stopGeoWatch();
+      geoBusy = false;
+      closeOverlay(els.formOverlay);
+    }
+
+    function openSettings() {
+      renderPriceSettings();
+      closeOverlay(els.menuOverlay);
+      openOverlay(els.settingsOverlay);
+    }
+
+    function renderPriceSettings() {
+      const host = $("priceRows");
+      if (!host) return;
+      host.innerHTML = WEIGHTS.map((w) => {
+        const key = weightKey(w);
+        return (
+          '<div class="price-row">' +
+            "<span>" + escapeHtml(formatGrams(w)) + "</span>" +
+            '<input type="number" id="price_' + escapeAttr(key) +
+            '" min="0" step="1" inputmode="numeric" value="' +
+            escapeAttr(String(itemPrice(w))) + '" />' +
+          "</div>"
+        );
+      }).join("");
+    }
+
+    /* ── Export / sync ── */
+
+    function exportCsv() {
+      const headers = [
+        "id", "location", "location_label", "weight_g", "tape_color", "price_rub", "revenue",
+        "note", "photos_count", "created_at", "updated_at",
+        "lat", "lon", "accuracy_m", "geo_source", "altitude_m", "address"
+      ];
+      const rows = items.map((item) => {
+        const price = itemPrice(item.weight);
+        const revenue = itemRevenue(item);
+        const g = item.geo || {};
+        return [
+          item.id,
+          item.location,
+          locationLabel(item.location),
+          item.weight,
+          item.tapeColor || "",
+          price,
+          revenue,
+          '"' + String(item.note || "").replace(/"/g, '""') + '"',
+          (item.photos && item.photos.length) || 0,
+          item.createdAt,
+          item.updatedAt || "",
+          g.latitude != null ? g.latitude : "",
+          g.longitude != null ? g.longitude : "",
+          g.accuracy != null ? g.accuracy : "",
+          g.source || "",
+          g.altitude != null ? g.altitude : "",
+          '"' + String(g.address || "").replace(/"/g, '""') + '"'
+        ].join(",");
+      });
+      const csv = "\uFEFF" + headers.join(",") + "\n" + rows.join("\n");
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "logistics_export_" + new Date().toISOString().slice(0, 10) + ".csv";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      showToast("CSV экспортирован");
+      haptic("ok");
+    }
+
+    function sendDataToBot() {
+      const payload = {
+        type: "logistics_sync",
+        exportedAt: new Date().toISOString(),
+        prices: prices,
+        stats: computeStats(),
+        items: items.map((i) => ({
+          id: i.id,
+          location: i.location,
+          weight: i.weight,
+          tapeColor: i.tapeColor,
+          note: i.note,
+          createdAt: i.createdAt,
+          updatedAt: i.updatedAt,
+          photoCount: (i.photos && i.photos.length) || 0,
+          geo: i.geo || null
+        }))
+      };
+      const data = JSON.stringify(payload);
+      if (tg && typeof tg.sendData === "function") {
+        try {
+          tg.sendData(data);
+          showToast("Сводка отправлена боту");
+          haptic("ok");
+          return;
+        } catch (_) { /* fallback */ }
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(data).then(() => {
+          showToast("JSON скопирован в буфер");
+        }).catch(() => showToast("Нет Telegram WebApp API", true));
+      } else {
+        showToast("Нет Telegram WebApp API", true);
+      }
+    }
+
+    async function syncToServer() {
+      if (!items.length) {
+        showToast("Нет данных для синхронизации");
+        return;
+      }
+      const userId =
+        (tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.id) || 0;
+      if (!userId) {
+        showToast("Нет userId Telegram — откройте из бота", true);
+        return;
       }
 
-      function openSettings() {
-        renderPriceSettings();
-        closeOverlay(els.menuOverlay);
-        openOverlay(els.settingsOverlay);
-      }
-
-      function exportCsv() {
-        const headers = [
-          "id", "location", "location_label", "weight_g", "price_rub", "revenue",
-          "note", "created_at", "lat", "lon", "accuracy_m", "geo_source", "altitude_m", "address"
-        ];
-        const rows = items.map((item) => {
-          const price = itemPrice(item.weight);
-          const revenue = itemRevenue(item);
-          const g = item.geo || {};
-          return [
-            item.id,
-            item.location,
-            locationLabel(item.location),
-            item.weight,
-            price,
-            revenue,
-            '"' + String(item.note || "").replace(/"/g, '""') + '"',
-            item.createdAt,
-            g.latitude != null ? g.latitude : "",
-            g.longitude != null ? g.longitude : "",
-            g.accuracy != null ? g.accuracy : "",
-            g.source || "",
-            g.altitude != null ? g.altitude : "",
-            '"' + String(g.address || "").replace(/"/g, '""') + '"'
-          ].join(",");
-        });
-        const csv = "\uFEFF" + headers.join(",") + "\n" + rows.join("\n");
-        const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = "logistics_export_" + new Date().toISOString().slice(0, 10) + ".csv";
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        URL.revokeObjectURL(url);
-        showToast("CSV экспортирован");
-        haptic("ok");
-      }
-
-      function sendDataToBot() {
-        const payload = {
-          type: "logistics_sync",
-          exportedAt: new Date().toISOString(),
-          prices,
-          stats: computeStats(),
-          items: items.map((i) => ({
-            id: i.id,
-            location: i.location,
-            weight: i.weight,
-            note: i.note,
-            createdAt: i.createdAt,
-            hasPhoto: !!i.photo,
-            geo: i.geo || null
+      showToast("Синхронизация…");
+      const payload = {
+        userId: userId,
+        items: items.map((i) => ({
+          id: i.id,
+          location: i.location,
+          weight: i.weight,
+          tapeColor: i.tapeColor,
+          note: i.note,
+          geo: i.geo || null,
+          createdAt: i.createdAt,
+          updatedAt: i.updatedAt,
+          photos: (i.photos || []).map((p) => ({
+            id: p.id,
+            final: p.final || "",
+            raw: p.raw || ""
           }))
-        };
-        const data = JSON.stringify(payload);
-        if (tg && typeof tg.sendData === "function") {
-          try {
-            tg.sendData(data);
-            showToast("Данные отправлены боту");
-            haptic("ok");
-            return;
-          } catch (_) { /* fallback below */ }
-        }
-        // Fallback outside Telegram: copy summary
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard.writeText(data).then(() => {
-            showToast("JSON скопирован в буфер");
-          }).catch(() => showToast("Нет Telegram WebApp API"));
-        } else {
-          showToast("Нет Telegram WebApp API");
-        }
-      }
+        }))
+      };
 
-      // Events
-      els.btnAdd.addEventListener("click", () => openForm({ useDraft: true }));
-      els.btnRepeat.addEventListener("click", () => {
-        if (els.btnRepeat.disabled) return;
-        openForm({ repeatLast: true, useDraft: false });
-      });
-
-      els.btnCloseForm.addEventListener("click", () => closeForm(true));
-      els.btnCancelForm.addEventListener("click", () => closeForm(true));
-
-      els.btnMenu.addEventListener("click", () => openOverlay(els.menuOverlay));
-      els.btnCloseMenu.addEventListener("click", () => closeOverlay(els.menuOverlay));
-      els.btnOpenSettings.addEventListener("click", openSettings);
-      els.btnCloseSettings.addEventListener("click", () => closeOverlay(els.settingsOverlay));
-
-      els.btnSaveSettings.addEventListener("click", () => {
-        const next = {};
-        WEIGHTS.forEach((w) => {
-          const key = weightKey(w);
-          const input = $("price_" + key);
-          next[key] = Math.max(0, Number(input && input.value) || 0);
+      try {
+        const res = await fetch("/api/sync-items", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
         });
-        prices = next;
-        saveJSON(STORAGE_PRICES, prices);
-        closeOverlay(els.settingsOverlay);
-        renderAll();
-        showToast("Настройки сохранены");
-        haptic("ok");
-      });
-
-      els.btnExportCsv.addEventListener("click", () => {
-        closeOverlay(els.menuOverlay);
-        if (!items.length) {
-          showToast("Нет данных для экспорта");
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.ok) {
+          showToast("Ошибка синхронизации", true);
+          haptic("warn");
           return;
         }
-        exportCsv();
-      });
-
-      els.btnSendToBot.addEventListener("click", () => {
-        closeOverlay(els.menuOverlay);
+        showToast("Синхронизировано: " + (data.saved || 0) + " поз.");
+        haptic("ok");
         sendDataToBot();
-      });
+      } catch (_) {
+        showToast("Сеть недоступна", true);
+        haptic("warn");
+      }
+    }
 
-      els.btnCloseApp.addEventListener("click", () => {
-        if (tg && typeof tg.close === "function") tg.close();
-        else showToast("Закрытие доступно в Telegram");
-      });
+    /* ── Events ── */
 
-      els.filterChips.addEventListener("click", (e) => {
-        const btn = e.target.closest("[data-filter]");
-        if (!btn) return;
-        activeFilter = btn.getAttribute("data-filter") || "all";
-        renderFilters();
-        renderList();
-        haptic("light");
-      });
+    els.btnAdd.addEventListener("click", () => openForm({ useDraft: true }));
+    els.btnRepeat.addEventListener("click", () => {
+      if (els.btnRepeat.disabled) return;
+      openForm({ repeatLast: true, useDraft: false });
+    });
 
-      els.itemsList.addEventListener("click", (e) => {
-        const btn = e.target.closest("[data-action='delete']");
-        if (!btn) return;
-        const card = btn.closest(".card");
-        if (!card) return;
-        const id = card.getAttribute("data-id");
+    els.btnCloseForm.addEventListener("click", () => closeForm(true));
+    els.btnCancelForm.addEventListener("click", () => closeForm(true));
+
+    els.btnMenu.addEventListener("click", () => openOverlay(els.menuOverlay));
+    els.btnCloseMenu.addEventListener("click", () => closeOverlay(els.menuOverlay));
+    els.btnOpenSettings.addEventListener("click", openSettings);
+    els.btnCloseSettings.addEventListener("click", () => closeOverlay(els.settingsOverlay));
+
+    els.btnSaveSettings.addEventListener("click", () => {
+      const next = {};
+      WEIGHTS.forEach((w) => {
+        const key = weightKey(w);
+        const input = $("price_" + key);
+        next[key] = Math.max(0, Number(input && input.value) || 0);
+      });
+      prices = next;
+      saveJSON(STORAGE_PRICES, prices);
+      closeOverlay(els.settingsOverlay);
+      renderAll();
+      showToast("Настройки сохранены");
+      haptic("ok");
+    });
+
+    els.btnExportCsv.addEventListener("click", () => {
+      closeOverlay(els.menuOverlay);
+      if (!items.length) {
+        showToast("Нет данных для экспорта");
+        return;
+      }
+      exportCsv();
+    });
+
+    els.btnSyncServer.addEventListener("click", () => {
+      closeOverlay(els.menuOverlay);
+      syncToServer();
+    });
+
+    els.btnSendToBot.addEventListener("click", () => {
+      closeOverlay(els.menuOverlay);
+      sendDataToBot();
+    });
+
+    els.btnCloseApp.addEventListener("click", () => {
+      if (tg && typeof tg.close === "function") tg.close();
+      else showToast("Закрытие доступно в Telegram");
+    });
+
+    els.filterChips.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-filter]");
+      if (!btn) return;
+      activeFilter = btn.getAttribute("data-filter") || "all";
+      renderFilters();
+      renderList();
+      haptic("light");
+    });
+
+    els.itemsList.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-action]");
+      if (!btn) return;
+      const card = btn.closest(".card");
+      if (!card) return;
+      const id = card.getAttribute("data-id");
+      const action = btn.getAttribute("data-action");
+
+      if (action === "delete") {
         items = items.filter((i) => i.id !== id);
         saveJSON(STORAGE_ITEMS, items);
         renderAll();
         showToast("Позиция удалена");
         haptic("light");
+        return;
+      }
+
+      if (action === "edit") {
+        const item = items.find((i) => i.id === id);
+        if (!item) return;
+        openForm({ editItem: item, useDraft: false });
+      }
+    });
+
+    els.photosGrid.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-remove]");
+      if (!btn) return;
+      const idx = Number(btn.getAttribute("data-remove"));
+      if (!isFinite(idx)) return;
+      formPhotos.splice(idx, 1);
+      renderPhotosGrid();
+      saveDraft();
+      haptic("light");
+    });
+
+    els.btnAddPhoto.addEventListener("click", () => openStage());
+
+    els.weightSelect.addEventListener("change", () => {
+      updateHeavyAlert();
+      const w = Number(els.weightSelect.value);
+      if (w > HEAVY_WEIGHT_G) {
+        showToast("Внимание, крупная партия", true);
+        haptic("warn");
+      }
+      saveDraft();
+      if (stageOpen && stageRaw) redrawStageCanvas();
+    });
+
+    els.locationSelect.addEventListener("change", () => {
+      saveDraft();
+      if (stageOpen && stageRaw) redrawStageCanvas();
+    });
+
+    els.tapeSelect.addEventListener("change", () => {
+      saveDraft();
+      if (stageOpen && stageRaw) redrawStageCanvas();
+    });
+
+    els.noteInput.addEventListener("input", () => {
+      saveDraft();
+      if (stageOpen && stageRaw) redrawStageCanvas();
+    });
+
+    els.btnCapture.addEventListener("click", () => capturePhoto());
+    els.btnDoneDraw.addEventListener("click", () => finishStagePhoto());
+    els.btnRetake.addEventListener("click", () => {
+      stageRaw = "";
+      stageStrokes = [];
+      stageCurrent = null;
+      els.stageImage.removeAttribute("src");
+      els.stageImage.classList.add("hidden");
+      startCamera();
+    });
+    els.btnCancelStage.addEventListener("click", () => closeStage());
+
+    els.stageCanvas.addEventListener("pointerdown", onDrawStart, { passive: false });
+    els.stageCanvas.addEventListener("pointermove", onDrawMove, { passive: false });
+    els.stageCanvas.addEventListener("pointerup", onDrawEnd, { passive: false });
+    els.stageCanvas.addEventListener("pointercancel", onDrawEnd, { passive: false });
+    els.stage.addEventListener("touchmove", preventStageScroll, { passive: false });
+    els.stage.addEventListener("wheel", preventStageScroll, { passive: false });
+
+    els.drawColors.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-color]");
+      if (!btn) return;
+      drawColor = btn.getAttribute("data-color") || "#3dcf7a";
+      els.drawColors.querySelectorAll(".draw-color").forEach((el) => {
+        el.classList.toggle("active", el === btn);
       });
+    });
 
-      els.weightSelect.addEventListener("change", () => {
-        updateHeavyAlert();
-        const w = Number(els.weightSelect.value);
-        if (w > HEAVY_WEIGHT_G) {
-          showToast("Внимание, крупная партия", true);
-          haptic("warn");
-        }
-        saveDraft();
-      });
+    els.drawSize.addEventListener("input", () => {
+      drawWidthPx = Number(els.drawSize.value) || 5;
+    });
 
-      els.locationSelect.addEventListener("change", saveDraft);
-      els.noteInput.addEventListener("input", saveDraft);
+    els.btnUndoDraw.addEventListener("click", () => {
+      stageStrokes.pop();
+      redrawStageCanvas();
+      updateDrawButtons();
+    });
 
-      els.btnStartCamera.addEventListener("click", () => startCamera());
-      els.btnCapture.addEventListener("click", () => capturePhoto());
-      els.btnRetake.addEventListener("click", () => {
-        clearDrawings();
-        setPhotoPreview("");
-        startCamera();
-      });
+    els.btnClearDraw.addEventListener("click", () => {
+      stageStrokes = [];
+      stageCurrent = null;
+      isDrawing = false;
+      redrawStageCanvas();
+      updateDrawButtons();
+      showToast("Обводка очищена");
+    });
 
-      els.drawCanvas.addEventListener("pointerdown", onDrawStart);
-      els.drawCanvas.addEventListener("pointermove", onDrawMove);
-      els.drawCanvas.addEventListener("pointerup", onDrawEnd);
-      els.drawCanvas.addEventListener("pointercancel", onDrawEnd);
+    window.addEventListener("resize", () => {
+      if (stageOpen && stageRaw) resizeStageCanvas();
+    });
 
-      els.drawColors.addEventListener("click", (e) => {
-        const btn = e.target.closest("[data-color]");
-        if (!btn) return;
-        drawColor = btn.getAttribute("data-color") || "#3dcf7a";
-        els.drawColors.querySelectorAll(".draw-color").forEach((el) => {
-          el.classList.toggle("active", el === btn);
-        });
-      });
+    els.photoInput.addEventListener("change", async () => {
+      const file = els.photoInput.files && els.photoInput.files[0];
+      els.photoInput.value = "";
+      if (!file) return;
+      if (!file.type.startsWith("image/")) {
+        showToast("Нужен снимок с камеры");
+        return;
+      }
+      try {
+        const raw = await readFileAsDataURL(file);
+        const compressed = await compressImage(raw, 1280, 0.78);
+        if (!stageOpen) await openStage();
+        enterDrawMode(compressed);
+        showToast("Снимок готов — обведите Клад");
+        haptic("ok");
+      } catch (_) {
+        showToast("Не удалось сохранить снимок");
+      }
+    });
 
-      els.drawSize.addEventListener("input", () => {
-        drawWidthPx = Number(els.drawSize.value) || 5;
-      });
+    els.btnRefreshGeo.addEventListener("click", () => {
+      acquirePreciseGeo({ keepBest: false });
+      haptic("light");
+    });
 
-      els.btnUndoDraw.addEventListener("click", () => {
-        drawStrokes.pop();
-        redrawCanvas();
-        updateDrawButtons();
-        saveDraft();
-      });
+    els.btnGeoSettings.addEventListener("click", () => openTelegramGeoSettings());
 
-      els.btnClearDraw.addEventListener("click", () => {
-        clearDrawings();
-        saveDraft();
-        showToast("Обводка очищена");
-      });
+    els.itemForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
 
-      window.addEventListener("resize", () => {
-        if (draftPhotoDataUrl) resizeDrawCanvas();
-      });
-
-      // Fallback only: native capture=environment (camera intent)
-      els.photoInput.addEventListener("change", async () => {
-        const file = els.photoInput.files && els.photoInput.files[0];
-        if (!file) return;
-        if (!file.type.startsWith("image/")) {
-          showToast("Нужен снимок с камеры");
-          return;
-        }
-        try {
-          const raw = await readFileAsDataURL(file);
-          const compressed = await compressImage(raw, 960, 0.72);
-          setPhotoPreview(compressed);
-          saveDraft();
-          showToast("Снимок готов — обведите Клад");
-          haptic("ok");
-        } catch (_) {
-          showToast("Не удалось сохранить снимок");
-        }
-      });
-
-      els.btnRefreshGeo.addEventListener("click", () => {
+      if (!formPhotos.length) {
+        showToast("Добавьте хотя бы одно фото");
+        haptic("warn");
+        return;
+      }
+      if (!currentGeo) {
+        showToast("Дождитесь координат GPS");
+        haptic("warn");
         acquirePreciseGeo({ keepBest: false });
-        haptic("light");
-      });
+        return;
+      }
+      if (currentGeo.accuracy > GEO_ACCEPTABLE_M) {
+        showToast("Точность слабая — нажмите «Уточнить GPS»", true);
+        haptic("warn");
+        return;
+      }
 
-      els.btnGeoSettings.addEventListener("click", () => openTelegramGeoSettings());
+      els.btnSaveItem.disabled = true;
+      const weight = Number(els.weightSelect.value);
+      const now = new Date().toISOString();
+      const meta = currentStampMeta({ time: now });
 
-      els.itemForm.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        if (!draftPhotoDataUrl) {
-          showToast("Сделайте снимок Клада");
-          haptic("warn");
-          return;
-        }
-        if (!currentGeo) {
-          showToast("Дождитесь координат GPS");
-          haptic("warn");
-          acquirePreciseGeo({ keepBest: false });
-          return;
-        }
-        if (currentGeo.accuracy > GEO_ACCEPTABLE_M) {
-          showToast("Точность слабая — нажмите «Уточнить GPS»", true);
-          haptic("warn");
-          return;
-        }
+      let bakedPhotos;
+      try {
+        bakedPhotos = await rebakeAllPhotos(formPhotos, meta);
+      } catch (_) {
+        bakedPhotos = formPhotos;
+      }
 
-        let finalPhoto = draftPhotoDataUrl;
-        try {
-          finalPhoto = await getPhotoWithDrawings();
-        } catch (_) {
-          finalPhoto = draftPhotoDataUrl;
-        }
+      const geoPayload = {
+        latitude: currentGeo.latitude,
+        longitude: currentGeo.longitude,
+        accuracy: currentGeo.accuracy,
+        altitude: currentGeo.altitude,
+        source: currentGeo.source,
+        timestamp: currentGeo.timestamp,
+        address: currentAddress || ""
+      };
 
-        const weight = Number(els.weightSelect.value);
-        const item = {
-          id: uid(),
+      if (editingId) {
+        const idx = items.findIndex((i) => i.id === editingId);
+        if (idx >= 0) {
+          items[idx] = Object.assign({}, items[idx], {
+            location: els.locationSelect.value,
+            weight: weight,
+            tapeColor: els.tapeSelect.value,
+            note: (els.noteInput.value || "").trim(),
+            photos: bakedPhotos,
+            geo: geoPayload,
+            updatedAt: now
+          });
+        }
+      } else {
+        items.push({
+          id: uid("i"),
           location: els.locationSelect.value,
           weight: weight,
+          tapeColor: els.tapeSelect.value,
           note: (els.noteInput.value || "").trim(),
-          photo: finalPhoto,
-          geo: {
-            latitude: currentGeo.latitude,
-            longitude: currentGeo.longitude,
-            accuracy: currentGeo.accuracy,
-            altitude: currentGeo.altitude,
-            source: currentGeo.source,
-            timestamp: currentGeo.timestamp,
-            address: currentAddress || ""
-          },
-          createdAt: new Date().toISOString()
-        };
-
-        items.push(item);
-        saveJSON(STORAGE_ITEMS, items);
-        saveJSON(STORAGE_LAST, {
-          location: item.location,
-          weight: item.weight,
-          note: item.note
-        });
-        clearDraft();
-
-        suppressDraft = true;
-        resetForm();
-        suppressDraft = false;
-        closeOverlay(els.formOverlay);
-        renderAll();
-
-        if (weight > HEAVY_WEIGHT_G) {
-          showToast("Позиция сохранена · крупная партия", true);
-          haptic("warn");
-        } else {
-          showToast("Позиция добавлена");
-          haptic("ok");
-        }
-      });
-
-      // Close overlays by backdrop click
-      [els.formOverlay, els.menuOverlay, els.settingsOverlay].forEach((overlay) => {
-        overlay.addEventListener("click", (e) => {
-          if (e.target !== overlay) return;
-          if (overlay === els.formOverlay) closeForm(true);
-          else closeOverlay(overlay);
-        });
-      });
-
-      if (tg && tg.BackButton) {
-        tg.BackButton.onClick(() => {
-          if (els.formOverlay.classList.contains("open")) {
-            closeForm(true);
-            return;
-          }
-          if (els.settingsOverlay.classList.contains("open")) {
-            closeOverlay(els.settingsOverlay);
-            return;
-          }
-          if (els.menuOverlay.classList.contains("open")) {
-            closeOverlay(els.menuOverlay);
-          }
+          photos: bakedPhotos,
+          geo: geoPayload,
+          createdAt: now,
+          updatedAt: now
         });
       }
 
-      // Init
-      initTelegram();
-      items = loadJSON(STORAGE_ITEMS, []);
-      if (!Array.isArray(items)) items = [];
-      const storedPrices = loadJSON(STORAGE_PRICES, {});
-      prices = {};
-      WEIGHTS.forEach((w) => {
-        const key = weightKey(w);
-        const raw = storedPrices && storedPrices[key];
-        prices[key] = raw != null ? Math.max(0, Number(raw) || 0) : DEFAULT_PRICES[key];
+      saveJSON(STORAGE_ITEMS, items);
+      saveJSON(STORAGE_LAST, {
+        location: els.locationSelect.value,
+        weight: weight,
+        tapeColor: els.tapeSelect.value,
+        note: (els.noteInput.value || "").trim()
       });
+      clearDraft();
+
+      const wasEdit = !!editingId;
+      suppressDraft = true;
+      resetForm();
+      suppressDraft = false;
+      closeOverlay(els.formOverlay);
+      els.btnSaveItem.disabled = false;
       renderAll();
-    })();
+
+      if (weight > HEAVY_WEIGHT_G) {
+        showToast("Позиция сохранена · крупная партия", true);
+        haptic("warn");
+      } else {
+        showToast(wasEdit ? "Позиция обновлена" : "Позиция добавлена");
+        haptic("ok");
+      }
+    });
+
+    [els.formOverlay, els.menuOverlay, els.settingsOverlay].forEach((overlay) => {
+      overlay.addEventListener("click", (e) => {
+        if (e.target !== overlay) return;
+        if (overlay === els.formOverlay) closeForm(true);
+        else closeOverlay(overlay);
+      });
+    });
+
+    if (tg && tg.BackButton) {
+      tg.BackButton.onClick(() => {
+        if (stageOpen) {
+          closeStage();
+          return;
+        }
+        if (els.formOverlay.classList.contains("open")) {
+          closeForm(true);
+          return;
+        }
+        if (els.settingsOverlay.classList.contains("open")) {
+          closeOverlay(els.settingsOverlay);
+          return;
+        }
+        if (els.menuOverlay.classList.contains("open")) {
+          closeOverlay(els.menuOverlay);
+        }
+      });
+    }
+
+    /* ── Init ── */
+
+    initTelegram();
+    items = loadItems();
+    const storedPrices = loadJSON(STORAGE_PRICES, {});
+    prices = {};
+    WEIGHTS.forEach((w) => {
+      const key = weightKey(w);
+      const raw = storedPrices && storedPrices[key];
+      prices[key] = raw != null ? Math.max(0, Number(raw) || 0) : DEFAULT_PRICES[key];
+    });
+    renderAll();
+  })();
   </script>
 </body>
 </html>
