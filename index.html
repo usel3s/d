@@ -1654,10 +1654,10 @@
   (function () {
     "use strict";
 
-    const STORAGE_ITEMS = "logistics_items_v1";
-    const STORAGE_PRICES = "logistics_prices_v2";
-    const STORAGE_DRAFT = "logistics_draft_v2";
-    const STORAGE_LAST = "logistics_last_v2";
+    const STORAGE_ITEMS_BASE = "logistics_items_v1";
+    const STORAGE_PRICES_BASE = "logistics_prices_v3";
+    const STORAGE_DRAFT_BASE = "logistics_draft_v2";
+    const STORAGE_LAST_BASE = "logistics_last_v2";
     const STORAGE_TG_UID = "logistics_tg_uid";
     const MAX_PHOTOS = 5;
 
@@ -1686,8 +1686,8 @@
     const HEAVY_WEIGHT_G = 3;
 
     const DEFAULT_PRICES = {
-      "0.5": 80,
-      "1": 140,
+      "0.5": 850,
+      "1": 1100,
       "2": 260,
       "3": 380,
       "4": 490,
@@ -1862,6 +1862,22 @@
       return id;
     }
 
+    function storageKey(base) {
+      const uid = resolveTelegramUserId();
+      return uid ? base + "_" + uid : base;
+    }
+
+    function migrateScopedStorage(base) {
+      const scoped = storageKey(base);
+      if (scoped === base) return scoped;
+      try {
+        if (!localStorage.getItem(scoped) && localStorage.getItem(base)) {
+          localStorage.setItem(scoped, localStorage.getItem(base));
+        }
+      } catch (_) { /* ignore */ }
+      return scoped;
+    }
+
     function getTelegramInitData() {
       return (tg && tg.initData) ? String(tg.initData) : "";
     }
@@ -1913,7 +1929,7 @@
     }
 
     function saveItemsPersistent(nextItems) {
-      if (saveJSON(STORAGE_ITEMS, nextItems)) {
+      if (saveJSON(migrateScopedStorage(STORAGE_ITEMS_BASE), nextItems)) {
         items = nextItems;
         return true;
       }
@@ -1934,7 +1950,7 @@
           final: p.final || p.raw || ""
         }))
       }));
-      if (saveJSON(STORAGE_ITEMS, slim)) {
+      if (saveJSON(migrateScopedStorage(STORAGE_ITEMS_BASE), slim)) {
         items = slim;
         showToast("Сохранено (slim)");
         return true;
@@ -2100,10 +2116,10 @@
     }
 
     function loadItems() {
-      const raw = loadJSON(STORAGE_ITEMS, []);
+      const raw = loadJSON(migrateScopedStorage(STORAGE_ITEMS_BASE), []);
       if (!Array.isArray(raw)) return [];
       const migrated = raw.map(migrateItem).filter(Boolean);
-      saveJSON(STORAGE_ITEMS, migrated);
+      saveJSON(migrateScopedStorage(STORAGE_ITEMS_BASE), migrated);
       return migrated;
     }
 
@@ -2675,7 +2691,7 @@
     }
 
     function updateRepeatButton() {
-      const last = loadJSON(STORAGE_LAST, null);
+      const last = loadJSON(migrateScopedStorage(STORAGE_LAST_BASE), null);
       els.btnRepeat.disabled = !last;
     }
 
@@ -3647,16 +3663,16 @@
         geo: currentGeo,
         address: currentAddress
       };
-      return saveJSON(STORAGE_DRAFT, draft);
+      return saveJSON(migrateScopedStorage(STORAGE_DRAFT_BASE), draft);
     }
 
     function clearDraft() {
-      localStorage.removeItem(STORAGE_DRAFT);
+      localStorage.removeItem(migrateScopedStorage(STORAGE_DRAFT_BASE));
     }
 
     function loadDraftIntoForm(options) {
       options = options || {};
-      const draft = loadJSON(STORAGE_DRAFT, null);
+      const draft = loadJSON(migrateScopedStorage(STORAGE_DRAFT_BASE), null);
       if (!draft) return false;
       // Черновик редактирования не должен открываться через «Добавить»
       if (draft.editingId && !options.allowEdit) return false;
@@ -3748,7 +3764,7 @@
           renderGeoUi();
         }
       } else if (options.repeatLast) {
-        const last = loadJSON(STORAGE_LAST, null);
+        const last = loadJSON(migrateScopedStorage(STORAGE_LAST_BASE), null);
         if (last) {
           resetForm({
             location: last.location,
@@ -3808,34 +3824,36 @@
 
     function exportCsv() {
       const headers = [
-        "id", "location", "location_label", "weight_g", "tape_color", "price_rub", "revenue",
-        "note", "photos_count", "created_at", "updated_at",
-        "lat", "lon", "accuracy_m", "geo_source", "altitude_m", "address"
+        "location", "location_label", "weight_g", "count", "price_rub", "sum_rub"
       ];
-      const rows = items.map((item) => {
-        const price = itemPrice(item.weight);
-        const revenue = itemRevenue(item);
-        const g = item.geo || {};
-        return [
-          item.id,
-          item.location,
-          locationLabel(item.location),
-          item.weight,
-          item.tapeColor || "",
-          price,
-          revenue,
-          '"' + String(item.note || "").replace(/"/g, '""') + '"',
-          (item.photos && item.photos.length) || 0,
-          item.createdAt,
-          item.updatedAt || "",
-          g.latitude != null ? g.latitude : "",
-          g.longitude != null ? g.longitude : "",
-          g.accuracy != null ? g.accuracy : "",
-          g.source || "",
-          g.altitude != null ? g.altitude : "",
-          '"' + String(g.address || "").replace(/"/g, '""') + '"'
-        ].join(",");
+      const buckets = new Map();
+      items.forEach((item) => {
+        const loc = item.location || "";
+        const w = Number(item.weight) || 0;
+        const key = loc + "|" + w;
+        const price = itemPrice(w);
+        const cur = buckets.get(key) || {
+          location: loc,
+          weight: w,
+          count: 0,
+          price: price,
+          sum: 0
+        };
+        cur.count += 1;
+        cur.sum += price;
+        buckets.set(key, cur);
       });
+      const rows = Array.from(buckets.values()).map((b) => [
+        b.location,
+        locationLabel(b.location),
+        b.weight,
+        b.count,
+        b.price,
+        b.sum
+      ].join(","));
+      const totalCount = items.length;
+      const totalSum = items.reduce((acc, it) => acc + itemRevenue(it), 0);
+      rows.push(["TOTAL", "", "", totalCount, "", totalSum].join(","));
       const csv = "\uFEFF" + headers.join(",") + "\n" + rows.join("\n");
       const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
       const url = URL.createObjectURL(blob);
@@ -3988,7 +4006,7 @@
         next[key] = Math.max(0, Number(input && input.value) || 0);
       });
       prices = next;
-      saveJSON(STORAGE_PRICES, prices);
+      saveJSON(migrateScopedStorage(STORAGE_PRICES_BASE), prices);
       closeOverlay(els.settingsOverlay);
       renderAll();
       showToast("ok");
@@ -4328,7 +4346,7 @@
         els.btnSaveItem.disabled = false;
         return;
       }
-      saveJSON(STORAGE_LAST, {
+      saveJSON(migrateScopedStorage(STORAGE_LAST_BASE), {
         location: els.locationSelect.value,
         weight: weight,
         tapeColor: els.tapeSelect.value,
@@ -4447,7 +4465,7 @@
       if (!allowed) return;
 
       items = loadItems();
-      const storedPrices = loadJSON(STORAGE_PRICES, {});
+      const storedPrices = loadJSON(migrateScopedStorage(STORAGE_PRICES_BASE), {});
       prices = {};
       WEIGHTS.forEach((w) => {
         const key = weightKey(w);

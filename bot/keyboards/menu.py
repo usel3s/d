@@ -106,10 +106,15 @@ def admin_keyboard() -> InlineKeyboardMarkup:
         inline_keyboard=[
             [
                 InlineKeyboardButton(
-                    text="Все фото",
+                    text="Мои фото",
                     callback_data="admin:photos:0",
                     icon_custom_emoji_id=pe_id("file"),
-                )
+                ),
+                InlineKeyboardButton(
+                    text="Экспорт",
+                    callback_data="admin:export",
+                    icon_custom_emoji_id=pe_id("coins"),
+                ),
             ],
             [
                 InlineKeyboardButton(

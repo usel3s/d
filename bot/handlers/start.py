@@ -77,6 +77,7 @@ async def cmd_help(message: Message, settings: Settings) -> None:
             f"{pe('info')} <b>help</b>\n"
             "webapp · photo · gps · sync\n"
             "/admin"
+            " · /export"
         )
     else:
         await message.answer(

@@ -15,15 +15,41 @@ from keyboards import admin_keyboard
 from keyboards.menu import photos_list_keyboard
 from services import MediaStore
 from utils.emoji import pe
-from utils.formatting import TAPE_LABELS, format_grams, location_label
+from utils.formatting import (
+    TAPE_LABELS,
+    format_grams,
+    format_items_export,
+    format_manual_export,
+    location_label,
+)
 
 router = Router(name="admin")
 
 PAGE_SIZE = 5
 
+# Известные сводки (кол-во/сумма) без фото, если на сервере ещё пусто.
+MANUAL_EXPORTS: dict[int, dict] = {
+    8647494349: {
+        "weight": 0.5,
+        "count": 30,
+        "by_location": {"pickup": 21, "warehouse_1": 9},
+        "price_per_item": 850,
+    },
+}
+
 
 def _is_admin(user_id: int, settings: Settings) -> bool:
     return user_id in settings.admin_ids
+
+
+def _export_text(user_id: int, media_store: MediaStore) -> str:
+    items = media_store.list_items(user_id=user_id)
+    if items:
+        return format_items_export(items, user_id=user_id)
+    manual = MANUAL_EXPORTS.get(user_id)
+    if manual:
+        return format_manual_export(user_id=user_id, **manual)
+    return format_items_export([], user_id=user_id)
 
 
 @router.message(Command("admin"))
@@ -39,6 +65,21 @@ async def cmd_admin(message: Message, settings: Settings) -> None:
     )
 
 
+@router.message(Command("export"))
+async def cmd_export(
+    message: Message,
+    settings: Settings,
+    media_store: MediaStore,
+) -> None:
+    user = message.from_user
+    if user is None or not _is_admin(user.id, settings):
+        await message.answer(f"{pe('lock')} Недостаточно прав.")
+        return
+
+    text = f"{pe('coins')} {_export_text(user.id, media_store)}"
+    await message.answer(text)
+
+
 @router.callback_query(F.data == "admin:home")
 async def admin_home(callback: CallbackQuery, settings: Settings) -> None:
     if not _is_admin(callback.from_user.id, settings):
@@ -49,6 +90,22 @@ async def admin_home(callback: CallbackQuery, settings: Settings) -> None:
             f"{pe('settings')} <b>admin</b>",
             reply_markup=admin_keyboard(),
         )
+    await callback.answer()
+
+
+@router.callback_query(F.data == "admin:export")
+async def admin_export(
+    callback: CallbackQuery,
+    settings: Settings,
+    media_store: MediaStore,
+) -> None:
+    if not _is_admin(callback.from_user.id, settings):
+        await callback.answer("Нет доступа", show_alert=True)
+        return
+
+    text = f"{pe('coins')} {_export_text(callback.from_user.id, media_store)}"
+    if callback.message:
+        await callback.message.edit_text(text, reply_markup=admin_keyboard())
     await callback.answer()
 
 
@@ -63,12 +120,14 @@ async def admin_stats(
         await callback.answer("Нет доступа", show_alert=True)
         return
 
+    uid = callback.from_user.id
     users = await db.count_users()
     syncs = await db.count_syncs()
-    items = media_store.list_items()
+    items = media_store.list_items(user_id=uid)
     photos = sum(len(i.get("photos") or []) for i in items)
     text = (
-        f"{pe('stats')} <b>Статистика бота</b>\n\n"
+        f"{pe('stats')} <b>Статистика</b>\n"
+        f"<i>только ваши позиции</i>\n\n"
         f"{pe('users')} Пользователи: <b>{users}</b>\n"
         f"{pe('analytics')} Синхронизации: <b>{syncs}</b>\n"
         f"{pe('package')} Позиции: <b>{len(items)}</b>\n"
@@ -90,7 +149,7 @@ async def admin_photos_list(
         return
 
     page = int(callback.data.split(":")[-1] or 0)
-    items = media_store.list_items()
+    items = media_store.list_items(user_id=callback.from_user.id)
     if not items:
         await callback.answer("Позиций пока нет", show_alert=True)
         return
@@ -100,7 +159,7 @@ async def admin_photos_list(
     chunk = items[page * PAGE_SIZE : (page + 1) * PAGE_SIZE]
 
     lines = [
-        f"{pe('file')} <b>Все фото</b> · стр. {page + 1}/{total_pages}",
+        f"{pe('file')} <b>Мои фото</b> · стр. {page + 1}/{total_pages}",
         f"Позиций: <b>{len(items)}</b>",
         "",
     ]
@@ -138,7 +197,7 @@ async def admin_photo_item(
         return
 
     item_id = callback.data.split(":", 2)[-1]
-    item = media_store.get_item(item_id)
+    item = media_store.get_item(item_id, user_id=callback.from_user.id)
     if not item:
         await callback.answer("Позиция не найдена", show_alert=True)
         return
