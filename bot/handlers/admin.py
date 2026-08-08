@@ -34,8 +34,7 @@ async def cmd_admin(message: Message, settings: Settings) -> None:
         return
 
     await message.answer(
-        f"{pe('settings')} <b>Администрирование</b>\n"
-        "Статистика и просмотр всех фото позиций.",
+        f"{pe('settings')} <b>admin</b>",
         reply_markup=admin_keyboard(),
     )
 
@@ -47,8 +46,7 @@ async def admin_home(callback: CallbackQuery, settings: Settings) -> None:
         return
     if callback.message:
         await callback.message.edit_text(
-            f"{pe('settings')} <b>Администрирование</b>\n"
-            "Статистика и просмотр всех фото позиций.",
+            f"{pe('settings')} <b>admin</b>",
             reply_markup=admin_keyboard(),
         )
     await callback.answer()

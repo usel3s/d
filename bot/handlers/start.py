@@ -13,11 +13,7 @@ router = Router(name="start")
 
 
 def _home_text() -> str:
-    return (
-        f"{pe('package')} <b>Логистика — учёт перемещений</b>\n\n"
-        f"{pe('info')} Откройте WebApp, чтобы добавить позицию: фото, локация, вес, GPS.\n"
-        f"{pe('location')} Координаты и адрес сохраняются вместе с карточкой товара."
-    )
+    return f"{pe('package')} <b>Логистика</b>"
 
 
 @router.message(CommandStart())
@@ -41,7 +37,7 @@ async def cmd_start(
         reply_markup=main_reply_keyboard(settings.webapp_url),
     )
     await message.answer(
-        f"{pe('link')} Быстрый доступ:",
+        f"{pe('link')} menu",
         reply_markup=main_inline_keyboard(settings.webapp_url),
     )
 
@@ -50,13 +46,9 @@ async def cmd_start(
 @router.message(F.text == "Справка")
 async def cmd_help(message: Message) -> None:
     await message.answer(
-        f"{pe('info')} <b>Справка</b>\n\n"
-        "1. Откройте учёт через кнопку WebApp\n"
-        "2. Сделайте до 5 фото, обведите товар в полноэкранном режиме\n"
-        "3. Укажите цвет изоленты, локацию, граммовку и описание\n"
-        "4. Дождитесь GPS — на фото проставятся цвет, место, время и описание\n"
-        "5. Синхронизируйте данные в меню WebApp\n"
-        "6. Админ: /admin → Все фото"
+        f"{pe('info')} <b>help</b>\n"
+        "webapp · photo · gps · sync\n"
+        "/admin"
     )
 
 
@@ -82,15 +74,15 @@ async def show_profile(
     await logistics.register_user(user.id, user.username, user.full_name)
     row = await logistics.latest_sync(user.id)
     sync_line = (
-        f"Последняя синхронизация: <b>#{row.id}</b> · позиций {row.items_count}"
+        f"sync #{row.id} · {row.items_count}"
         if row
-        else "Синхронизаций пока нет"
+        else "sync: —"
     )
 
     text = (
-        f"{pe('profile')} <b>Профиль</b>\n\n"
-        f"ID: <code>{user.id}</code>\n"
-        f"Имя: {user.full_name}\n"
+        f"{pe('profile')} <b>profile</b>\n"
+        f"<code>{user.id}</code>\n"
+        f"{user.full_name}\n"
         f"{pe('analytics')} {sync_line}"
     )
 
@@ -107,10 +99,8 @@ async def cb_help(callback: CallbackQuery) -> None:
         await callback.answer()
         return
     await callback.message.edit_text(
-        f"{pe('info')} <b>Справка</b>\n\n"
-        "WebApp хранит данные локально на устройстве.\n"
-        "Кнопка «Отправить данные боту» передаёт сводку без тяжёлых фото "
-        "(чтобы уложиться в лимит sendData)."
+        f"{pe('info')} <b>help</b>\n"
+        "local storage · sync → /api"
     )
     await callback.answer()
 
