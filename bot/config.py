@@ -9,7 +9,6 @@ from dotenv import load_dotenv
 _BOT_DIR = Path(__file__).resolve().parent
 _ROOT_DIR = _BOT_DIR.parent
 
-# Bothost cwd = /app — подхватываем .env из корня и из bot/
 load_dotenv(_ROOT_DIR / ".env")
 load_dotenv(_BOT_DIR / ".env")
 load_dotenv()
@@ -28,13 +27,6 @@ def _parse_admin_ids(raw: str) -> frozenset[int]:
     return frozenset(ids)
 
 
-def _env_bool(name: str, default: bool = False) -> bool:
-    raw = (os.getenv(name) or "").strip().lower()
-    if not raw:
-        return default
-    return raw in {"1", "true", "yes", "on"}
-
-
 @dataclass(frozen=True, slots=True)
 class Settings:
     bot_token: str
@@ -43,42 +35,34 @@ class Settings:
     database_path: str
     host: str
     port: int
-    use_webhook: bool
-    webhook_path: str
-    base_url: str
 
 
 def load_settings() -> Settings:
     token = (os.getenv("BOT_TOKEN") or "").strip()
     if not token:
-        raise RuntimeError("BOT_TOKEN is not set")
+        raise RuntimeError(
+            "BOT_TOKEN is not set. "
+            "Add it in Bothost panel → Environment variables (do not commit .env)."
+        )
 
-    # Bothost / PaaS usually inject PORT
-    port = int((os.getenv("PORT") or os.getenv("APP_PORT") or "8080").strip())
+    # Bothost injects PORT (cannabis: process.env.PORT || PANEL_PORT)
+    port = int((os.getenv("PORT") or os.getenv("PANEL_PORT") or "3000").strip())
     host = (os.getenv("HOST") or "0.0.0.0").strip()
 
-    base_url = (os.getenv("BASE_URL") or os.getenv("WEBAPP_URL") or "").strip().rstrip("/")
-    webapp_url = (os.getenv("WEBAPP_URL") or base_url or "").strip().rstrip("/")
+    webapp_url = (
+        os.getenv("WEBAPP_URL")
+        or os.getenv("BASE_URL")
+        or os.getenv("PANEL_PUBLIC_URL")
+        or ""
+    ).strip().rstrip("/")
     if not webapp_url:
-        raise RuntimeError("WEBAPP_URL (or BASE_URL) is not set")
-
-    # На Bothost HTTP (Uvicorn/app.py) и бот (bot/main.py) — разные процессы.
-    # По умолчанию polling; webhook включайте явно USE_WEBHOOK=1 только если
-    # webhook принимает тот же процесс, что и HTTP.
-    use_webhook = _env_bool("USE_WEBHOOK", default=False)
-
-    webhook_path = (os.getenv("WEBHOOK_PATH") or "/webhook").strip()
-    if not webhook_path.startswith("/"):
-        webhook_path = "/" + webhook_path
+        # last resort — bot still runs, WebApp button needs a real HTTPS URL in panel
+        webapp_url = f"http://127.0.0.1:{port}"
 
     db_path = (os.getenv("DATABASE_PATH") or "data/logistics.db").strip()
     db_file = Path(db_path)
     if not db_file.is_absolute():
-        # relative paths resolve from bot/ so data/ always рядом с кодом бота
-        candidate = (_BOT_DIR / db_path).resolve()
-        if not candidate.parent.exists() and (_ROOT_DIR / db_path).parent.exists():
-            candidate = (_ROOT_DIR / db_path).resolve()
-        db_file = candidate
+        db_file = (_BOT_DIR / db_path).resolve()
 
     return Settings(
         bot_token=token,
@@ -87,7 +71,4 @@ def load_settings() -> Settings:
         database_path=str(db_file),
         host=host,
         port=port,
-        use_webhook=use_webhook,
-        webhook_path=webhook_path,
-        base_url=base_url or webapp_url,
     )

@@ -1,45 +1,17 @@
 """
-Точка входа бота для Bothost: long polling.
+Bothost должен запускать корневой main.py (HTTP + бот в одном процессе).
 
-HTTP/Mini App отдаёт корневой app.py через Uvicorn платформы.
-Главный файл в панели: bot/main.py
+Этот файл оставлен как тонкий алиас на случай, если в панели указан bot/main.py.
 """
 
 from __future__ import annotations
 
-import asyncio
-import logging
+import runpy
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
-
-from app_factory import build_app
-from config import load_settings
-
-
-async def main() -> None:
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
-    )
-    settings = load_settings()
-    bot, dp, db, _ = await build_app(settings)
-
-    # Bothost держит отдельный Uvicorn — webhook в этом процессе не слушаем
-    await bot.delete_webhook(drop_pending_updates=True)
-    logging.info(
-        "Bot polling started | webapp=%s",
-        settings.webapp_url,
-    )
-    try:
-        await dp.start_polling(bot)
-    finally:
-        await db.close()
-        await bot.session.close()
-
+ROOT_MAIN = Path(__file__).resolve().parent.parent / "main.py"
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    sys.argv[0] = str(ROOT_MAIN)
+    runpy.run_path(str(ROOT_MAIN), run_name="__main__")
