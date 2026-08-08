@@ -499,6 +499,7 @@
       overflow: hidden;
       border: 1px solid var(--border);
       background: var(--bg-input);
+      cursor: pointer;
     }
 
     .photo-thumb img {
@@ -506,6 +507,7 @@
       height: 100%;
       object-fit: cover;
       display: block;
+      pointer-events: none;
     }
 
     .photo-thumb .btn-remove-photo {
@@ -846,8 +848,10 @@
     }
 
     .draw-size input[type="range"] {
-      width: 72px;
+      width: 96px;
       accent-color: var(--accent);
+      touch-action: manipulation;
+      pointer-events: auto;
     }
 
     .draw-tools {
@@ -1126,7 +1130,7 @@
       <canvas id="stageCanvas"></canvas>
     </div>
     <div class="stage-bar">
-      <div class="stage-hint" id="stageHint">Наведите камеру и нажмите «Снять»</div>
+      <div class="stage-hint" id="stageHint">Снимайте подряд · обводка потом по тапу на фото</div>
       <div class="draw-row">
         <div class="draw-colors" id="drawColors">
           <button type="button" class="draw-color active" data-color="#3dcf7a" style="background:#3dcf7a" aria-label="Зелёный"></button>
@@ -1136,8 +1140,8 @@
           <button type="button" class="draw-color" data-color="#0a84ff" style="background:#0a84ff" aria-label="Синий"></button>
         </div>
         <label class="draw-size">
-          Толщ.
-          <input type="range" id="drawSize" min="2" max="16" value="5" />
+          Толщ. <strong id="drawSizeLabel">4</strong>
+          <input type="range" id="drawSize" min="1" max="24" value="4" step="1" />
         </label>
         <div class="draw-tools">
           <button type="button" id="btnUndoDraw" disabled>↩</button>
@@ -1146,9 +1150,10 @@
       </div>
       <div class="stage-actions">
         <button type="button" class="btn-shot act-cam" id="btnCapture">Снять</button>
-        <button type="button" class="btn-done act-draw" id="btnDoneDraw">Готово</button>
-        <button type="button" class="btn-gold act-draw" id="btnRetake">Переснять</button>
-        <button type="button" id="btnCancelStage">Отмена</button>
+        <button type="button" class="btn-done act-cam" id="btnFinishCam">Готово</button>
+        <button type="button" class="btn-done act-draw" id="btnDoneDraw">Сохранить обводку</button>
+        <button type="button" class="btn-gold act-draw" id="btnRetake">Сбросить обводку</button>
+        <button type="button" id="btnCancelStage">Закрыть</button>
       </div>
     </div>
     <input type="file" id="photoInput" class="camera-fallback" accept="image/*" capture="environment" tabindex="-1" />
@@ -1209,10 +1214,12 @@
     let stageStrokes = [];
     let stageCurrent = null;
     let drawColor = "#3dcf7a";
-    let drawWidthPx = 5;
+    let drawWidthPx = 4;
     let isDrawing = false;
     let stageOpen = false;
     let bodyScrollY = 0;
+    /** null = burst capture; number = editing formPhotos[idx] */
+    let editingPhotoIdx = null;
 
     /** Geo */
     let currentGeo = null;
@@ -1282,9 +1289,11 @@
       stageHint: $("stageHint"),
       drawColors: $("drawColors"),
       drawSize: $("drawSize"),
+      drawSizeLabel: $("drawSizeLabel"),
       btnUndoDraw: $("btnUndoDraw"),
       btnClearDraw: $("btnClearDraw"),
       btnCapture: $("btnCapture"),
+      btnFinishCam: $("btnFinishCam"),
       btnDoneDraw: $("btnDoneDraw"),
       btnRetake: $("btnRetake"),
       btnCancelStage: $("btnCancelStage")
@@ -1340,7 +1349,43 @@
     }
 
     function saveJSON(key, value) {
-      localStorage.setItem(key, JSON.stringify(value));
+      try {
+        localStorage.setItem(key, JSON.stringify(value));
+        return true;
+      } catch (_) {
+        return false;
+      }
+    }
+
+    function saveItemsPersistent(nextItems) {
+      if (saveJSON(STORAGE_ITEMS, nextItems)) {
+        items = nextItems;
+        return true;
+      }
+      // fallback: keep finals only (drop raw duplicates) to fit quota
+      const slim = nextItems.map((it) => ({
+        id: it.id,
+        location: it.location,
+        weight: it.weight,
+        tapeColor: it.tapeColor,
+        note: it.note,
+        geo: it.geo,
+        createdAt: it.createdAt,
+        updatedAt: it.updatedAt,
+        photos: (it.photos || []).map((p) => ({
+          id: p.id,
+          raw: p.final || p.raw || "",
+          strokes: [],
+          final: p.final || p.raw || ""
+        }))
+      }));
+      if (saveJSON(STORAGE_ITEMS, slim)) {
+        items = slim;
+        showToast("Сохранено (сжатый режим памяти)");
+        return true;
+      }
+      showToast("Не хватает памяти браузера для фото", true);
+      return false;
     }
 
     function locationLabel(id) {
@@ -1632,21 +1677,44 @@
       }
     }
 
+    function formatStreetAddress(street, house) {
+      const s = String(street || "").replace(/^ул\.?\s*/i, "").trim();
+      const h = String(house || "").trim();
+      if (s && h) return "ул. " + s + ", дом " + h;
+      if (s) return "ул. " + s;
+      if (h) return "дом " + h;
+      return "";
+    }
+
+    function streetOnlyAddress(addr) {
+      if (!addr) return "";
+      const raw = String(addr).trim();
+      if (!raw || raw === "Определяем адрес…" || raw === "Адрес не найден") return "";
+      const drop = /^(г\.|город|обл\.?|область|район|республика|край|пос\.?|пгт|село|деревня|муницип)/i;
+      const parts = raw.split(",").map((p) => p.trim()).filter(Boolean);
+      const kept = parts.filter((p) => !drop.test(p));
+      const streetish = kept.filter((p) =>
+        /^(ул\.|улица|пер\.|просп|пр-т|пр\.|ш\.|наб\.|бул|дом|д\.)/i.test(p) || /^\d+[а-яa-z]?$/i.test(p)
+      );
+      if (streetish.length) return streetish.slice(0, 2).join(", ");
+      return kept.slice(0, 2).join(", ") || raw.split(",")[0].trim();
+    }
+
     function buildAddressFromGeoData(data) {
       if (!data) return "";
-      const street = data.street || data.road || "";
-      const house = data.streetNumber || data.street_number || "";
-      const line1 = [house, street].filter(Boolean).join(" ");
-      const place = data.locality && data.city && data.locality !== data.city
-        ? data.locality + ", " + data.city
-        : (data.city || data.locality || "");
-      const line2 = [place, data.principalSubdivision, data.countryName]
-        .filter(Boolean)
-        .filter((v, i, a) => a.indexOf(v) === i)
-        .join(", ");
-      const composed = [line1, line2].filter(Boolean).join(", ");
-      if (composed) return composed;
-      return data.locality || data.city || data.principalSubdivision || data.countryName || "";
+      return formatStreetAddress(
+        data.street || data.road || "",
+        data.streetNumber || data.street_number || ""
+      );
+    }
+
+    function buildAddressFromNominatim(data) {
+      if (!data) return "";
+      const a = data.address || {};
+      return formatStreetAddress(
+        a.road || a.pedestrian || a.street || a.footway || a.residential || "",
+        a.house_number || ""
+      );
     }
 
     async function resolveAddress(lat, lon) {
@@ -1670,11 +1738,12 @@
           encodeURIComponent(lat) +
           "&lon=" +
           encodeURIComponent(lon) +
-          "&accept-language=ru";
+          "&accept-language=ru&addressdetails=1";
         const res = await fetch(nom, { headers: { Accept: "application/json" } });
         if (!res.ok) throw new Error("nom http");
         const data = await res.json();
-        if (data && data.display_name) return String(data.display_name);
+        const addr = buildAddressFromNominatim(data);
+        if (addr) return addr;
       } catch (_) { /* ignore */ }
 
       return "";
@@ -1696,7 +1765,7 @@
       renderGeoUi();
       resolveAddress(lat, lon).then((addr) => {
         if (token !== addressLookupToken) return;
-        currentAddress = addr || "Адрес не найден";
+        currentAddress = streetOnlyAddress(addr) || "Адрес не найден";
         lastAddressCoords = { lat: lat, lon: lon };
         if (currentGeo) currentGeo.address = currentAddress;
         renderGeoUi();
@@ -2179,9 +2248,9 @@
           formatCoords(geo.latitude, geo.longitude) +
           (geo.accuracy != null ? "  ±" + formatAccuracy(geo.accuracy) : "")
         );
-        const addr = meta.address || geo.address || "";
-        if (addr) lines.push(addr);
       }
+      const addr = streetOnlyAddress(meta.address || (geo && geo.address) || "");
+      if (addr) lines.push(addr);
       return lines;
     }
 
@@ -2232,7 +2301,7 @@
         note: els.noteInput.value,
         time: new Date().toISOString(),
         geo: currentGeo,
-        address: currentAddress
+        address: streetOnlyAddress(currentAddress)
       };
       return Object.assign(base, overrides || {});
     }
@@ -2259,7 +2328,7 @@
         ctx.lineCap = "round";
         ctx.lineJoin = "round";
         ctx.strokeStyle = stroke.color || "#3dcf7a";
-        ctx.lineWidth = Math.max(2, (stroke.width || 5) / Math.max(contain.scale, 0.0001));
+        ctx.lineWidth = Math.max(1, (Number(stroke.width) || drawWidthPx) / Math.max(contain.scale, 0.0001));
         ctx.beginPath();
         ctx.moveTo(mapped[0].x, mapped[0].y);
         for (let i = 1; i < mapped.length; i++) ctx.lineTo(mapped[i].x, mapped[i].y);
@@ -2271,7 +2340,7 @@
       paintStamp(ctx, imgW, imgH, meta);
 
       try {
-        return canvas.toDataURL("image/jpeg", 0.85);
+        return canvas.toDataURL("image/jpeg", 0.72);
       } catch (_) {
         return raw;
       }
@@ -2281,8 +2350,11 @@
       const out = [];
       for (let i = 0; i < photos.length; i++) {
         const p = photos[i];
-        const raw = p.raw || p.final || "";
+        let raw = p.raw || p.final || "";
         if (!raw) continue;
+        try {
+          raw = await compressImage(raw, 960, 0.68);
+        } catch (_) { /* keep */ }
         const final = await bakePhoto(raw, p.strokes || [], meta, 720, 960);
         out.push({
           id: p.id || uid("p"),
@@ -2311,9 +2383,11 @@
     function setStageMode(mode) {
       els.stage.classList.toggle("mode-camera", mode === "camera");
       els.stage.classList.toggle("mode-draw", mode === "draw");
-      els.stageHint.textContent = mode === "camera"
-        ? "Наведите камеру и нажмите «Снять»"
-        : "Обведите Клад · затем «Готово»";
+      if (mode === "camera") {
+        els.stageHint.textContent = "Снимайте подряд · обводка потом по тапу на фото";
+      } else {
+        els.stageHint.textContent = "Обведите товар · толщина слева · «Готово»";
+      }
     }
 
     function stopCamera() {
@@ -2330,6 +2404,9 @@
       const has = stageStrokes.length > 0;
       els.btnUndoDraw.disabled = !has;
       els.btnClearDraw.disabled = !has;
+      if (els.drawSizeLabel) {
+        els.drawSizeLabel.textContent = String(drawWidthPx);
+      }
     }
 
     function paintStrokeOnCtx(ctx, stroke, w, h) {
@@ -2338,9 +2415,10 @@
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
       ctx.strokeStyle = stroke.color || "#3dcf7a";
+      // width хранится в CSS-пикселях; масштабируем на canvas DPR
       const cssW = els.stageCanvas.getBoundingClientRect().width || 360;
-      const base = Math.min(w, h);
-      ctx.lineWidth = (stroke.width || 5) * (base / Math.max(cssW, 1));
+      const scale = w / Math.max(cssW, 1);
+      ctx.lineWidth = Math.max(1, (Number(stroke.width) || drawWidthPx) * scale);
       ctx.beginPath();
       ctx.moveTo(stroke.points[0].x * w, stroke.points[0].y * h);
       for (let i = 1; i < stroke.points.length; i++) {
@@ -2433,14 +2511,19 @@
 
     function preventStageScroll(e) {
       if (!stageOpen) return;
+      // не блокируем ползунок толщины и кнопки
+      if (e.target && e.target.closest && e.target.closest(".stage-bar")) return;
       e.preventDefault();
     }
 
-    async function openStage() {
-      if (formPhotos.length >= MAX_PHOTOS) {
+    async function openStage(options) {
+      options = options || {};
+      if (options.editIndex == null && formPhotos.length >= MAX_PHOTOS) {
         showToast("Максимум " + MAX_PHOTOS + " фото");
         return;
       }
+
+      editingPhotoIdx = options.editIndex != null ? options.editIndex : null;
       stageOpen = true;
       stageRaw = "";
       stageStrokes = [];
@@ -2451,11 +2534,18 @@
       requestStageFullscreen();
       els.stage.classList.add("open");
       els.stage.setAttribute("aria-hidden", "false");
+      updateDrawButtons();
+      if (tg && tg.BackButton) tg.BackButton.show();
+
+      if (editingPhotoIdx != null && formPhotos[editingPhotoIdx]) {
+        const photo = formPhotos[editingPhotoIdx];
+        enterDrawMode(photo.raw || photo.final || "", photo.strokes || []);
+        return;
+      }
+
       setStageMode("camera");
       els.stageImage.classList.add("hidden");
       els.stageIdle.classList.remove("hidden");
-      updateDrawButtons();
-      if (tg && tg.BackButton) tg.BackButton.show();
       await startCamera();
     }
 
@@ -2466,6 +2556,7 @@
       stageStrokes = [];
       stageCurrent = null;
       isDrawing = false;
+      editingPhotoIdx = null;
       els.stage.classList.remove("open", "streaming");
       els.stage.setAttribute("aria-hidden", "true");
       els.stageImage.removeAttribute("src");
@@ -2514,9 +2605,9 @@
       }
     }
 
-    function enterDrawMode(dataUrl) {
+    function enterDrawMode(dataUrl, strokes) {
       stageRaw = dataUrl;
-      stageStrokes = [];
+      stageStrokes = Array.isArray(strokes) ? strokes.slice() : [];
       stageCurrent = null;
       stopCamera();
       els.stageVideo.classList.add("hidden");
@@ -2524,6 +2615,7 @@
       els.stageImage.src = dataUrl;
       els.stageImage.classList.remove("hidden");
       setStageMode("draw");
+      if (els.drawSize) els.drawSize.value = String(drawWidthPx);
       updateDrawButtons();
       requestAnimationFrame(() => {
         resizeStageCanvas();
@@ -2531,10 +2623,39 @@
       });
     }
 
+    function flashCaptureFeedback() {
+      const flash = document.createElement("div");
+      flash.style.cssText =
+        "position:absolute;inset:0;background:#fff;opacity:0.55;z-index:5;pointer-events:none;";
+      els.stageViewport.appendChild(flash);
+      setTimeout(() => flash.remove(), 120);
+    }
+
+    async function addQuickPhoto(dataUrl) {
+      const compressed = await compressImage(dataUrl, 960, 0.65);
+      formPhotos.push({
+        id: uid("p"),
+        raw: compressed,
+        strokes: [],
+        final: compressed
+      });
+      renderPhotosGrid();
+      if (!saveDraft()) {
+        // draft overflow — still keep in memory
+      }
+      showToast("Снято " + formPhotos.length + "/" + MAX_PHOTOS);
+      haptic("ok");
+    }
+
     function capturePhoto() {
+      if (formPhotos.length >= MAX_PHOTOS && editingPhotoIdx == null) {
+        showToast("Максимум " + MAX_PHOTOS + " фото");
+        return;
+      }
       const video = els.stageVideo;
       if (!mediaStream || !video.videoWidth) {
-        showToast("Сначала дождитесь камеры");
+        // fallback: системная камера / галерея
+        els.photoInput.click();
         return;
       }
       const canvas = document.createElement("canvas");
@@ -2544,45 +2665,49 @@
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       let dataUrl;
       try {
-        dataUrl = canvas.toDataURL("image/jpeg", 0.82);
+        dataUrl = canvas.toDataURL("image/jpeg", 0.8);
       } catch (_) {
         showToast("Не удалось сделать снимок");
         return;
       }
-      compressImage(dataUrl, 1280, 0.78).then((compressed) => {
-        enterDrawMode(compressed);
-        showToast("Снимок готов — обведите Клад");
-        haptic("ok");
+      flashCaptureFeedback();
+      // быстрый режим: сразу в галерею формы, камера продолжает работать
+      addQuickPhoto(dataUrl).then(() => {
+        if (formPhotos.length >= MAX_PHOTOS) {
+          showToast("Лимит 5 фото — закройте камеру");
+        }
       });
     }
 
     async function finishStagePhoto() {
+      // В режиме рисования — сохранить обводку в выбранное/текущее фото
       if (!stageRaw) {
-        showToast("Сначала сделайте снимок");
+        showToast("Нет снимка для сохранения");
         return;
       }
-      const viewRect = els.stageViewport.getBoundingClientRect();
-      const meta = currentStampMeta();
-      let finalUrl = stageRaw;
-      try {
-        finalUrl = await bakePhoto(
-          stageRaw,
-          stageStrokes,
-          meta,
-          viewRect.width || 720,
-          viewRect.height || 960
-        );
-      } catch (_) {
-        finalUrl = stageRaw;
+
+      if (editingPhotoIdx != null && formPhotos[editingPhotoIdx]) {
+        formPhotos[editingPhotoIdx] = {
+          id: formPhotos[editingPhotoIdx].id || uid("p"),
+          raw: stageRaw,
+          strokes: stageStrokes.slice(),
+          final: stageRaw
+        };
+        closeStage();
+        renderPhotosGrid();
+        saveDraft();
+        showToast("Обводка сохранена");
+        haptic("ok");
+        return;
       }
 
+      // если открыли draw без editIndex (fallback) — добавить как новое
       formPhotos.push({
         id: uid("p"),
         raw: stageRaw,
         strokes: stageStrokes.slice(),
-        final: finalUrl
+        final: stageRaw
       });
-
       closeStage();
       renderPhotosGrid();
       saveDraft();
@@ -2604,7 +2729,8 @@
       }).join("");
       els.btnAddPhoto.disabled = formPhotos.length >= MAX_PHOTOS;
       els.photosHint.textContent =
-        formPhotos.length + " / " + MAX_PHOTOS + " фото · камера и обводка";
+        formPhotos.length + " / " + MAX_PHOTOS +
+        " · снимите подряд, затем тап по фото для обводки";
     }
 
     function updateHeavyAlert() {
@@ -2615,8 +2741,8 @@
     /* ── Draft ── */
 
     function saveDraft() {
-      if (suppressDraft) return;
-      if (!els.formOverlay.classList.contains("open")) return;
+      if (suppressDraft) return true;
+      if (!els.formOverlay.classList.contains("open")) return true;
       const draft = {
         editingId: editingId,
         location: els.locationSelect.value,
@@ -2627,7 +2753,7 @@
         geo: currentGeo,
         address: currentAddress
       };
-      saveJSON(STORAGE_DRAFT, draft);
+      return saveJSON(STORAGE_DRAFT, draft);
     }
 
     function clearDraft() {
@@ -2649,7 +2775,7 @@
         currentGeo = normalizeFix(Object.assign({}, draft.geo, { source: draft.geo.source || "browser" }));
         if (currentGeo) geoSamples = [currentGeo];
       }
-      currentAddress = draft.address || (currentGeo && currentGeo.address) || "";
+      currentAddress = streetOnlyAddress(draft.address || (currentGeo && currentGeo.address) || "");
       if (currentGeo && currentAddress) {
         lastAddressCoords = { lat: currentGeo.latitude, lon: currentGeo.longitude };
       }
@@ -2701,7 +2827,7 @@
           currentGeo = normalizeFix(Object.assign({}, item.geo, { source: item.geo.source || "browser" }));
           if (currentGeo) {
             geoSamples = [currentGeo];
-            currentAddress = item.geo.address || "";
+            currentAddress = streetOnlyAddress(item.geo.address || "");
             if (currentAddress) {
               lastAddressCoords = { lat: currentGeo.latitude, lon: currentGeo.longitude };
             }
@@ -2971,7 +3097,7 @@
 
       if (action === "delete") {
         items = items.filter((i) => i.id !== id);
-        saveJSON(STORAGE_ITEMS, items);
+        saveItemsPersistent(items);
         renderAll();
         showToast("Позиция удалена");
         haptic("light");
@@ -2987,13 +3113,20 @@
 
     els.photosGrid.addEventListener("click", (e) => {
       const btn = e.target.closest("[data-remove]");
-      if (!btn) return;
-      const idx = Number(btn.getAttribute("data-remove"));
-      if (!isFinite(idx)) return;
-      formPhotos.splice(idx, 1);
-      renderPhotosGrid();
-      saveDraft();
-      haptic("light");
+      if (btn) {
+        const idx = Number(btn.getAttribute("data-remove"));
+        if (!isFinite(idx)) return;
+        formPhotos.splice(idx, 1);
+        renderPhotosGrid();
+        saveDraft();
+        haptic("light");
+        return;
+      }
+      const thumb = e.target.closest(".photo-thumb[data-idx]");
+      if (!thumb) return;
+      const idx = Number(thumb.getAttribute("data-idx"));
+      if (!isFinite(idx) || !formPhotos[idx]) return;
+      openStage({ editIndex: idx });
     });
 
     els.btnAddPhoto.addEventListener("click", () => openStage());
@@ -3025,14 +3158,23 @@
     });
 
     els.btnCapture.addEventListener("click", () => capturePhoto());
+    if (els.btnFinishCam) {
+      els.btnFinishCam.addEventListener("click", () => {
+        closeStage();
+        if (formPhotos.length) {
+          showToast("Готово · тапните фото для обводки");
+        }
+      });
+    }
     els.btnDoneDraw.addEventListener("click", () => finishStagePhoto());
     els.btnRetake.addEventListener("click", () => {
-      stageRaw = "";
       stageStrokes = [];
       stageCurrent = null;
-      els.stageImage.removeAttribute("src");
-      els.stageImage.classList.add("hidden");
-      startCamera();
+      isDrawing = false;
+      redrawStageCanvas();
+      updateDrawButtons();
+      showToast("Обводка сброшена");
+      haptic("light");
     });
     els.btnCancelStage.addEventListener("click", () => closeStage());
 
@@ -3053,7 +3195,12 @@
     });
 
     els.drawSize.addEventListener("input", () => {
-      drawWidthPx = Number(els.drawSize.value) || 5;
+      drawWidthPx = Math.max(1, Number(els.drawSize.value) || 4);
+      if (els.drawSizeLabel) els.drawSizeLabel.textContent = String(drawWidthPx);
+    });
+    els.drawSize.addEventListener("change", () => {
+      drawWidthPx = Math.max(1, Number(els.drawSize.value) || 4);
+      if (els.drawSizeLabel) els.drawSizeLabel.textContent = String(drawWidthPx);
     });
 
     els.btnUndoDraw.addEventListener("click", () => {
@@ -3085,11 +3232,23 @@
       }
       try {
         const raw = await readFileAsDataURL(file);
-        const compressed = await compressImage(raw, 1280, 0.78);
-        if (!stageOpen) await openStage();
-        enterDrawMode(compressed);
-        showToast("Снимок готов — обведите Клад");
-        haptic("ok");
+        const compressed = await compressImage(raw, 960, 0.65);
+        if (editingPhotoIdx != null) {
+          if (!stageOpen) await openStage({ editIndex: editingPhotoIdx });
+          enterDrawMode(compressed, []);
+          showToast("Снимок готов — обведите");
+          haptic("ok");
+          return;
+        }
+        if (!stageOpen) {
+          stageOpen = true;
+          lockBodyScroll();
+          setVerticalSwipes(false);
+          els.stage.classList.add("open");
+          els.stage.setAttribute("aria-hidden", "false");
+          setStageMode("camera");
+        }
+        await addQuickPhoto(compressed);
       } catch (_) {
         showToast("Не удалось сохранить снимок");
       }
@@ -3171,7 +3330,10 @@
         });
       }
 
-      saveJSON(STORAGE_ITEMS, items);
+      if (!saveItemsPersistent(items)) {
+        els.btnSaveItem.disabled = false;
+        return;
+      }
       saveJSON(STORAGE_LAST, {
         location: els.locationSelect.value,
         weight: weight,
