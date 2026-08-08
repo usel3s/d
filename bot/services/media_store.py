@@ -109,6 +109,44 @@ class MediaStore:
         self._save_items(others + new_records)
         return len(new_records)
 
+    def ensure_seed(self, user_id: int) -> int:
+        """Если у админа пусто — засеять известную сводку (без фото)."""
+        from services.inventory_seed import build_seed_webapp_items
+
+        uid = self._uid(user_id)
+        if not uid:
+            return 0
+        if self.list_items(user_id=uid):
+            return 0
+        seed = build_seed_webapp_items(uid)
+        if not seed:
+            return 0
+        return self.upsert_items(uid, seed)
+
+    @staticmethod
+    def to_webapp_item(item: dict[str, Any]) -> dict[str, Any]:
+        """Мета позиции для WebApp (без бинарников фото)."""
+        photos_meta = item.get("photos") or []
+        return {
+            "id": str(item.get("id") or ""),
+            "location": item.get("location"),
+            "weight": item.get("weight"),
+            "tapeColor": item.get("tape_color") or item.get("tapeColor") or "yellow",
+            "note": item.get("note") or "",
+            "photos": [
+                {"id": str(p.get("id") or ""), "raw": "", "final": "", "strokes": []}
+                for p in photos_meta
+                if isinstance(p, dict)
+            ],
+            "geo": item.get("geo") or None,
+            "createdAt": item.get("created_at") or item.get("createdAt"),
+            "updatedAt": item.get("updated_at") or item.get("updatedAt"),
+        }
+
+    def list_webapp_items(self, user_id: int) -> list[dict[str, Any]]:
+        self.ensure_seed(user_id)
+        return [self.to_webapp_item(i) for i in self.list_items(user_id=user_id)]
+
     def list_items(self, user_id: int | None = None) -> list[dict[str, Any]]:
         items = self._load_items()
         if user_id is not None:

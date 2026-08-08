@@ -14,6 +14,7 @@ from database import Database
 from keyboards import admin_keyboard
 from keyboards.menu import photos_list_keyboard
 from services import MediaStore
+from services.inventory_seed import DEFAULT_PRICES, manual_export_kwargs
 from utils.emoji import pe
 from utils.formatting import (
     TAPE_LABELS,
@@ -28,33 +29,25 @@ router = Router(name="admin")
 
 PAGE_SIZE = 5
 
-# Известные сводки (кол-во/сумма) без фото, если на сервере ещё пусто.
-MANUAL_EXPORTS: dict[int, dict] = {
-    8647494349: {
-        "weight": 0.5,
-        "count": 30,
-        "by_location": {"pickup": 21, "warehouse_1": 9},
-        "price_per_item": 850,
-    },
-}
-
 
 def _is_admin(user_id: int, settings: Settings) -> bool:
     return user_id in settings.admin_ids
 
 
 def _export_text(user_id: int, media_store: MediaStore) -> str:
+    media_store.ensure_seed(user_id)
     items = media_store.list_items(user_id=user_id)
     if items:
-        return format_items_export(items, user_id=user_id)
-    manual = MANUAL_EXPORTS.get(user_id)
+        return format_items_export(items, DEFAULT_PRICES, user_id=user_id)
+    manual = manual_export_kwargs(user_id)
     if manual:
         return format_manual_export(user_id=user_id, **manual)
-    return format_items_export([], user_id=user_id)
+    return format_items_export([], DEFAULT_PRICES, user_id=user_id)
 
 
-def _user_inventory_stats(user_id: int, media_store: MediaStore) -> dict[str, float | int]:
-    """Позиции/вес/сумма админа: из store или из известной сводки."""
+def _user_inventory_stats(user_id: int, media_store: MediaStore) -> dict[str, float | int | str]:
+    """Позиции/вес/сумма админа."""
+    media_store.ensure_seed(user_id)
     items = media_store.list_items(user_id=user_id)
     if items:
         weight = 0.0
@@ -66,10 +59,8 @@ def _user_inventory_stats(user_id: int, media_store: MediaStore) -> dict[str, fl
             except (TypeError, ValueError):
                 w = 0.0
             weight += w
-            # цена по умолчанию из MANUAL / defaults
             key = str(int(w)) if w.is_integer() else str(w)
-            price_map = {"0.5": 850, "1": 1100, "2": 260, "3": 380, "4": 490, "5": 600}
-            revenue += float(price_map.get(key, 0) or 0)
+            revenue += float(DEFAULT_PRICES.get(key, 0) or 0)
             photos += len(item.get("photos") or [])
         return {
             "count": len(items),
@@ -79,7 +70,7 @@ def _user_inventory_stats(user_id: int, media_store: MediaStore) -> dict[str, fl
             "source": "store",
         }
 
-    manual = MANUAL_EXPORTS.get(user_id)
+    manual = manual_export_kwargs(user_id)
     if manual:
         count = int(manual["count"])
         w = float(manual["weight"])

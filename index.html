@@ -4612,6 +4612,41 @@
       }
     }
 
+    async function pullInventoryIfEmpty() {
+      if (items.length > 0) return false;
+      const userId = resolveTelegramUserId();
+      const initData = getTelegramInitData();
+      try {
+        const res = await fetch("/api/inventory", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Telegram-Init-Data": initData
+          },
+          body: JSON.stringify({ userId: userId || 0, initData: initData })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.ok || !Array.isArray(data.items) || !data.items.length) {
+          return false;
+        }
+        const next = data.items.map(migrateItem).filter(Boolean);
+        if (!next.length) return false;
+        saveItemsPersistent(next);
+        if (data.prices && typeof data.prices === "object") {
+          WEIGHTS.forEach((w) => {
+            const key = weightKey(w);
+            if (data.prices[key] != null) {
+              prices[key] = Math.max(0, Number(data.prices[key]) || 0);
+            }
+          });
+          saveJSON(migrateScopedStorage(STORAGE_PRICES_BASE), prices);
+        }
+        return true;
+      } catch (_) {
+        return false;
+      }
+    }
+
     (async function boot() {
       const allowed = await ensureAdminAccess();
       if (!allowed) return;
@@ -4624,6 +4659,7 @@
         const raw = storedPrices && storedPrices[key];
         prices[key] = raw != null ? Math.max(0, Number(raw) || 0) : DEFAULT_PRICES[key];
       });
+      await pullInventoryIfEmpty();
       renderAll();
     })();
   })();

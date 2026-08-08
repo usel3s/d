@@ -109,6 +109,39 @@ async def handle_sync_items(request: web.Request) -> web.Response:
     return web.json_response({"ok": True, "saved": saved, "userId": user_id})
 
 
+async def handle_inventory(request: web.Request) -> web.Response:
+    """WebApp ← сервер: позиции админа (без фото-бинарников)."""
+    media_store = request.app["media_store"]
+    try:
+        payload = await request.json()
+    except Exception:
+        payload = {}
+
+    user_id = _resolve_request_user_id(request, payload)
+    if not user_id:
+        return web.json_response({"ok": False, "error": "no_user"}, status=401)
+    if not _is_admin_user(request, user_id):
+        return web.json_response({"ok": False, "error": "forbidden"}, status=403)
+
+    items = media_store.list_webapp_items(user_id)
+    return web.json_response(
+        {
+            "ok": True,
+            "userId": user_id,
+            "count": len(items),
+            "items": items,
+            "prices": {
+                "0.5": 850,
+                "1": 1100,
+                "2": 260,
+                "3": 380,
+                "4": 490,
+                "5": 600,
+            },
+        }
+    )
+
+
 async def run() -> None:
     logging.basicConfig(
         level=logging.INFO,
@@ -130,6 +163,7 @@ async def run() -> None:
     app.router.add_get("/health", handle_health)
     app.router.add_post("/api/auth", handle_auth)
     app.router.add_post("/api/sync-items", handle_sync_items)
+    app.router.add_post("/api/inventory", handle_inventory)
 
     runner = web.AppRunner(app)
     await runner.setup()
