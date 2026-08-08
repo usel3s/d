@@ -1,0 +1,2729 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <title>Логистика — учёт перемещений</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    :root {
+      --bg: #0f1210;
+      --bg-elevated: #171b18;
+      --bg-card: #1c221e;
+      --bg-input: #121612;
+      --border: #2a332c;
+      --text: #e8efe9;
+      --text-muted: #8a968c;
+      --accent: #3dcf7a;
+      --accent-dim: rgba(61, 207, 122, 0.14);
+      --gold: #d4af37;
+      --gold-dim: rgba(212, 175, 55, 0.16);
+      --danger: #e85d5d;
+      --danger-dim: rgba(232, 93, 93, 0.14);
+      --warning: #f0b429;
+      --radius: 14px;
+      --shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+      --header-h: 56px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background:
+        radial-gradient(ellipse 120% 60% at 10% -10%, rgba(61, 207, 122, 0.12), transparent 55%),
+        radial-gradient(ellipse 80% 50% at 100% 0%, rgba(212, 175, 55, 0.08), transparent 50%),
+        var(--bg);
+      overflow-x: hidden;
+    }
+
+    button, input, select, textarea { font: inherit; color: inherit; }
+
+    .app {
+      max-width: 520px;
+      margin: 0 auto;
+      min-height: 100%;
+      padding-bottom: calc(88px + var(--safe-bottom));
+    }
+
+    /* Header */
+    .header {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      height: var(--header-h);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 0 16px;
+      background: rgba(15, 18, 16, 0.88);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .header h1 {
+      font-size: 17px;
+      font-weight: 650;
+      letter-spacing: 0.02em;
+    }
+
+    .header h1 span { color: var(--gold); }
+
+    .icon-btn {
+      width: 40px;
+      height: 40px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--bg-elevated);
+      color: var(--text);
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+    }
+
+    .icon-btn:active { background: var(--accent-dim); border-color: var(--accent); }
+
+    .icon-btn svg { width: 20px; height: 20px; }
+
+    /* Stats */
+    .stats {
+      padding: 16px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .stats-total {
+      background: linear-gradient(135deg, var(--bg-card), #1a241c);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      box-shadow: var(--shadow);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stats-total::before {
+      content: "";
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 3px;
+      background: linear-gradient(180deg, var(--accent), var(--gold));
+    }
+
+    .stats-total .label {
+      color: var(--text-muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 6px;
+    }
+
+    .stats-total .value {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--gold);
+      line-height: 1.1;
+    }
+
+    .stats-total .sub {
+      margin-top: 8px;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .stats-total .sub strong { color: var(--accent); font-weight: 600; }
+
+    .loc-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+
+    @media (min-width: 420px) {
+      .loc-grid { grid-template-columns: 1fr 1fr 1fr; }
+    }
+
+    .loc-stat {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+    }
+
+    .loc-stat .name {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .loc-stat .kg {
+      font-size: 16px;
+      font-weight: 650;
+      color: var(--accent);
+    }
+
+    .loc-stat .rub {
+      font-size: 12px;
+      color: var(--gold);
+      margin-top: 4px;
+    }
+
+    /* Toolbar */
+    .toolbar {
+      padding: 0 16px 12px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      flex: 1;
+    }
+
+    .chip {
+      border: 1px solid var(--border);
+      background: var(--bg-elevated);
+      color: var(--text-muted);
+      border-radius: 999px;
+      padding: 7px 12px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .chip.active {
+      background: var(--accent-dim);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .btn-ghost {
+      border: 1px solid var(--border);
+      background: var(--bg-elevated);
+      color: var(--text);
+      border-radius: 10px;
+      padding: 8px 12px;
+      font-size: 12px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .btn-ghost:active { border-color: var(--gold); color: var(--gold); }
+
+    .btn-ghost:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    /* List */
+    .list {
+      padding: 0 16px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .empty {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-muted);
+      border: 1px dashed var(--border);
+      border-radius: var(--radius);
+      background: var(--bg-elevated);
+    }
+
+    .empty strong {
+      display: block;
+      color: var(--text);
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+
+    .card {
+      display: grid;
+      grid-template-columns: 72px 1fr auto;
+      gap: 12px;
+      align-items: start;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
+      animation: fadeIn 0.25s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: none; }
+    }
+
+    .card-photo {
+      width: 72px;
+      height: 72px;
+      border-radius: 10px;
+      object-fit: cover;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+    }
+
+    .card-body { min-width: 0; }
+
+    .card-title {
+      font-size: 14px;
+      font-weight: 650;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 3px 6px;
+      border-radius: 6px;
+      background: var(--warning);
+      color: #1a1400;
+    }
+
+    .card-meta {
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.45;
+    }
+
+    .card-meta .accent { color: var(--accent); }
+    .card-meta .gold { color: var(--gold); }
+
+    .card-note {
+      margin-top: 6px;
+      font-size: 12px;
+      color: var(--text);
+      opacity: 0.9;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .card-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .mini-btn {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--bg-elevated);
+      color: var(--text-muted);
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+    }
+
+    .mini-btn:active { color: var(--danger); border-color: var(--danger); }
+    .mini-btn svg { width: 16px; height: 16px; }
+
+    /* FAB */
+    .fab-bar {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 25;
+      padding: 12px 16px calc(12px + var(--safe-bottom));
+      background: linear-gradient(180deg, transparent, rgba(15, 18, 16, 0.95) 30%);
+      pointer-events: none;
+    }
+
+    .fab-bar > * { pointer-events: auto; }
+
+    .fab-row {
+      max-width: 520px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+    }
+
+    .btn-primary {
+      border: none;
+      border-radius: 14px;
+      padding: 14px 18px;
+      font-weight: 650;
+      font-size: 15px;
+      cursor: pointer;
+      background: linear-gradient(135deg, #2fbf6c, #3dcf7a 55%, #c9a227);
+      color: #0a100c;
+      box-shadow: 0 8px 20px rgba(61, 207, 122, 0.25);
+    }
+
+    .btn-primary:active { transform: scale(0.98); }
+
+    .btn-secondary {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px 14px;
+      background: var(--bg-card);
+      color: var(--gold);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .btn-secondary:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+      color: var(--text-muted);
+    }
+
+    /* Overlay / sheets */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 40;
+      background: rgba(0, 0, 0, 0.55);
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+    }
+
+    .overlay.open { display: flex; }
+
+    .sheet {
+      width: 100%;
+      max-width: 520px;
+      max-height: min(92vh, 820px);
+      overflow: auto;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-bottom: none;
+      border-radius: 20px 20px 0 0;
+      padding: 12px 16px calc(20px + var(--safe-bottom));
+      box-shadow: var(--shadow);
+      animation: sheetUp 0.22s ease;
+    }
+
+    @keyframes sheetUp {
+      from { transform: translateY(24px); opacity: 0.6; }
+      to { transform: none; opacity: 1; }
+    }
+
+    .sheet-handle {
+      width: 40px;
+      height: 4px;
+      border-radius: 999px;
+      background: var(--border);
+      margin: 4px auto 14px;
+    }
+
+    .sheet-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .sheet-head h2 { font-size: 18px; font-weight: 650; }
+
+    .form { display: grid; gap: 14px; }
+
+    .field label {
+      display: block;
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+      letter-spacing: 0.02em;
+    }
+
+    .field label .req { color: var(--accent); }
+
+    .field select,
+    .field textarea,
+    .field input[type="number"] {
+      width: 100%;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 14px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .field select:focus,
+    .field textarea:focus,
+    .field input:focus { border-color: var(--accent); }
+
+    .field textarea {
+      min-height: 88px;
+      resize: vertical;
+    }
+
+    .camera-box {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: #0a0d0b;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .camera-viewport {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      background: #000;
+      overflow: hidden;
+    }
+
+    .camera-viewport video,
+    .camera-viewport img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .camera-viewport video.hidden,
+    .camera-viewport img.hidden { display: none; }
+
+    #drawCanvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+      z-index: 2;
+      display: none;
+      cursor: crosshair;
+    }
+
+    .camera-box.has-shot #drawCanvas { display: block; }
+
+    .draw-toolbar {
+      display: none;
+      grid-template-columns: auto 1fr auto;
+      gap: 8px;
+      align-items: center;
+      padding: 8px 10px;
+      background: #141a16;
+      border-top: 1px solid var(--border);
+    }
+
+    .camera-box.has-shot .draw-toolbar { display: grid; }
+
+    .draw-hint {
+      grid-column: 1 / -1;
+      font-size: 11px;
+      color: var(--text-muted);
+      text-align: center;
+    }
+
+    .draw-colors {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .draw-color {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      border: 2px solid transparent;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    .draw-color.active {
+      border-color: #fff;
+      box-shadow: 0 0 0 2px var(--accent);
+    }
+
+    .draw-tools {
+      display: flex;
+      gap: 6px;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+    }
+
+    .draw-tools button {
+      border: 1px solid var(--border);
+      background: var(--bg-elevated);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 7px 10px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .draw-tools button:active { border-color: var(--gold); color: var(--gold); }
+    .draw-tools button:disabled { opacity: 0.35; cursor: not-allowed; }
+
+    .draw-size {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      color: var(--text-muted);
+      font-size: 11px;
+    }
+
+    .draw-size input[type="range"] {
+      width: 64px;
+      accent-color: var(--accent);
+    }
+
+    .camera-idle {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      color: var(--text-muted);
+      padding: 16px;
+      background: var(--bg-input);
+      z-index: 1;
+    }
+
+    .camera-idle.hidden { display: none; }
+
+    .camera-idle svg {
+      width: 36px;
+      height: 36px;
+      margin: 0 auto 8px;
+      color: var(--gold);
+      display: block;
+    }
+
+    .camera-idle .sub {
+      font-size: 12px;
+      margin-top: 4px;
+      opacity: 0.8;
+    }
+
+    .camera-controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      padding: 10px;
+      background: var(--bg-card);
+      border-top: 1px solid var(--border);
+    }
+
+    .camera-controls .btn-shot {
+      grid-column: 1 / -1;
+      border: none;
+      border-radius: 12px;
+      padding: 13px;
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+      background: linear-gradient(135deg, #2fbf6c, #3dcf7a);
+      color: #0a100c;
+    }
+
+    .camera-controls .btn-shot:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .camera-controls .btn-retake,
+    .camera-controls .btn-start-cam {
+      border: 1px solid var(--border);
+      background: var(--bg-elevated);
+      color: var(--text);
+      border-radius: 12px;
+      padding: 12px;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .camera-controls .btn-retake { color: var(--gold); border-color: rgba(212, 175, 55, 0.45); }
+
+    .camera-box.has-shot .camera-controls .btn-shot { display: none; }
+    .camera-box:not(.has-shot) .camera-controls .btn-retake { display: none; }
+    .camera-box.streaming .btn-start-cam { display: none; }
+    .camera-box:not(.streaming):not(.has-shot) .btn-shot { display: none; }
+    .camera-box.has-shot .btn-start-cam { display: none; }
+    .camera-box.has-shot .camera-controls {
+      grid-template-columns: 1fr;
+    }
+
+    .camera-fallback {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .geo-box {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: var(--bg-card);
+      padding: 12px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .geo-status {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .geo-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      margin-top: 4px;
+      flex-shrink: 0;
+      background: var(--text-muted);
+    }
+
+    .geo-dot.pending { background: var(--warning); box-shadow: 0 0 0 3px rgba(240, 180, 41, 0.2); animation: pulse 1.2s infinite; }
+    .geo-dot.ok { background: var(--accent); box-shadow: 0 0 0 3px rgba(61, 207, 122, 0.2); }
+    .geo-dot.bad { background: var(--danger); }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.45; }
+    }
+
+    .geo-title { font-size: 13px; font-weight: 650; }
+    .geo-meta { font-size: 12px; color: var(--text-muted); margin-top: 3px; line-height: 1.45; }
+    .geo-meta .ok { color: var(--accent); }
+    .geo-meta .warn { color: var(--warning); }
+    .geo-meta .gold { color: var(--gold); }
+
+    .geo-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .geo-actions button {
+      border: 1px solid var(--border);
+      background: var(--bg-elevated);
+      color: var(--text);
+      border-radius: 10px;
+      padding: 10px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .geo-actions button:active { border-color: var(--accent); color: var(--accent); }
+
+    .card-geo {
+      margin-top: 6px;
+      font-size: 11px;
+      color: var(--gold);
+      word-break: break-all;
+    }
+
+    .form-actions {
+      display: grid;
+      grid-template-columns: 1fr 1.4fr;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    .btn-outline {
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text);
+      border-radius: 12px;
+      padding: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .alert {
+      display: none;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 12px;
+      border-radius: 12px;
+      background: var(--danger-dim);
+      border: 1px solid rgba(232, 93, 93, 0.35);
+      color: #ffc9c9;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .alert.show { display: flex; }
+    .alert strong { color: var(--warning); }
+
+    /* Settings */
+    .settings-block {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+
+    .settings-block h3 {
+      font-size: 14px;
+      margin-bottom: 12px;
+      color: var(--gold);
+    }
+
+    .price-row {
+      display: grid;
+      grid-template-columns: 1fr 110px;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .price-row:last-child { margin-bottom: 0; }
+
+    .price-row span { font-size: 13px; color: var(--text-muted); }
+
+    .menu-list { display: grid; gap: 8px; }
+
+    .menu-item {
+      width: 100%;
+      text-align: left;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      border-radius: 12px;
+      padding: 14px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--text);
+    }
+
+    .menu-item:active { border-color: var(--accent); }
+    .menu-item .hint { color: var(--text-muted); font-size: 12px; }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: calc(96px + var(--safe-bottom));
+      transform: translateX(-50%) translateY(12px);
+      z-index: 60;
+      background: #1f2a22;
+      border: 1px solid var(--accent);
+      color: var(--text);
+      padding: 10px 16px;
+      border-radius: 999px;
+      font-size: 13px;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.2s ease;
+      max-width: calc(100% - 32px);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .toast.warn {
+      border-color: var(--warning);
+      background: #2a2414;
+    }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <h1>Логистика <span>· учёт</span></h1>
+      <button type="button" class="icon-btn" id="btnMenu" aria-label="Меню" title="Меню">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M4 7h16M4 12h16M4 17h10" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </header>
+
+    <section class="stats" id="statsBlock">
+      <div class="stats-total">
+        <div class="label">Прогноз выручки</div>
+        <div class="value" id="totalRevenue">0 ₽</div>
+        <div class="sub">Общий вес: <strong id="totalWeight">0 г</strong> · позиций: <strong id="totalCount">0</strong></div>
+      </div>
+      <div class="loc-grid" id="locStats"></div>
+    </section>
+
+    <div class="toolbar">
+      <div class="chips" id="filterChips"></div>
+    </div>
+
+    <section class="list" id="itemsList"></section>
+  </div>
+
+  <div class="fab-bar">
+    <div class="fab-row">
+      <button type="button" class="btn-primary" id="btnAdd">+ Добавить позицию</button>
+      <button type="button" class="btn-secondary" id="btnRepeat" disabled title="Повторить последнюю">Повторить</button>
+    </div>
+  </div>
+
+  <!-- Add / edit form -->
+  <div class="overlay" id="formOverlay">
+    <div class="sheet" role="dialog" aria-labelledby="formTitle">
+      <div class="sheet-handle"></div>
+      <div class="sheet-head">
+        <h2 id="formTitle">Новая позиция</h2>
+        <button type="button" class="icon-btn" id="btnCloseForm" aria-label="Закрыть">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M6 6l12 12M18 6L6 18" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+
+      <form class="form" id="itemForm">
+        <div class="field">
+          <label>Фото Клада <span class="req">*</span></label>
+          <div class="camera-box" id="cameraBox">
+            <div class="camera-viewport">
+              <div class="camera-idle" id="cameraIdle">
+                <div>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <path d="M4 8h3l1.5-2h7L17 8h3a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2v-8a2 2 0 012-2z"/>
+                    <circle cx="12" cy="13" r="3.5"/>
+                  </svg>
+                  <div>Сделайте снимок Клада</div>
+                  <div class="sub">Камера · без выбора из галереи</div>
+                </div>
+              </div>
+              <video id="cameraVideo" class="hidden" playsinline muted autoplay></video>
+              <img id="photoPreview" class="hidden" alt="Снимок" />
+              <canvas id="drawCanvas"></canvas>
+            </div>
+            <div class="draw-toolbar" id="drawToolbar">
+              <div class="draw-hint">Обведите Клад пальцем или мышью</div>
+              <div class="draw-colors" id="drawColors">
+                <button type="button" class="draw-color active" data-color="#3dcf7a" style="background:#3dcf7a" aria-label="Зелёный"></button>
+                <button type="button" class="draw-color" data-color="#d4af37" style="background:#d4af37" aria-label="Золотой"></button>
+                <button type="button" class="draw-color" data-color="#ff3b30" style="background:#ff3b30" aria-label="Красный"></button>
+                <button type="button" class="draw-color" data-color="#ffffff" style="background:#ffffff" aria-label="Белый"></button>
+              </div>
+              <label class="draw-size">
+                Толщ.
+                <input type="range" id="drawSize" min="2" max="14" value="5" />
+              </label>
+              <div class="draw-tools">
+                <button type="button" id="btnUndoDraw" disabled>↩ Отменить</button>
+                <button type="button" id="btnClearDraw" disabled>Очистить</button>
+              </div>
+            </div>
+            <div class="camera-controls">
+              <button type="button" class="btn-start-cam" id="btnStartCamera">Включить камеру</button>
+              <button type="button" class="btn-shot" id="btnCapture" disabled>Снять фото</button>
+              <button type="button" class="btn-retake" id="btnRetake">Переснять</button>
+            </div>
+            <input type="file" id="photoInput" class="camera-fallback" accept="image/*" capture="environment" tabindex="-1" />
+          </div>
+        </div>
+
+        <div class="field">
+          <label>ГеоТип места закладки <span class="req">*</span></label>
+          <div class="geo-box" id="geoBox">
+            <div class="geo-status">
+              <span class="geo-dot pending" id="geoDot"></span>
+              <div>
+                <div class="geo-title" id="geoTitle">Определяем координаты…</div>
+                <div class="geo-meta" id="geoMeta">GPS устройства · VPN на точность не влияет</div>
+              </div>
+            </div>
+            <div class="geo-actions">
+              <button type="button" id="btnRefreshGeo">Уточнить GPS</button>
+              <button type="button" id="btnGeoSettings">Доступ в Telegram</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="locationSelect">Тип локации <span class="req">*</span></label>
+          <select id="locationSelect" required>
+            <option value="warehouse_1">Тайник</option>
+            <option value="warehouse_2">Подьезд</option>
+            <option value="pickup">Прикоп</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="weightSelect">Граммовка (г) <span class="req">*</span></label>
+          <select id="weightSelect" required>
+            <option value="0.5">0.5 г</option>
+            <option value="1">1 г</option>
+            <option value="2">2 г</option>
+            <option value="3">3 г</option>
+            <option value="4">4 г</option>
+            <option value="5">5 г</option>
+          </select>
+        </div>
+
+        <div class="alert" id="heavyAlert">
+          <div>
+            <strong>Внимание, крупная партия.</strong>
+            Граммовка превышает 3 г — проверьте параметры перед сохранением.
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="noteInput">Примечание</label>
+          <textarea id="noteInput" maxlength="500" placeholder="Описание, номер партии, комментарий…"></textarea>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn-outline" id="btnCancelForm">Отмена</button>
+          <button type="submit" class="btn-primary">Сохранить</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Menu -->
+  <div class="overlay" id="menuOverlay">
+    <div class="sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-head">
+        <h2>Меню</h2>
+        <button type="button" class="icon-btn" id="btnCloseMenu" aria-label="Закрыть">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M6 6l12 12M18 6L6 18" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+      <div class="menu-list">
+        <button type="button" class="menu-item" id="btnOpenSettings">
+          <span>Настройки цен</span>
+          <span class="hint">₽ / граммовка</span>
+        </button>
+        <button type="button" class="menu-item" id="btnExportCsv">
+          <span>Экспорт CSV</span>
+          <span class="hint">файл</span>
+        </button>
+        <button type="button" class="menu-item" id="btnSendToBot">
+          <span>Отправить данные боту</span>
+          <span class="hint">Telegram</span>
+        </button>
+        <button type="button" class="menu-item" id="btnCloseApp">
+          <span>Закрыть приложение</span>
+          <span class="hint">WebApp</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings -->
+  <div class="overlay" id="settingsOverlay">
+    <div class="sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-head">
+        <h2>Настройки</h2>
+        <button type="button" class="icon-btn" id="btnCloseSettings" aria-label="Закрыть">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M6 6l12 12M18 6L6 18" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="settings-block">
+        <h3>Цена по граммовке (₽)</h3>
+        <div id="priceRows"></div>
+      </div>
+
+      <button type="button" class="btn-primary" id="btnSaveSettings" style="width:100%">Сохранить настройки</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    (function () {
+      "use strict";
+
+      const STORAGE_ITEMS = "logistics_items_v1";
+      const STORAGE_PRICES = "logistics_prices_v2";
+      const STORAGE_DRAFT = "logistics_draft_v1";
+      const STORAGE_LAST = "logistics_last_v1";
+
+      const LOCATIONS = [
+        { id: "warehouse_1", label: "Тайник" },
+        { id: "warehouse_2", label: "Подьезд" },
+        { id: "pickup", label: "Прикоп" }
+      ];
+
+      /** Available grammage options in grams */
+      const WEIGHTS = [0.5, 1, 2, 3, 4, 5];
+      const HEAVY_WEIGHT_G = 3;
+
+      const DEFAULT_PRICES = {
+        "0.5": 80,
+        "1": 140,
+        "2": 260,
+        "3": 380,
+        "4": 490,
+        "5": 600
+      };
+
+      const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+
+      /** @type {Array<Object>} */
+      let items = [];
+      let prices = { ...DEFAULT_PRICES };
+      let activeFilter = "all";
+      let draftPhotoDataUrl = "";
+      let suppressDraft = false;
+      let mediaStream = null;
+
+      /** Drawing strokes on photo (normalized 0..1 coordinates) */
+      let drawStrokes = [];
+      let drawCurrent = null;
+      let drawColor = "#3dcf7a";
+      let drawWidthPx = 5;
+      let isDrawing = false;
+
+      /** Best GPS fix for current form session (device GPS / TG — not IP) */
+      let currentGeo = null;
+      let currentAddress = "";
+      let addressLookupToken = 0;
+      let lastAddressCoords = null;
+      let geoWatchId = null;
+      let geoCollectTimer = null;
+      let geoSamples = [];
+      let geoBusy = false;
+
+      const GEO_TARGET_ACCURACY_M = 15;
+      const GEO_ACCEPTABLE_M = 80;
+      const GEO_COLLECT_MS = 12000;
+      const GEO_SAMPLE_LIMIT = 24;
+
+      const $ = (id) => document.getElementById(id);
+
+      const els = {
+        itemsList: $("itemsList"),
+        locStats: $("locStats"),
+        filterChips: $("filterChips"),
+        totalRevenue: $("totalRevenue"),
+        totalWeight: $("totalWeight"),
+        totalCount: $("totalCount"),
+        formOverlay: $("formOverlay"),
+        menuOverlay: $("menuOverlay"),
+        settingsOverlay: $("settingsOverlay"),
+        itemForm: $("itemForm"),
+        photoInput: $("photoInput"),
+        cameraBox: $("cameraBox"),
+        cameraIdle: $("cameraIdle"),
+        cameraVideo: $("cameraVideo"),
+        photoPreview: $("photoPreview"),
+        btnStartCamera: $("btnStartCamera"),
+        btnCapture: $("btnCapture"),
+        btnRetake: $("btnRetake"),
+        drawCanvas: $("drawCanvas"),
+        drawColors: $("drawColors"),
+        drawSize: $("drawSize"),
+        btnUndoDraw: $("btnUndoDraw"),
+        btnClearDraw: $("btnClearDraw"),
+        geoDot: $("geoDot"),
+        geoTitle: $("geoTitle"),
+        geoMeta: $("geoMeta"),
+        btnRefreshGeo: $("btnRefreshGeo"),
+        btnGeoSettings: $("btnGeoSettings"),
+        locationSelect: $("locationSelect"),
+        weightSelect: $("weightSelect"),
+        noteInput: $("noteInput"),
+        heavyAlert: $("heavyAlert"),
+        btnAdd: $("btnAdd"),
+        btnRepeat: $("btnRepeat"),
+        btnCloseForm: $("btnCloseForm"),
+        btnCancelForm: $("btnCancelForm"),
+        btnMenu: $("btnMenu"),
+        btnCloseMenu: $("btnCloseMenu"),
+        btnOpenSettings: $("btnOpenSettings"),
+        btnCloseSettings: $("btnCloseSettings"),
+        btnSaveSettings: $("btnSaveSettings"),
+        btnExportCsv: $("btnExportCsv"),
+        btnSendToBot: $("btnSendToBot"),
+        btnCloseApp: $("btnCloseApp"),
+        toast: $("toast")
+      };
+
+      function initTelegram() {
+        if (!tg) return;
+        try {
+          tg.ready();
+          tg.expand();
+          if (tg.setHeaderColor) tg.setHeaderColor("#0f1210");
+          if (tg.setBackgroundColor) tg.setBackgroundColor("#0f1210");
+          document.documentElement.style.setProperty(
+            "--tg-safe",
+            (tg.safeAreaInset && tg.safeAreaInset.bottom) || 0
+          );
+        } catch (_) { /* ignore */ }
+      }
+
+      function loadJSON(key, fallback) {
+        try {
+          const raw = localStorage.getItem(key);
+          if (!raw) return fallback;
+          return JSON.parse(raw);
+        } catch (_) {
+          return fallback;
+        }
+      }
+
+      function saveJSON(key, value) {
+        localStorage.setItem(key, JSON.stringify(value));
+      }
+
+      function locationLabel(id) {
+        const found = LOCATIONS.find((l) => l.id === id);
+        return found ? found.label : id;
+      }
+
+      function formatRub(n) {
+        return new Intl.NumberFormat("ru-RU", {
+          style: "currency",
+          currency: "RUB",
+          maximumFractionDigits: 0
+        }).format(n || 0);
+      }
+
+      function formatGrams(n) {
+        const v = Number(n) || 0;
+        const text = Number.isInteger(v) ? String(v) : String(v);
+        return text + " г";
+      }
+
+      function weightKey(weight) {
+        const v = Number(weight);
+        if (!isFinite(v)) return String(weight);
+        // normalize 1 and 1.0 to stable key matching DEFAULT_PRICES
+        return WEIGHTS.includes(v) ? String(v) : String(weight);
+      }
+
+      function itemPrice(weight) {
+        return Math.max(0, Number(prices[weightKey(weight)]) || 0);
+      }
+
+      function itemRevenue(item) {
+        return itemPrice(item.weight);
+      }
+
+      function formatDate(iso) {
+        try {
+          return new Intl.DateTimeFormat("ru-RU", {
+            day: "2-digit",
+            month: "short",
+            hour: "2-digit",
+            minute: "2-digit"
+          }).format(new Date(iso));
+        } catch (_) {
+          return iso;
+        }
+      }
+
+      function uid() {
+        return "i_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 8);
+      }
+
+      function showToast(message, warn) {
+        els.toast.textContent = message;
+        els.toast.classList.toggle("warn", !!warn);
+        els.toast.classList.add("show");
+        clearTimeout(showToast._t);
+        showToast._t = setTimeout(() => els.toast.classList.remove("show"), 2600);
+      }
+
+      function haptic(type) {
+        try {
+          if (tg && tg.HapticFeedback) {
+            if (type === "warn") tg.HapticFeedback.notificationOccurred("warning");
+            else if (type === "ok") tg.HapticFeedback.notificationOccurred("success");
+            else tg.HapticFeedback.impactOccurred("light");
+          }
+        } catch (_) { /* ignore */ }
+      }
+
+      /* ── Geolocation: device GPS via Telegram LocationManager + browser GPS.
+         VPN affects IP-geo only; we never use IP geolocation services. ── */
+
+      function formatCoords(lat, lon) {
+        return Number(lat).toFixed(6) + ", " + Number(lon).toFixed(6);
+      }
+
+      function formatAccuracy(m) {
+        if (m == null || !isFinite(m)) return "н/д";
+        if (m < 10) return m.toFixed(1) + " м";
+        return Math.round(m) + " м";
+      }
+
+      function sourceLabel(source) {
+        if (source === "telegram") return "Telegram GPS";
+        if (source === "browser") return "GPS устройства";
+        if (source === "fused") return "GPS (уточнённый)";
+        return source || "GPS";
+      }
+
+      function normalizeFix(raw) {
+        if (!raw) return null;
+        const lat = Number(raw.latitude);
+        const lon = Number(raw.longitude);
+        if (!isFinite(lat) || !isFinite(lon)) return null;
+        if (Math.abs(lat) > 90 || Math.abs(lon) > 180) return null;
+
+        let accuracy = raw.accuracy != null ? Number(raw.accuracy) : Number(raw.horizontal_accuracy);
+        if (!isFinite(accuracy) || accuracy <= 0) accuracy = 9999;
+
+        // Reject coarse network/IP-like fixes — VPN would poison those.
+        // Device GPS / Wi‑Fi / cell usually report tens of meters; IP is km-scale.
+        if (accuracy > 2000) return null;
+
+        return {
+          latitude: lat,
+          longitude: lon,
+          accuracy: accuracy,
+          altitude: raw.altitude != null && isFinite(Number(raw.altitude)) ? Number(raw.altitude) : null,
+          altitudeAccuracy: raw.altitudeAccuracy != null
+            ? Number(raw.altitudeAccuracy)
+            : (raw.vertical_accuracy != null ? Number(raw.vertical_accuracy) : null),
+          heading: raw.heading != null
+            ? Number(raw.heading)
+            : (raw.course != null ? Number(raw.course) : null),
+          speed: raw.speed != null ? Number(raw.speed) : null,
+          source: raw.source || "unknown",
+          timestamp: raw.timestamp || Date.now()
+        };
+      }
+
+      function considerFix(fix) {
+        const n = normalizeFix(fix);
+        if (!n) return;
+        geoSamples.push(n);
+        if (geoSamples.length > GEO_SAMPLE_LIMIT) geoSamples.shift();
+
+        // Prefer lower accuracy meters; break ties by newer timestamp.
+        if (
+          !currentGeo ||
+          n.accuracy + 0.5 < currentGeo.accuracy ||
+          (Math.abs(n.accuracy - currentGeo.accuracy) <= 0.5 && n.timestamp > currentGeo.timestamp)
+        ) {
+          // Fuse nearby high-quality samples for a slightly stabler point.
+          currentGeo = fuseBestSamples() || n;
+          renderGeoUi();
+          scheduleAddressLookup();
+          saveDraft();
+        } else {
+          renderGeoUi();
+        }
+
+        if (currentGeo && currentGeo.accuracy <= GEO_TARGET_ACCURACY_M) {
+          stopGeoWatch();
+          geoBusy = false;
+          renderGeoUi();
+        }
+      }
+
+      function buildAddressFromGeoData(data) {
+        if (!data) return "";
+        const street = data.street || data.road || "";
+        const house = data.streetNumber || data.street_number || "";
+        const line1 = [house, street].filter(Boolean).join(" ");
+        const place = data.locality && data.city && data.locality !== data.city
+          ? data.locality + ", " + data.city
+          : (data.city || data.locality || "");
+        const line2 = [place, data.principalSubdivision, data.countryName]
+          .filter(Boolean)
+          .filter((v, i, a) => a.indexOf(v) === i)
+          .join(", ");
+        const composed = [line1, line2].filter(Boolean).join(", ");
+        if (composed) return composed;
+        return data.locality || data.city || data.principalSubdivision || data.countryName || "";
+      }
+
+      async function resolveAddress(lat, lon) {
+        const url =
+          "https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=" +
+          encodeURIComponent(lat) +
+          "&longitude=" +
+          encodeURIComponent(lon) +
+          "&localityLanguage=ru";
+        try {
+          const res = await fetch(url);
+          if (!res.ok) throw new Error("geo http");
+          const data = await res.json();
+          const addr = buildAddressFromGeoData(data);
+          if (addr) return addr;
+        } catch (_) { /* try nominatim */ }
+
+        try {
+          const nom =
+            "https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=" +
+            encodeURIComponent(lat) +
+            "&lon=" +
+            encodeURIComponent(lon) +
+            "&accept-language=ru";
+          const res = await fetch(nom, {
+            headers: { Accept: "application/json" }
+          });
+          if (!res.ok) throw new Error("nom http");
+          const data = await res.json();
+          if (data && data.display_name) return String(data.display_name);
+        } catch (_) { /* ignore */ }
+
+        return "";
+      }
+
+      function scheduleAddressLookup() {
+        if (!currentGeo) return;
+        const lat = currentGeo.latitude;
+        const lon = currentGeo.longitude;
+        if (
+          lastAddressCoords &&
+          currentAddress &&
+          haversineM(lastAddressCoords.lat, lastAddressCoords.lon, lat, lon) < 30
+        ) {
+          redrawCanvas();
+          return;
+        }
+        const token = ++addressLookupToken;
+        currentAddress = currentAddress || "Определяем адрес…";
+        renderGeoUi();
+        redrawCanvas();
+        resolveAddress(lat, lon).then((addr) => {
+          if (token !== addressLookupToken) return;
+          currentAddress = addr || "Адрес не найден";
+          lastAddressCoords = { lat: lat, lon: lon };
+          renderGeoUi();
+          redrawCanvas();
+          saveDraft();
+        });
+      }
+
+      function fuseBestSamples() {
+        const good = geoSamples
+          .filter((s) => s.accuracy <= Math.max(GEO_ACCEPTABLE_M, (currentGeo && currentGeo.accuracy) || GEO_ACCEPTABLE_M))
+          .slice()
+          .sort((a, b) => a.accuracy - b.accuracy)
+          .slice(0, 5);
+
+        if (!good.length) return null;
+        if (good.length === 1) return good[0];
+
+        // Inverse-accuracy weighted average of closest cluster around best fix.
+        const best = good[0];
+        const cluster = good.filter((s) => haversineM(best.latitude, best.longitude, s.latitude, s.longitude) <= 40);
+        const pool = cluster.length ? cluster : [best];
+        let wSum = 0;
+        let lat = 0;
+        let lon = 0;
+        let acc = Infinity;
+        pool.forEach((s) => {
+          const w = 1 / Math.max(s.accuracy, 1);
+          wSum += w;
+          lat += s.latitude * w;
+          lon += s.longitude * w;
+          acc = Math.min(acc, s.accuracy);
+        });
+
+        return {
+          latitude: lat / wSum,
+          longitude: lon / wSum,
+          accuracy: acc,
+          altitude: best.altitude,
+          altitudeAccuracy: best.altitudeAccuracy,
+          heading: best.heading,
+          speed: best.speed,
+          source: pool.some((p) => p.source !== pool[0].source) ? "fused" : pool[0].source,
+          timestamp: Date.now()
+        };
+      }
+
+      function haversineM(lat1, lon1, lat2, lon2) {
+        const R = 6371000;
+        const toRad = (d) => (d * Math.PI) / 180;
+        const dLat = toRad(lat2 - lat1);
+        const dLon = toRad(lon2 - lon1);
+        const a =
+          Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+          Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+          Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        return 2 * R * Math.asin(Math.sqrt(a));
+      }
+
+      function renderGeoUi() {
+        const dot = els.geoDot;
+        dot.classList.remove("pending", "ok", "bad");
+
+        if (geoBusy && !currentGeo) {
+          dot.classList.add("pending");
+          els.geoTitle.textContent = "Ловим GPS-сигнал…";
+          els.geoMeta.innerHTML =
+            "Telegram LocationManager + GPS устройства<br/>VPN не влияет — берём координаты с чипа, не по IP";
+          return;
+        }
+
+        if (!currentGeo) {
+          dot.classList.add("bad");
+          els.geoTitle.textContent = "Координаты не получены";
+          els.geoMeta.innerHTML =
+            'Разрешите доступ к геолокации. На улице GPS точнее.<br/><span class="warn">Без координат позицию сохранить нельзя</span>';
+          return;
+        }
+
+        const good = currentGeo.accuracy <= GEO_TARGET_ACCURACY_M;
+        const ok = currentGeo.accuracy <= GEO_ACCEPTABLE_M;
+        dot.classList.add(ok ? "ok" : "pending");
+        els.geoTitle.textContent = formatCoords(currentGeo.latitude, currentGeo.longitude);
+        els.geoMeta.innerHTML =
+          '<span class="' + (good ? "ok" : ok ? "gold" : "warn") + '">±' +
+          escapeHtml(formatAccuracy(currentGeo.accuracy)) +
+          "</span> · " +
+          escapeHtml(sourceLabel(currentGeo.source)) +
+          (geoBusy ? " · уточняем…" : good ? " · высокая точность" : " · можно уточнить") +
+          (currentGeo.altitude != null
+            ? "<br/>высота ~" + escapeHtml(String(Math.round(currentGeo.altitude))) + " м"
+            : "") +
+          (currentAddress
+            ? "<br/><span class=\"gold\">" + escapeHtml(currentAddress) + "</span>"
+            : "");
+      }
+
+      function stopGeoWatch() {
+        if (geoWatchId != null && navigator.geolocation) {
+          try { navigator.geolocation.clearWatch(geoWatchId); } catch (_) { /* ignore */ }
+        }
+        geoWatchId = null;
+        if (geoCollectTimer) {
+          clearTimeout(geoCollectTimer);
+          geoCollectTimer = null;
+        }
+      }
+
+      function initTelegramLocationManager() {
+        return new Promise((resolve) => {
+          if (!tg || !tg.LocationManager) {
+            resolve(false);
+            return;
+          }
+          const lm = tg.LocationManager;
+          if (lm.isInited) {
+            resolve(true);
+            return;
+          }
+          try {
+            lm.init(() => resolve(true));
+            // Safety timeout if callback never fires
+            setTimeout(() => resolve(!!lm.isInited), 2500);
+          } catch (_) {
+            resolve(false);
+          }
+        });
+      }
+
+      function requestTelegramLocation() {
+        return new Promise(async (resolve) => {
+          let settled = false;
+          const done = (value) => {
+            if (settled) return;
+            settled = true;
+            resolve(value);
+          };
+
+          const ready = await initTelegramLocationManager();
+          if (!ready || !tg || !tg.LocationManager) {
+            done(null);
+            return;
+          }
+          const lm = tg.LocationManager;
+          if (lm.isLocationAvailable === false) {
+            done(null);
+            return;
+          }
+          try {
+            lm.getLocation((data) => {
+              if (!data) {
+                done(null);
+                return;
+              }
+              done(normalizeFix({
+                latitude: data.latitude,
+                longitude: data.longitude,
+                accuracy: data.horizontal_accuracy,
+                altitude: data.altitude,
+                vertical_accuracy: data.vertical_accuracy,
+                course: data.course,
+                speed: data.speed,
+                source: "telegram",
+                timestamp: Date.now()
+              }));
+            });
+          } catch (_) {
+            done(null);
+            return;
+          }
+          setTimeout(() => done(null), 8000);
+        });
+      }
+
+      function requestBrowserFixOnce(timeout) {
+        return new Promise((resolve) => {
+          if (!navigator.geolocation) {
+            resolve(null);
+            return;
+          }
+          navigator.geolocation.getCurrentPosition(
+            (pos) => {
+              const c = pos.coords;
+              resolve(normalizeFix({
+                latitude: c.latitude,
+                longitude: c.longitude,
+                accuracy: c.accuracy,
+                altitude: c.altitude,
+                altitudeAccuracy: c.altitudeAccuracy,
+                heading: c.heading,
+                speed: c.speed,
+                source: "browser",
+                timestamp: pos.timestamp || Date.now()
+              }));
+            },
+            () => resolve(null),
+            {
+              enableHighAccuracy: true,
+              maximumAge: 0,
+              timeout: timeout || 10000
+            }
+          );
+        });
+      }
+
+      function startBrowserWatch() {
+        if (!navigator.geolocation || geoWatchId != null) return;
+        geoWatchId = navigator.geolocation.watchPosition(
+          (pos) => {
+            const c = pos.coords;
+            considerFix({
+              latitude: c.latitude,
+              longitude: c.longitude,
+              accuracy: c.accuracy,
+              altitude: c.altitude,
+              altitudeAccuracy: c.altitudeAccuracy,
+              heading: c.heading,
+              speed: c.speed,
+              source: "browser",
+              timestamp: pos.timestamp || Date.now()
+            });
+          },
+          () => { /* keep waiting / TG path */ },
+          {
+            enableHighAccuracy: true,
+            maximumAge: 0,
+            timeout: 15000
+          }
+        );
+      }
+
+      async function acquirePreciseGeo(options) {
+        options = options || {};
+        stopGeoWatch();
+        if (!options.keepBest) {
+          currentGeo = null;
+          currentAddress = "";
+          lastAddressCoords = null;
+          addressLookupToken += 1;
+          geoSamples = [];
+        }
+        geoBusy = true;
+        renderGeoUi();
+        redrawCanvas();
+
+        // Parallel: Telegram native location + browser GPS one-shot + watch refine
+        startBrowserWatch();
+
+        const [tgFix, browserFix] = await Promise.all([
+          requestTelegramLocation(),
+          requestBrowserFixOnce(10000)
+        ]);
+
+        if (tgFix) considerFix(tgFix);
+        if (browserFix) considerFix(browserFix);
+
+        // Keep watching until target accuracy or timeout — GPS lock improves over time
+        if (geoCollectTimer) clearTimeout(geoCollectTimer);
+        geoCollectTimer = setTimeout(() => {
+          stopGeoWatch();
+          geoBusy = false;
+          if (currentGeo && currentGeo.accuracy > GEO_ACCEPTABLE_M) {
+            showToast("Точность средняя (±" + formatAccuracy(currentGeo.accuracy) + ")", true);
+          } else if (!currentGeo) {
+            showToast("Не удалось получить GPS", true);
+          } else if (currentGeo.accuracy <= GEO_TARGET_ACCURACY_M) {
+            showToast("GPS: высокая точность");
+            haptic("ok");
+          }
+          renderGeoUi();
+          saveDraft();
+        }, GEO_COLLECT_MS);
+      }
+
+      function openTelegramGeoSettings() {
+        if (tg && tg.LocationManager && typeof tg.LocationManager.openSettings === "function") {
+          try {
+            tg.LocationManager.openSettings();
+            return;
+          } catch (_) { /* fallthrough */ }
+        }
+        showToast("Откройте доступ к геолокации в настройках Telegram");
+      }
+
+      function getFilteredItems() {
+        if (activeFilter === "all") return items.slice().reverse();
+        return items.filter((i) => i.location === activeFilter).reverse();
+      }
+
+      function computeStats() {
+        const byLoc = {};
+        LOCATIONS.forEach((l) => {
+          byLoc[l.id] = { weight: 0, revenue: 0, count: 0 };
+        });
+
+        let totalWeight = 0;
+        let totalRevenue = 0;
+
+        items.forEach((item) => {
+          const w = Number(item.weight) || 0;
+          const rev = itemRevenue(item);
+          totalWeight += w;
+          totalRevenue += rev;
+          if (byLoc[item.location]) {
+            byLoc[item.location].weight += w;
+            byLoc[item.location].revenue += rev;
+            byLoc[item.location].count += 1;
+          }
+        });
+
+        return { byLoc, totalWeight, totalRevenue, totalCount: items.length };
+      }
+
+      function renderStats() {
+        const { byLoc, totalWeight, totalRevenue, totalCount } = computeStats();
+        els.totalRevenue.textContent = formatRub(totalRevenue);
+        els.totalWeight.textContent = formatGrams(totalWeight);
+        els.totalCount.textContent = String(totalCount);
+
+        els.locStats.innerHTML = LOCATIONS.map((l) => {
+          const s = byLoc[l.id];
+          return (
+            '<div class="loc-stat">' +
+              '<div class="name">' + escapeHtml(l.label) + "</div>" +
+              '<div class="kg">' + escapeHtml(formatGrams(s.weight)) + "</div>" +
+              '<div class="rub">' + escapeHtml(formatRub(s.revenue)) + "</div>" +
+            "</div>"
+          );
+        }).join("");
+      }
+
+      function renderFilters() {
+        const chips = [{ id: "all", label: "Все" }].concat(
+          LOCATIONS.map((l) => ({ id: l.id, label: l.label }))
+        );
+        els.filterChips.innerHTML = chips.map((c) => {
+          const active = c.id === activeFilter ? " active" : "";
+          return (
+            '<button type="button" class="chip' + active + '" data-filter="' +
+            escapeAttr(c.id) + '">' + escapeHtml(c.label) + "</button>"
+          );
+        }).join("");
+      }
+
+      function renderList() {
+        const list = getFilteredItems();
+        if (!list.length) {
+          els.itemsList.innerHTML =
+            '<div class="empty"><strong>Позиций нет</strong>Добавьте Клад или смените фильтр локации.</div>';
+          return;
+        }
+
+        els.itemsList.innerHTML = list.map((item) => {
+          const revenue = itemRevenue(item);
+          const heavy = Number(item.weight) > HEAVY_WEIGHT_G;
+          return (
+            '<article class="card" data-id="' + escapeAttr(item.id) + '">' +
+              '<img class="card-photo" src="' + escapeAttr(item.photo) + '" alt="Клад" />' +
+              '<div class="card-body">' +
+                '<div class="card-title">' +
+                  escapeHtml(locationLabel(item.location)) +
+                  (heavy ? ' <span class="badge">крупная</span>' : "") +
+                "</div>" +
+                '<div class="card-meta">' +
+                  '<span class="accent">' + escapeHtml(formatGrams(item.weight)) + "</span> · " +
+                  '<span class="gold">' + escapeHtml(formatRub(revenue)) + "</span><br/>" +
+                  escapeHtml(formatDate(item.createdAt)) +
+                "</div>" +
+                (item.geo
+                  ? '<div class="card-geo">' +
+                      escapeHtml(formatCoords(item.geo.latitude, item.geo.longitude)) +
+                      " · ±" + escapeHtml(formatAccuracy(item.geo.accuracy)) +
+                      (item.geo.address
+                        ? "<br/>" + escapeHtml(item.geo.address)
+                        : "") +
+                    "</div>"
+                  : "") +
+                (item.note
+                  ? '<div class="card-note">' + escapeHtml(item.note) + "</div>"
+                  : "") +
+              "</div>" +
+              '<div class="card-actions">' +
+                '<button type="button" class="mini-btn" data-action="delete" title="Удалить" aria-label="Удалить">' +
+                  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' +
+                    '<path d="M5 7h14M10 11v6M14 11v6M9 7l1-2h4l1 2M8 7v12a1 1 0 001 1h6a1 1 0 001-1V7" stroke-linecap="round" stroke-linejoin="round"/>' +
+                  "</svg>" +
+                "</button>" +
+              "</div>" +
+            "</article>"
+          );
+        }).join("");
+      }
+
+      function renderAll() {
+        renderStats();
+        renderFilters();
+        renderList();
+        updateRepeatButton();
+      }
+
+      function updateRepeatButton() {
+        const last = loadJSON(STORAGE_LAST, null);
+        els.btnRepeat.disabled = !last;
+      }
+
+      function escapeHtml(str) {
+        return String(str)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;");
+      }
+
+      function escapeAttr(str) {
+        return escapeHtml(str).replace(/'/g, "&#39;");
+      }
+
+      function openOverlay(el) {
+        el.classList.add("open");
+        if (tg && tg.BackButton) {
+          tg.BackButton.show();
+        }
+      }
+
+      function closeOverlay(el) {
+        el.classList.remove("open");
+        if (
+          tg &&
+          tg.BackButton &&
+          !els.formOverlay.classList.contains("open") &&
+          !els.menuOverlay.classList.contains("open") &&
+          !els.settingsOverlay.classList.contains("open")
+        ) {
+          tg.BackButton.hide();
+        }
+      }
+
+      function anyOverlayOpen() {
+        return (
+          els.formOverlay.classList.contains("open") ||
+          els.menuOverlay.classList.contains("open") ||
+          els.settingsOverlay.classList.contains("open")
+        );
+      }
+
+      function readFileAsDataURL(file) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(String(reader.result || ""));
+          reader.onerror = () => reject(reader.error);
+          reader.readAsDataURL(file);
+        });
+      }
+
+      function compressImage(dataUrl, maxSide, quality) {
+        return new Promise((resolve) => {
+          const img = new Image();
+          img.onload = () => {
+            let { width, height } = img;
+            const scale = Math.min(1, maxSide / Math.max(width, height));
+            width = Math.round(width * scale);
+            height = Math.round(height * scale);
+            const canvas = document.createElement("canvas");
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(img, 0, 0, width, height);
+            try {
+              resolve(canvas.toDataURL("image/jpeg", quality));
+            } catch (_) {
+              resolve(dataUrl);
+            }
+          };
+          img.onerror = () => resolve(dataUrl);
+          img.src = dataUrl;
+        });
+      }
+
+      function stopCamera() {
+        if (mediaStream) {
+          mediaStream.getTracks().forEach((t) => t.stop());
+          mediaStream = null;
+        }
+        els.cameraVideo.srcObject = null;
+        els.cameraVideo.classList.add("hidden");
+        els.cameraBox.classList.remove("streaming");
+        els.btnCapture.disabled = true;
+      }
+
+      function updateDrawButtons() {
+        const has = drawStrokes.length > 0;
+        els.btnUndoDraw.disabled = !has;
+        els.btnClearDraw.disabled = !has;
+      }
+
+      function clearDrawings() {
+        drawStrokes = [];
+        drawCurrent = null;
+        isDrawing = false;
+        redrawCanvas();
+        updateDrawButtons();
+      }
+
+      function resizeDrawCanvas() {
+        const canvas = els.drawCanvas;
+        const viewport = canvas.parentElement;
+        if (!viewport) return;
+        const rect = viewport.getBoundingClientRect();
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const w = Math.max(1, Math.round(rect.width * dpr));
+        const h = Math.max(1, Math.round(rect.height * dpr));
+        if (canvas.width !== w || canvas.height !== h) {
+          canvas.width = w;
+          canvas.height = h;
+        }
+        canvas.style.width = rect.width + "px";
+        canvas.style.height = rect.height + "px";
+        redrawCanvas();
+      }
+
+      function strokeLineWidth(stroke) {
+        const canvas = els.drawCanvas;
+        const base = Math.min(canvas.width, canvas.height);
+        // stroke.width is "logical" px on ~360 CSS width; scale to canvas
+        const cssW = canvas.getBoundingClientRect().width || 360;
+        return (stroke.width || 5) * (base / Math.max(cssW, 1));
+      }
+
+      function paintStroke(ctx, stroke) {
+        if (!stroke || !stroke.points || stroke.points.length < 1) return;
+        const w = els.drawCanvas.width;
+        const h = els.drawCanvas.height;
+        ctx.save();
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+        ctx.strokeStyle = stroke.color || "#3dcf7a";
+        ctx.lineWidth = strokeLineWidth(stroke);
+        ctx.beginPath();
+        ctx.moveTo(stroke.points[0].x * w, stroke.points[0].y * h);
+        for (let i = 1; i < stroke.points.length; i++) {
+          ctx.lineTo(stroke.points[i].x * w, stroke.points[i].y * h);
+        }
+        if (stroke.points.length === 1) {
+          ctx.lineTo(stroke.points[0].x * w + 0.01, stroke.points[0].y * h);
+        }
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      function wrapTextLines(ctx, text, maxWidth) {
+        const words = String(text || "").split(/\s+/).filter(Boolean);
+        const lines = [];
+        let line = "";
+        words.forEach((word) => {
+          const test = line ? line + " " + word : word;
+          if (ctx.measureText(test).width > maxWidth && line) {
+            lines.push(line);
+            line = word;
+          } else {
+            line = test;
+          }
+        });
+        if (line) lines.push(line);
+        return lines;
+      }
+
+      function paintGeoStamp(ctx, width, height, geo, address) {
+        if (!geo) return;
+        const pad = Math.max(10, Math.round(width * 0.025));
+        const fontSize = Math.max(14, Math.round(width * 0.032));
+        const lineH = Math.round(fontSize * 1.25);
+        ctx.save();
+        ctx.font = "600 " + fontSize + "px Segoe UI, system-ui, sans-serif";
+        ctx.textBaseline = "top";
+
+        const lines = [
+          formatCoords(geo.latitude, geo.longitude) + "  ±" + formatAccuracy(geo.accuracy),
+          address || "Адрес уточняется…",
+          formatDate(new Date(geo.timestamp || Date.now()).toISOString())
+        ];
+
+        const maxTextW = width - pad * 2;
+        const wrapped = [];
+        lines.forEach((l, idx) => {
+          if (idx === 1) {
+            wrapTextLines(ctx, l, maxTextW).slice(0, 3).forEach((w) => wrapped.push(w));
+          } else {
+            wrapped.push(l);
+          }
+        });
+
+        const boxH = pad + wrapped.length * lineH + pad;
+        const boxY = height - boxH;
+
+        ctx.fillStyle = "rgba(0, 0, 0, 0.62)";
+        ctx.fillRect(0, boxY, width, boxH);
+
+        // accent bar
+        const grad = ctx.createLinearGradient(0, boxY, width, boxY);
+        grad.addColorStop(0, "#3dcf7a");
+        grad.addColorStop(1, "#d4af37");
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, boxY, width, Math.max(2, Math.round(fontSize * 0.18)));
+
+        wrapped.forEach((text, i) => {
+          const y = boxY + pad + i * lineH;
+          ctx.fillStyle = i === 0 ? "#3dcf7a" : i === wrapped.length - 1 ? "#cfcfcf" : "#f2e6b8";
+          ctx.fillText(text, pad, y, maxTextW);
+        });
+        ctx.restore();
+      }
+
+      function redrawCanvas() {
+        const canvas = els.drawCanvas;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawStrokes.forEach((s) => paintStroke(ctx, s));
+        if (drawCurrent) paintStroke(ctx, drawCurrent);
+        if (draftPhotoDataUrl && currentGeo) {
+          paintGeoStamp(ctx, canvas.width, canvas.height, currentGeo, currentAddress);
+        }
+      }
+
+      function pointerToNorm(e) {
+        const rect = els.drawCanvas.getBoundingClientRect();
+        const clientX = e.clientX != null ? e.clientX : (e.touches && e.touches[0] && e.touches[0].clientX);
+        const clientY = e.clientY != null ? e.clientY : (e.touches && e.touches[0] && e.touches[0].clientY);
+        if (clientX == null || clientY == null || !rect.width || !rect.height) return null;
+        return {
+          x: Math.min(1, Math.max(0, (clientX - rect.left) / rect.width)),
+          y: Math.min(1, Math.max(0, (clientY - rect.top) / rect.height))
+        };
+      }
+
+      function onDrawStart(e) {
+        if (!draftPhotoDataUrl) return;
+        e.preventDefault();
+        const p = pointerToNorm(e);
+        if (!p) return;
+        isDrawing = true;
+        drawCurrent = {
+          color: drawColor,
+          width: drawWidthPx,
+          points: [p]
+        };
+        try { els.drawCanvas.setPointerCapture(e.pointerId); } catch (_) { /* ignore */ }
+        redrawCanvas();
+      }
+
+      function onDrawMove(e) {
+        if (!isDrawing || !drawCurrent) return;
+        e.preventDefault();
+        const p = pointerToNorm(e);
+        if (!p) return;
+        const last = drawCurrent.points[drawCurrent.points.length - 1];
+        const dx = p.x - last.x;
+        const dy = p.y - last.y;
+        // Skip micro-moves (normalized)
+        if (dx * dx + dy * dy < 0.00002) return;
+        drawCurrent.points.push(p);
+        redrawCanvas();
+      }
+
+      function onDrawEnd(e) {
+        if (!isDrawing) return;
+        e.preventDefault();
+        isDrawing = false;
+        if (drawCurrent && drawCurrent.points.length) {
+          drawStrokes.push(drawCurrent);
+        }
+        drawCurrent = null;
+        redrawCanvas();
+        updateDrawButtons();
+        saveDraft();
+        haptic("light");
+      }
+
+      function loadImageElement(src) {
+        return new Promise((resolve, reject) => {
+          const img = new Image();
+          img.onload = () => resolve(img);
+          img.onerror = reject;
+          img.src = src;
+        });
+      }
+
+      function mapCoverPoint(nx, ny, imgW, imgH, viewW, viewH) {
+        // Inverse of CSS object-fit: cover — viewport normalized -> image pixels
+        const scale = Math.max(viewW / imgW, viewH / imgH);
+        const drawnW = imgW * scale;
+        const drawnH = imgH * scale;
+        const offsetX = (viewW - drawnW) / 2;
+        const offsetY = (viewH - drawnH) / 2;
+        const vx = nx * viewW;
+        const vy = ny * viewH;
+        return {
+          x: (vx - offsetX) / scale,
+          y: (vy - offsetY) / scale
+        };
+      }
+
+      async function getPhotoWithDrawings() {
+        if (!draftPhotoDataUrl) return "";
+        if (!drawStrokes.length && !currentGeo) return draftPhotoDataUrl;
+        const img = await loadImageElement(draftPhotoDataUrl);
+        const canvas = document.createElement("canvas");
+        const imgW = img.naturalWidth || img.width;
+        const imgH = img.naturalHeight || img.height;
+        canvas.width = imgW;
+        canvas.height = imgH;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, imgW, imgH);
+
+        const viewRect = els.drawCanvas.getBoundingClientRect();
+        const viewW = viewRect.width || 1;
+        const viewH = viewRect.height || 1;
+
+        drawStrokes.forEach((stroke) => {
+          if (!stroke.points || !stroke.points.length) return;
+          const mapped = stroke.points.map((p) => mapCoverPoint(p.x, p.y, imgW, imgH, viewW, viewH));
+          ctx.save();
+          ctx.lineCap = "round";
+          ctx.lineJoin = "round";
+          ctx.strokeStyle = stroke.color || "#3dcf7a";
+          const scale = Math.max(viewW / imgW, viewH / imgH);
+          ctx.lineWidth = Math.max(2, (stroke.width || 5) / scale);
+          ctx.beginPath();
+          ctx.moveTo(mapped[0].x, mapped[0].y);
+          for (let i = 1; i < mapped.length; i++) {
+            ctx.lineTo(mapped[i].x, mapped[i].y);
+          }
+          if (mapped.length === 1) {
+            ctx.lineTo(mapped[0].x + 0.5, mapped[0].y);
+          }
+          ctx.stroke();
+          ctx.restore();
+        });
+
+        if (currentGeo) {
+          paintGeoStamp(ctx, imgW, imgH, currentGeo, currentAddress);
+        }
+
+        try {
+          return canvas.toDataURL("image/jpeg", 0.85);
+        } catch (_) {
+          return draftPhotoDataUrl;
+        }
+      }
+
+      function setCameraUiState() {
+        const hasShot = !!draftPhotoDataUrl;
+        els.cameraBox.classList.toggle("has-shot", hasShot);
+        els.cameraIdle.classList.toggle("hidden", hasShot || els.cameraBox.classList.contains("streaming"));
+        els.photoPreview.classList.toggle("hidden", !hasShot);
+        els.cameraVideo.classList.toggle("hidden", hasShot || !els.cameraBox.classList.contains("streaming"));
+        if (hasShot) {
+          requestAnimationFrame(() => resizeDrawCanvas());
+        }
+        updateDrawButtons();
+      }
+
+      function setPhotoPreview(dataUrl, options) {
+        options = options || {};
+        draftPhotoDataUrl = dataUrl || "";
+        if (!options.keepStrokes) {
+          drawStrokes = [];
+          drawCurrent = null;
+          isDrawing = false;
+        }
+        if (dataUrl) {
+          els.photoPreview.src = dataUrl;
+          stopCamera();
+          els.photoPreview.onload = () => {
+            resizeDrawCanvas();
+            els.photoPreview.onload = null;
+          };
+        } else {
+          els.photoPreview.removeAttribute("src");
+          const ctx = els.drawCanvas.getContext("2d");
+          if (ctx) ctx.clearRect(0, 0, els.drawCanvas.width, els.drawCanvas.height);
+        }
+        setCameraUiState();
+      }
+
+      async function startCamera() {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          els.photoInput.click();
+          return;
+        }
+        try {
+          stopCamera();
+          mediaStream = await navigator.mediaDevices.getUserMedia({
+            audio: false,
+            video: {
+              facingMode: { ideal: "environment" },
+              width: { ideal: 1280 },
+              height: { ideal: 960 }
+            }
+          });
+          els.cameraVideo.srcObject = mediaStream;
+          await els.cameraVideo.play();
+          els.cameraBox.classList.add("streaming");
+          els.cameraBox.classList.remove("has-shot");
+          draftPhotoDataUrl = "";
+          drawStrokes = [];
+          els.photoPreview.removeAttribute("src");
+          els.btnCapture.disabled = false;
+          setCameraUiState();
+          haptic("light");
+        } catch (_) {
+          showToast("Камера недоступна — откроем съёмку");
+          els.photoInput.click();
+        }
+      }
+
+      function capturePhoto() {
+        const video = els.cameraVideo;
+        if (!mediaStream || !video.videoWidth) {
+          showToast("Сначала включите камеру");
+          return;
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        let dataUrl;
+        try {
+          dataUrl = canvas.toDataURL("image/jpeg", 0.82);
+        } catch (_) {
+          showToast("Не удалось сделать снимок");
+          return;
+        }
+        compressImage(dataUrl, 960, 0.72).then((compressed) => {
+          setPhotoPreview(compressed);
+          saveDraft();
+          showToast("Снимок готов — обведите Клад");
+          haptic("ok");
+        });
+      }
+
+      function updateHeavyAlert() {
+        const w = Number(els.weightSelect.value);
+        els.heavyAlert.classList.toggle("show", w > HEAVY_WEIGHT_G);
+      }
+
+      function renderPriceSettings() {
+        const host = $("priceRows");
+        if (!host) return;
+        host.innerHTML = WEIGHTS.map((w) => {
+          const key = weightKey(w);
+          return (
+            '<div class="price-row">' +
+              "<span>" + escapeHtml(formatGrams(w)) + "</span>" +
+              '<input type="number" id="price_' + escapeAttr(key) +
+              '" min="0" step="1" inputmode="numeric" value="' +
+              escapeAttr(String(itemPrice(w))) + '" />' +
+            "</div>"
+          );
+        }).join("");
+      }
+
+      function saveDraft() {
+        if (suppressDraft) return;
+        if (!els.formOverlay.classList.contains("open")) return;
+        const draft = {
+          location: els.locationSelect.value,
+          weight: els.weightSelect.value,
+          note: els.noteInput.value,
+          photo: draftPhotoDataUrl,
+          strokes: drawStrokes,
+          geo: currentGeo,
+          address: currentAddress
+        };
+        saveJSON(STORAGE_DRAFT, draft);
+      }
+
+      function clearDraft() {
+        localStorage.removeItem(STORAGE_DRAFT);
+      }
+
+      function loadDraftIntoForm() {
+        const draft = loadJSON(STORAGE_DRAFT, null);
+        if (!draft) return false;
+        els.locationSelect.value = draft.location || "warehouse_1";
+        els.weightSelect.value = draft.weight != null ? String(draft.weight) : "0.5";
+        els.noteInput.value = draft.note || "";
+        drawStrokes = Array.isArray(draft.strokes) ? draft.strokes : [];
+        setPhotoPreview(draft.photo || "", { keepStrokes: true });
+        if (draft.geo) {
+          currentGeo = normalizeFix(Object.assign({}, draft.geo, { source: draft.geo.source || "browser" }));
+          if (currentGeo) geoSamples = [currentGeo];
+        }
+        currentAddress = draft.address || "";
+        if (currentGeo && currentAddress) {
+          lastAddressCoords = { lat: currentGeo.latitude, lon: currentGeo.longitude };
+        }
+        updateHeavyAlert();
+        renderGeoUi();
+        updateDrawButtons();
+        redrawCanvas();
+        return true;
+      }
+
+      function resetForm(defaults) {
+        els.itemForm.reset();
+        els.photoInput.value = "";
+        stopCamera();
+        drawStrokes = [];
+        setPhotoPreview("");
+        stopGeoWatch();
+        currentGeo = null;
+        geoSamples = [];
+        geoBusy = false;
+        renderGeoUi();
+        if (defaults) {
+          if (defaults.location) els.locationSelect.value = defaults.location;
+          if (defaults.weight != null) els.weightSelect.value = String(defaults.weight);
+          if (defaults.note != null) els.noteInput.value = defaults.note;
+        }
+        updateHeavyAlert();
+      }
+
+      function openForm(options) {
+        options = options || {};
+        suppressDraft = true;
+        resetForm();
+
+        if (options.repeatLast) {
+          const last = loadJSON(STORAGE_LAST, null);
+          if (last) {
+            resetForm({
+              location: last.location,
+              weight: last.weight,
+              note: last.note
+            });
+            showToast("Параметры скопированы — сделайте снимок");
+          }
+        } else if (options.useDraft !== false) {
+          const restored = loadDraftIntoForm();
+          if (restored) showToast("Черновик восстановлен");
+        }
+
+        suppressDraft = false;
+        openOverlay(els.formOverlay);
+        haptic("light");
+        if (!draftPhotoDataUrl) {
+          startCamera();
+        }
+        // Always refine GPS on open; keep draft coords as starting best if present
+        acquirePreciseGeo({ keepBest: !!currentGeo });
+      }
+
+      function closeForm(saveDraftFlag) {
+        if (saveDraftFlag) saveDraft();
+        stopCamera();
+        stopGeoWatch();
+        geoBusy = false;
+        closeOverlay(els.formOverlay);
+      }
+
+      function openSettings() {
+        renderPriceSettings();
+        closeOverlay(els.menuOverlay);
+        openOverlay(els.settingsOverlay);
+      }
+
+      function exportCsv() {
+        const headers = [
+          "id", "location", "location_label", "weight_g", "price_rub", "revenue",
+          "note", "created_at", "lat", "lon", "accuracy_m", "geo_source", "altitude_m", "address"
+        ];
+        const rows = items.map((item) => {
+          const price = itemPrice(item.weight);
+          const revenue = itemRevenue(item);
+          const g = item.geo || {};
+          return [
+            item.id,
+            item.location,
+            locationLabel(item.location),
+            item.weight,
+            price,
+            revenue,
+            '"' + String(item.note || "").replace(/"/g, '""') + '"',
+            item.createdAt,
+            g.latitude != null ? g.latitude : "",
+            g.longitude != null ? g.longitude : "",
+            g.accuracy != null ? g.accuracy : "",
+            g.source || "",
+            g.altitude != null ? g.altitude : "",
+            '"' + String(g.address || "").replace(/"/g, '""') + '"'
+          ].join(",");
+        });
+        const csv = "\uFEFF" + headers.join(",") + "\n" + rows.join("\n");
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "logistics_export_" + new Date().toISOString().slice(0, 10) + ".csv";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        showToast("CSV экспортирован");
+        haptic("ok");
+      }
+
+      function sendDataToBot() {
+        const payload = {
+          type: "logistics_sync",
+          exportedAt: new Date().toISOString(),
+          prices,
+          stats: computeStats(),
+          items: items.map((i) => ({
+            id: i.id,
+            location: i.location,
+            weight: i.weight,
+            note: i.note,
+            createdAt: i.createdAt,
+            hasPhoto: !!i.photo,
+            geo: i.geo || null
+          }))
+        };
+        const data = JSON.stringify(payload);
+        if (tg && typeof tg.sendData === "function") {
+          try {
+            tg.sendData(data);
+            showToast("Данные отправлены боту");
+            haptic("ok");
+            return;
+          } catch (_) { /* fallback below */ }
+        }
+        // Fallback outside Telegram: copy summary
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(data).then(() => {
+            showToast("JSON скопирован в буфер");
+          }).catch(() => showToast("Нет Telegram WebApp API"));
+        } else {
+          showToast("Нет Telegram WebApp API");
+        }
+      }
+
+      // Events
+      els.btnAdd.addEventListener("click", () => openForm({ useDraft: true }));
+      els.btnRepeat.addEventListener("click", () => {
+        if (els.btnRepeat.disabled) return;
+        openForm({ repeatLast: true, useDraft: false });
+      });
+
+      els.btnCloseForm.addEventListener("click", () => closeForm(true));
+      els.btnCancelForm.addEventListener("click", () => closeForm(true));
+
+      els.btnMenu.addEventListener("click", () => openOverlay(els.menuOverlay));
+      els.btnCloseMenu.addEventListener("click", () => closeOverlay(els.menuOverlay));
+      els.btnOpenSettings.addEventListener("click", openSettings);
+      els.btnCloseSettings.addEventListener("click", () => closeOverlay(els.settingsOverlay));
+
+      els.btnSaveSettings.addEventListener("click", () => {
+        const next = {};
+        WEIGHTS.forEach((w) => {
+          const key = weightKey(w);
+          const input = $("price_" + key);
+          next[key] = Math.max(0, Number(input && input.value) || 0);
+        });
+        prices = next;
+        saveJSON(STORAGE_PRICES, prices);
+        closeOverlay(els.settingsOverlay);
+        renderAll();
+        showToast("Настройки сохранены");
+        haptic("ok");
+      });
+
+      els.btnExportCsv.addEventListener("click", () => {
+        closeOverlay(els.menuOverlay);
+        if (!items.length) {
+          showToast("Нет данных для экспорта");
+          return;
+        }
+        exportCsv();
+      });
+
+      els.btnSendToBot.addEventListener("click", () => {
+        closeOverlay(els.menuOverlay);
+        sendDataToBot();
+      });
+
+      els.btnCloseApp.addEventListener("click", () => {
+        if (tg && typeof tg.close === "function") tg.close();
+        else showToast("Закрытие доступно в Telegram");
+      });
+
+      els.filterChips.addEventListener("click", (e) => {
+        const btn = e.target.closest("[data-filter]");
+        if (!btn) return;
+        activeFilter = btn.getAttribute("data-filter") || "all";
+        renderFilters();
+        renderList();
+        haptic("light");
+      });
+
+      els.itemsList.addEventListener("click", (e) => {
+        const btn = e.target.closest("[data-action='delete']");
+        if (!btn) return;
+        const card = btn.closest(".card");
+        if (!card) return;
+        const id = card.getAttribute("data-id");
+        items = items.filter((i) => i.id !== id);
+        saveJSON(STORAGE_ITEMS, items);
+        renderAll();
+        showToast("Позиция удалена");
+        haptic("light");
+      });
+
+      els.weightSelect.addEventListener("change", () => {
+        updateHeavyAlert();
+        const w = Number(els.weightSelect.value);
+        if (w > HEAVY_WEIGHT_G) {
+          showToast("Внимание, крупная партия", true);
+          haptic("warn");
+        }
+        saveDraft();
+      });
+
+      els.locationSelect.addEventListener("change", saveDraft);
+      els.noteInput.addEventListener("input", saveDraft);
+
+      els.btnStartCamera.addEventListener("click", () => startCamera());
+      els.btnCapture.addEventListener("click", () => capturePhoto());
+      els.btnRetake.addEventListener("click", () => {
+        clearDrawings();
+        setPhotoPreview("");
+        startCamera();
+      });
+
+      els.drawCanvas.addEventListener("pointerdown", onDrawStart);
+      els.drawCanvas.addEventListener("pointermove", onDrawMove);
+      els.drawCanvas.addEventListener("pointerup", onDrawEnd);
+      els.drawCanvas.addEventListener("pointercancel", onDrawEnd);
+
+      els.drawColors.addEventListener("click", (e) => {
+        const btn = e.target.closest("[data-color]");
+        if (!btn) return;
+        drawColor = btn.getAttribute("data-color") || "#3dcf7a";
+        els.drawColors.querySelectorAll(".draw-color").forEach((el) => {
+          el.classList.toggle("active", el === btn);
+        });
+      });
+
+      els.drawSize.addEventListener("input", () => {
+        drawWidthPx = Number(els.drawSize.value) || 5;
+      });
+
+      els.btnUndoDraw.addEventListener("click", () => {
+        drawStrokes.pop();
+        redrawCanvas();
+        updateDrawButtons();
+        saveDraft();
+      });
+
+      els.btnClearDraw.addEventListener("click", () => {
+        clearDrawings();
+        saveDraft();
+        showToast("Обводка очищена");
+      });
+
+      window.addEventListener("resize", () => {
+        if (draftPhotoDataUrl) resizeDrawCanvas();
+      });
+
+      // Fallback only: native capture=environment (camera intent)
+      els.photoInput.addEventListener("change", async () => {
+        const file = els.photoInput.files && els.photoInput.files[0];
+        if (!file) return;
+        if (!file.type.startsWith("image/")) {
+          showToast("Нужен снимок с камеры");
+          return;
+        }
+        try {
+          const raw = await readFileAsDataURL(file);
+          const compressed = await compressImage(raw, 960, 0.72);
+          setPhotoPreview(compressed);
+          saveDraft();
+          showToast("Снимок готов — обведите Клад");
+          haptic("ok");
+        } catch (_) {
+          showToast("Не удалось сохранить снимок");
+        }
+      });
+
+      els.btnRefreshGeo.addEventListener("click", () => {
+        acquirePreciseGeo({ keepBest: false });
+        haptic("light");
+      });
+
+      els.btnGeoSettings.addEventListener("click", () => openTelegramGeoSettings());
+
+      els.itemForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        if (!draftPhotoDataUrl) {
+          showToast("Сделайте снимок Клада");
+          haptic("warn");
+          return;
+        }
+        if (!currentGeo) {
+          showToast("Дождитесь координат GPS");
+          haptic("warn");
+          acquirePreciseGeo({ keepBest: false });
+          return;
+        }
+        if (currentGeo.accuracy > GEO_ACCEPTABLE_M) {
+          showToast("Точность слабая — нажмите «Уточнить GPS»", true);
+          haptic("warn");
+          return;
+        }
+
+        let finalPhoto = draftPhotoDataUrl;
+        try {
+          finalPhoto = await getPhotoWithDrawings();
+        } catch (_) {
+          finalPhoto = draftPhotoDataUrl;
+        }
+
+        const weight = Number(els.weightSelect.value);
+        const item = {
+          id: uid(),
+          location: els.locationSelect.value,
+          weight: weight,
+          note: (els.noteInput.value || "").trim(),
+          photo: finalPhoto,
+          geo: {
+            latitude: currentGeo.latitude,
+            longitude: currentGeo.longitude,
+            accuracy: currentGeo.accuracy,
+            altitude: currentGeo.altitude,
+            source: currentGeo.source,
+            timestamp: currentGeo.timestamp,
+            address: currentAddress || ""
+          },
+          createdAt: new Date().toISOString()
+        };
+
+        items.push(item);
+        saveJSON(STORAGE_ITEMS, items);
+        saveJSON(STORAGE_LAST, {
+          location: item.location,
+          weight: item.weight,
+          note: item.note
+        });
+        clearDraft();
+
+        suppressDraft = true;
+        resetForm();
+        suppressDraft = false;
+        closeOverlay(els.formOverlay);
+        renderAll();
+
+        if (weight > HEAVY_WEIGHT_G) {
+          showToast("Позиция сохранена · крупная партия", true);
+          haptic("warn");
+        } else {
+          showToast("Позиция добавлена");
+          haptic("ok");
+        }
+      });
+
+      // Close overlays by backdrop click
+      [els.formOverlay, els.menuOverlay, els.settingsOverlay].forEach((overlay) => {
+        overlay.addEventListener("click", (e) => {
+          if (e.target !== overlay) return;
+          if (overlay === els.formOverlay) closeForm(true);
+          else closeOverlay(overlay);
+        });
+      });
+
+      if (tg && tg.BackButton) {
+        tg.BackButton.onClick(() => {
+          if (els.formOverlay.classList.contains("open")) {
+            closeForm(true);
+            return;
+          }
+          if (els.settingsOverlay.classList.contains("open")) {
+            closeOverlay(els.settingsOverlay);
+            return;
+          }
+          if (els.menuOverlay.classList.contains("open")) {
+            closeOverlay(els.menuOverlay);
+          }
+        });
+      }
+
+      // Init
+      initTelegram();
+      items = loadJSON(STORAGE_ITEMS, []);
+      if (!Array.isArray(items)) items = [];
+      const storedPrices = loadJSON(STORAGE_PRICES, {});
+      prices = {};
+      WEIGHTS.forEach((w) => {
+        const key = weightKey(w);
+        const raw = storedPrices && storedPrices[key];
+        prices[key] = raw != null ? Math.max(0, Number(raw) || 0) : DEFAULT_PRICES[key];
+      });
+      renderAll();
+    })();
+  </script>
+</body>
+</html>
