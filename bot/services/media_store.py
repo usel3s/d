@@ -81,7 +81,13 @@ class MediaStore:
                     prev = prev_by_id.get(item_id) or {}
                     for p in prev.get("photos") or []:
                         if p.get("id") == photo_id and p.get("path"):
-                            photos_meta.append(p)
+                            kept = dict(p)
+                            if "noStamp" in photo or "no_stamp" in photo:
+                                if photo.get("noStamp") or photo.get("no_stamp"):
+                                    kept["no_stamp"] = True
+                                else:
+                                    kept.pop("no_stamp", None)
+                            photos_meta.append(kept)
                             break
                     continue
 
@@ -89,7 +95,10 @@ class MediaStore:
                 path = self.photos_dir / rel
                 path.parent.mkdir(parents=True, exist_ok=True)
                 path.write_bytes(blob)
-                photos_meta.append({"id": photo_id, "path": str(path)})
+                meta = {"id": photo_id, "path": str(path)}
+                if photo.get("noStamp") or photo.get("no_stamp"):
+                    meta["no_stamp"] = True
+                photos_meta.append(meta)
 
             new_records.append(
                 {
@@ -124,24 +133,57 @@ class MediaStore:
         return self.upsert_items(uid, seed)
 
     @staticmethod
+    def photo_url(item_id: str, photo_id: str) -> str:
+        return f"/api/photo/{item_id}/{photo_id}"
+
+    @staticmethod
     def to_webapp_item(item: dict[str, Any]) -> dict[str, Any]:
         """Мета позиции для WebApp (без бинарников фото)."""
+        item_id = str(item.get("id") or "")
         photos_meta = item.get("photos") or []
+        photos = []
+        for p in photos_meta:
+            if not isinstance(p, dict):
+                continue
+            photo_id = str(p.get("id") or "")
+            if not photo_id:
+                continue
+            photos.append(
+                {
+                    "id": photo_id,
+                    "url": MediaStore.photo_url(item_id, photo_id),
+                    "raw": "",
+                    "final": "",
+                    "strokes": [],
+                    "noStamp": bool(p.get("no_stamp") or p.get("noStamp")),
+                }
+            )
         return {
-            "id": str(item.get("id") or ""),
+            "id": item_id,
             "location": item.get("location"),
             "weight": item.get("weight"),
             "tapeColor": item.get("tape_color") or item.get("tapeColor") or "yellow",
             "note": item.get("note") or "",
-            "photos": [
-                {"id": str(p.get("id") or ""), "raw": "", "final": "", "strokes": []}
-                for p in photos_meta
-                if isinstance(p, dict)
-            ],
+            "photos": photos,
             "geo": item.get("geo") or None,
             "createdAt": item.get("created_at") or item.get("createdAt"),
             "updatedAt": item.get("updated_at") or item.get("updatedAt"),
         }
+
+    def resolve_photo_file(
+        self, user_id: int, item_id: str, photo_id: str
+    ) -> Path | None:
+        item = self.get_item(item_id, user_id=user_id)
+        if not item:
+            return None
+        for photo in item.get("photos") or []:
+            if str(photo.get("id") or "") != str(photo_id):
+                continue
+            path = Path(photo.get("path") or "")
+            if path.is_file():
+                return path
+            return None
+        return None
 
     def list_webapp_items(self, user_id: int) -> list[dict[str, Any]]:
         self.ensure_seed(user_id)

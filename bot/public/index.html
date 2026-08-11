@@ -774,6 +774,21 @@
       box-shadow: var(--shadow-soft);
     }
 
+    .photo-thumb .photo-badge {
+      position: absolute;
+      left: 4px;
+      bottom: 4px;
+      z-index: 2;
+      padding: 2px 6px;
+      border-radius: 8px;
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      color: #fff;
+      background: rgba(20, 24, 33, 0.72);
+      pointer-events: none;
+    }
+
     .btn-add-photo {
       position: relative;
       z-index: 1;
@@ -1375,6 +1390,31 @@
 
     .stage.mode-draw .stage-draw-dock { display: grid; }
 
+    .draw-nav {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .draw-nav-count {
+      min-width: 48px;
+      text-align: center;
+      font-size: 13px;
+      font-weight: 700;
+      color: rgba(255,255,255,0.9);
+      text-shadow: 0 1px 4px rgba(0,0,0,0.45);
+    }
+
+    .stage-text-btn.draw-nav-btn:disabled {
+      opacity: 0.35;
+      cursor: default;
+    }
+
+    .stage-text-btn.stamp-off {
+      color: #ffb4a8;
+    }
+
     .stage-side {
       display: flex;
       align-items: center;
@@ -1746,8 +1786,15 @@
       <div class="stage-draw-dock act-draw">
         <div class="stage-side stage-side-left">
           <button type="button" class="stage-text-btn muted" id="btnRetake">Сброс</button>
+          <button type="button" class="stage-text-btn" id="btnToggleStamp" title="Штамп">Штамп</button>
         </div>
-        <div class="stage-side stage-side-center"></div>
+        <div class="stage-side stage-side-center">
+          <div class="draw-nav">
+            <button type="button" class="stage-text-btn draw-nav-btn" id="btnDrawPrev" disabled>‹</button>
+            <span class="draw-nav-count" id="drawNavCount">1 / 1</span>
+            <button type="button" class="stage-text-btn draw-nav-btn" id="btnDrawNext" disabled>›</button>
+          </div>
+        </div>
         <div class="stage-side stage-side-right">
           <div class="stage-dock-icons">
             <button type="button" class="stage-text-btn accent" id="btnDoneDraw">Готово</button>
@@ -1946,6 +1993,10 @@
       btnFinishCam: $("btnFinishCam"),
       btnDoneDraw: $("btnDoneDraw"),
       btnRetake: $("btnRetake"),
+      btnToggleStamp: $("btnToggleStamp"),
+      btnDrawPrev: $("btnDrawPrev"),
+      btnDrawNext: $("btnDrawNext"),
+      drawNavCount: $("drawNavCount"),
       btnCancelStage: $("btnCancelStage"),
       gallery: $("gallery"),
       galleryMeta: $("galleryMeta"),
@@ -2066,13 +2117,66 @@
       }
     }
 
-    function saveItemsPersistent(nextItems) {
-      if (saveJSON(migrateScopedStorage(STORAGE_ITEMS_BASE), nextItems)) {
-        items = nextItems;
-        return true;
-      }
-      // fallback: keep finals only (drop raw duplicates) to fit quota
-      const slim = nextItems.map((it) => ({
+    function isDataUrl(value) {
+      return typeof value === "string" && value.indexOf("data:") === 0;
+    }
+
+    function photoApiUrl(itemId, photoId) {
+      return "/api/photo/" + encodeURIComponent(itemId) + "/" + encodeURIComponent(photoId);
+    }
+
+    function authPhotoUrl(url) {
+      if (!url || isDataUrl(url)) return url || "";
+      if (/^https?:\/\//i.test(url)) return url;
+      const userId = resolveTelegramUserId() || 0;
+      const initData = getTelegramInitData() || "";
+      const sep = url.indexOf("?") >= 0 ? "&" : "?";
+      return (
+        url +
+        sep +
+        "userId=" + encodeURIComponent(String(userId)) +
+        "&initData=" + encodeURIComponent(initData)
+      );
+    }
+
+    function photoDisplaySrc(photo) {
+      if (!photo) return "";
+      if (isDataUrl(photo.final)) return photo.final;
+      if (isDataUrl(photo.raw)) return photo.raw;
+      if (photo.url) return authPhotoUrl(photo.url);
+      if (photo.final) return authPhotoUrl(photo.final);
+      if (photo.raw) return authPhotoUrl(photo.raw);
+      return "";
+    }
+
+    function photoEditSrc(photo) {
+      if (!photo) return "";
+      if (isDataUrl(photo.raw)) return photo.raw;
+      if (isDataUrl(photo.final)) return photo.final;
+      if (photo.url) return authPhotoUrl(photo.url);
+      if (photo.raw) return authPhotoUrl(photo.raw);
+      if (photo.final) return authPhotoUrl(photo.final);
+      return "";
+    }
+
+    function slimPhotoForStorage(photo, itemId) {
+      if (!photo) return null;
+      const id = photo.id || uid("p");
+      const finalSrc = photo.final || photo.raw || "";
+      const keepBlob = isDataUrl(finalSrc);
+      return {
+        id: id,
+        url: photo.url || "",
+        raw: "",
+        strokes: [],
+        final: keepBlob ? finalSrc : "",
+        noStamp: !!photo.noStamp,
+        stampBaked: photo.noStamp ? false : !!(photo.stampBaked || keepBlob)
+      };
+    }
+
+    function slimItemsForStorage(list) {
+      return (list || []).map((it) => ({
         id: it.id,
         location: it.location,
         weight: it.weight,
@@ -2081,19 +2185,102 @@
         geo: it.geo,
         createdAt: it.createdAt,
         updatedAt: it.updatedAt,
-        photos: (it.photos || []).map((p) => ({
-          id: p.id,
-          raw: p.final || p.raw || "",
-          strokes: [],
-          final: p.final || p.raw || ""
-        }))
+        photos: (it.photos || []).map((p) => slimPhotoForStorage(p, it.id)).filter(Boolean)
       }));
+    }
+
+    function stripItemsToUrls(list) {
+      return (list || []).map((it) => ({
+        id: it.id,
+        location: it.location,
+        weight: it.weight,
+        tapeColor: it.tapeColor,
+        note: it.note,
+        geo: it.geo,
+        createdAt: it.createdAt,
+        updatedAt: it.updatedAt,
+        photos: (it.photos || []).map((p) => {
+          const id = p.id || uid("p");
+          return {
+            id: id,
+            url: p.url || photoApiUrl(it.id, id),
+            raw: "",
+            strokes: [],
+            final: "",
+            noStamp: !!p.noStamp,
+            stampBaked: !p.noStamp
+          };
+        })
+      }));
+    }
+
+    function dropOldestPhotoBlobs(list) {
+      const next = slimItemsForStorage(list);
+      for (let i = next.length - 1; i >= 0; i--) {
+        const photos = next[i].photos || [];
+        let changed = false;
+        for (let j = 0; j < photos.length; j++) {
+          if (isDataUrl(photos[j].final) || isDataUrl(photos[j].raw)) {
+            photos[j] = {
+              id: photos[j].id,
+              url: photos[j].url || photoApiUrl(next[i].id, photos[j].id),
+              raw: "",
+              strokes: [],
+              final: "",
+              noStamp: !!photos[j].noStamp,
+              stampBaked: !photos[j].noStamp
+            };
+            changed = true;
+          }
+        }
+        if (changed) return { list: next, changed: true };
+      }
+      return { list: next, changed: false };
+    }
+
+    function saveItemsPersistent(nextItems) {
+      const slim = slimItemsForStorage(nextItems);
       if (saveJSON(migrateScopedStorage(STORAGE_ITEMS_BASE), slim)) {
         items = slim;
-        showToast("Сохранено (slim)");
         return true;
       }
-      showToast("quota", true);
+      const urlsOnly = stripItemsToUrls(nextItems);
+      if (saveJSON(migrateScopedStorage(STORAGE_ITEMS_BASE), urlsOnly)) {
+        items = urlsOnly;
+        return true;
+      }
+      showToast("Мало места — удалите старые или синхронизируйте", true);
+      return false;
+    }
+
+    async function persistItemsWithQuotaRelief(nextItems) {
+      if (saveItemsPersistent(nextItems)) return true;
+
+      const synced = await syncToServer({ silent: true, notifyBot: false, itemsOverride: nextItems });
+      if (synced) {
+        const stripped = stripItemsToUrls(nextItems);
+        if (saveJSON(migrateScopedStorage(STORAGE_ITEMS_BASE), stripped)) {
+          items = stripped;
+          showToast("Мало места. Данные отправлены на сервер");
+          return true;
+        }
+        items = stripped;
+        return true;
+      }
+
+      let candidate = slimItemsForStorage(nextItems);
+      for (let attempt = 0; attempt < 12; attempt++) {
+        const step = dropOldestPhotoBlobs(candidate);
+        candidate = step.list;
+        if (saveJSON(migrateScopedStorage(STORAGE_ITEMS_BASE), candidate)) {
+          items = candidate;
+          showToast("Мало места. Старые фото убраны с устройства", true);
+          return true;
+        }
+        if (!step.changed) break;
+      }
+
+      showToast("Мало места — удалите старые или синхронизируйте", true);
       return false;
     }
 
@@ -2210,17 +2397,25 @@
       if (typeof photo === "string") {
         return {
           id: uid("p"),
+          url: "",
           raw: photo,
           strokes: [],
-          final: photo
+          final: photo,
+          noStamp: false
         };
       }
       if (typeof photo === "object") {
+        const raw = photo.raw || "";
+        const final = photo.final || "";
+        const url = photo.url || "";
         return {
           id: photo.id || uid("p"),
-          raw: photo.raw || photo.final || "",
+          url: url,
+          raw: raw,
           strokes: Array.isArray(photo.strokes) ? photo.strokes : [],
-          final: photo.final || photo.raw || ""
+          final: final || raw || "",
+          noStamp: !!(photo.noStamp || photo.no_stamp),
+          stampBaked: !!(photo.stampBaked || (url && !isDataUrl(raw) && !isDataUrl(final)))
         };
       }
       return null;
@@ -2257,8 +2452,14 @@
       const raw = loadJSON(migrateScopedStorage(STORAGE_ITEMS_BASE), []);
       if (!Array.isArray(raw)) return [];
       const migrated = raw.map(migrateItem).filter(Boolean);
-      saveJSON(migrateScopedStorage(STORAGE_ITEMS_BASE), migrated);
-      return migrated;
+      const slim = slimItemsForStorage(migrated);
+      // migrate старых жирных записей; при quota просто оставляем в памяти
+      if (!saveJSON(migrateScopedStorage(STORAGE_ITEMS_BASE), slim)) {
+        const urlsOnly = stripItemsToUrls(migrated);
+        if (saveJSON(migrateScopedStorage(STORAGE_ITEMS_BASE), urlsOnly)) return urlsOnly;
+        return slim;
+      }
+      return slim;
     }
 
     /* ── Geolocation ── */
@@ -2767,7 +2968,7 @@
 
     function firstPhotoSrc(item) {
       if (!item.photos || !item.photos.length) return "";
-      return item.photos[0].final || item.photos[0].raw || "";
+      return photoDisplaySrc(item.photos[0]);
     }
 
     function renderList() {
@@ -2836,7 +3037,7 @@
     function itemPhotoSources(item) {
       if (!item || !item.photos) return [];
       return item.photos
-        .map((p) => p.final || p.raw || "")
+        .map((p) => photoDisplaySrc(p))
         .filter(Boolean);
     }
 
@@ -3179,7 +3380,8 @@
       return Object.assign(base, overrides || {});
     }
 
-    async function bakePhoto(raw, strokes, meta) {
+    async function bakePhoto(raw, strokes, meta, options) {
+      options = options || {};
       if (!raw) return "";
       const img = await loadImageElement(raw);
       const imgW = img.naturalWidth || img.width;
@@ -3207,7 +3409,9 @@
         ctx.restore();
       });
 
-      paintStamp(ctx, imgW, imgH, meta);
+      if (!options.noStamp) {
+        paintStamp(ctx, imgW, imgH, meta);
+      }
 
       try {
         return canvas.toDataURL("image/jpeg", 0.72);
@@ -3248,20 +3452,47 @@
       const out = [];
       for (let i = 0; i < photos.length; i++) {
         const p = photos[i];
-        let raw = p.raw || p.final || "";
+        let raw = "";
+        if (isDataUrl(p.raw)) raw = p.raw;
+        else if (isDataUrl(p.final)) raw = p.final;
+        else raw = p.raw || p.final || "";
+        if (!raw && p.url) {
+          try {
+            raw = await fetchPhotoAsDataUrl(photoDisplaySrc(p));
+          } catch (_) {
+            raw = "";
+          }
+        }
         if (!raw) continue;
         try {
           raw = await compressImage(raw, 960, 0.68);
         } catch (_) { /* keep */ }
-        const final = await bakePhoto(raw, p.strokes || [], meta);
+        const final = await bakePhoto(raw, p.strokes || [], meta, { noStamp: !!p.noStamp });
         out.push({
           id: p.id || uid("p"),
+          url: p.url || "",
           raw: raw,
           strokes: Array.isArray(p.strokes) ? p.strokes : [],
-          final: final
+          final: final,
+          noStamp: !!p.noStamp,
+          stampBaked: !p.noStamp
         });
       }
       return out;
+    }
+
+    async function fetchPhotoAsDataUrl(src) {
+      if (!src) return "";
+      if (isDataUrl(src)) return src;
+      const res = await fetch(src);
+      if (!res.ok) throw new Error("photo fetch failed");
+      const blob = await res.blob();
+      return await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ""));
+        reader.onerror = () => reject(new Error("read failed"));
+        reader.readAsDataURL(blob);
+      });
     }
 
     /* ── Stage (fullscreen static camera + draw) ── */
@@ -3467,7 +3698,10 @@
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       stageStrokes.forEach((s) => paintStrokeOnCtx(ctx, s, canvas));
       if (stageCurrent) paintStrokeOnCtx(ctx, stageCurrent, canvas);
-      if (stageRaw) paintStampOnStage(ctx, canvas, currentStampMeta());
+      const showStamp = editingPhotoIdx == null
+        ? true
+        : !(formPhotos[editingPhotoIdx] && formPhotos[editingPhotoIdx].noStamp);
+      if (stageRaw && showStamp) paintStampOnStage(ctx, canvas, currentStampMeta());
     }
 
     function resizeStageCanvas() {
@@ -3579,7 +3813,17 @@
 
       if (editingPhotoIdx != null && formPhotos[editingPhotoIdx]) {
         const photo = formPhotos[editingPhotoIdx];
-        enterDrawMode(photo.raw || photo.final || "", photo.strokes || []);
+        let src = photoEditSrc(photo);
+        if (src && !isDataUrl(src)) {
+          try {
+            src = await fetchPhotoAsDataUrl(src);
+            if (src) {
+              photo.raw = photo.raw || src;
+              if (!isDataUrl(photo.final)) photo.final = src;
+            }
+          } catch (_) { /* keep url */ }
+        }
+        enterDrawMode(src, photo.strokes || []);
         return;
       }
 
@@ -3665,7 +3909,7 @@
         resizeStageCanvas();
         redrawStageCanvas();
       };
-      els.stageImage.src = dataUrl;
+      els.stageImage.src = dataUrl || "";
       els.stageImage.classList.remove("hidden");
       if (els.stageImage.complete && els.stageImage.naturalWidth) {
         stageImgSize = {
@@ -3676,10 +3920,85 @@
       setStageMode("draw");
       if (els.drawSize) els.drawSize.value = String(drawWidthPx);
       updateDrawButtons();
+      updateDrawNavUi();
+      updateStampToggleUi();
       requestAnimationFrame(() => {
         resizeStageCanvas();
         redrawStageCanvas();
       });
+    }
+
+    function updateDrawNavUi() {
+      const total = formPhotos.length;
+      const idx = editingPhotoIdx == null ? -1 : editingPhotoIdx;
+      if (els.drawNavCount) {
+        els.drawNavCount.textContent =
+          idx >= 0 && total ? (idx + 1) + " / " + total : "—";
+      }
+      if (els.btnDrawPrev) {
+        els.btnDrawPrev.disabled = idx <= 0 || total < 2;
+      }
+      if (els.btnDrawNext) {
+        els.btnDrawNext.disabled = idx < 0 || idx >= total - 1 || total < 2;
+      }
+    }
+
+    function updateStampToggleUi() {
+      if (!els.btnToggleStamp) return;
+      const photo = editingPhotoIdx != null ? formPhotos[editingPhotoIdx] : null;
+      const off = !!(photo && photo.noStamp);
+      els.btnToggleStamp.textContent = off ? "Без штампа" : "Штамп";
+      els.btnToggleStamp.classList.toggle("stamp-off", off);
+    }
+
+    function commitCurrentDrawPhoto() {
+      if (editingPhotoIdx == null || !formPhotos[editingPhotoIdx] || !stageRaw) return false;
+      const prev = formPhotos[editingPhotoIdx];
+      formPhotos[editingPhotoIdx] = {
+        id: prev.id || uid("p"),
+        url: prev.url || "",
+        raw: isDataUrl(stageRaw) ? stageRaw : (prev.raw || stageRaw),
+        strokes: stageStrokes.slice(),
+        final: isDataUrl(stageRaw) ? stageRaw : (prev.final || stageRaw),
+        noStamp: !!prev.noStamp,
+        stampBaked: !!prev.stampBaked
+      };
+      return true;
+    }
+
+    async function switchDrawPhoto(delta) {
+      if (editingPhotoIdx == null || !formPhotos.length) return;
+      const nextIdx = editingPhotoIdx + delta;
+      if (nextIdx < 0 || nextIdx >= formPhotos.length) return;
+      commitCurrentDrawPhoto();
+      editingPhotoIdx = nextIdx;
+      const photo = formPhotos[editingPhotoIdx];
+      let src = photoEditSrc(photo);
+      if (src && !isDataUrl(src) && photo.url) {
+        try {
+          src = await fetchPhotoAsDataUrl(src);
+          if (src) {
+            photo.raw = src;
+            if (!photo.final) photo.final = src;
+          }
+        } catch (_) { /* keep url */ }
+      }
+      enterDrawMode(src, photo.strokes || []);
+      saveDraft();
+    }
+
+    function toggleCurrentPhotoStamp() {
+      if (editingPhotoIdx == null || !formPhotos[editingPhotoIdx]) return;
+      const photo = formPhotos[editingPhotoIdx];
+      if (!photo.noStamp && photo.stampBaked) {
+        showToast("Чистое фото недоступно — штамп уже в кадре", true);
+        return;
+      }
+      photo.noStamp = !photo.noStamp;
+      updateStampToggleUi();
+      redrawStageCanvas();
+      saveDraft();
+      haptic("light");
     }
 
     function flashCaptureFeedback() {
@@ -3694,15 +4013,15 @@
       const compressed = await compressImage(dataUrl, 960, 0.65);
       formPhotos.push({
         id: uid("p"),
+        url: "",
         raw: compressed,
         strokes: [],
-        final: compressed
+        final: compressed,
+        noStamp: false
       });
       renderPhotosGrid();
       updateCamShotHint();
-      if (!saveDraft()) {
-        // draft overflow — still keep in memory
-      }
+      saveDraft();
       showToast(formPhotos.length + "/" + MAX_PHOTOS);
       haptic("ok");
     }
@@ -3747,12 +4066,7 @@
       }
 
       if (editingPhotoIdx != null && formPhotos[editingPhotoIdx]) {
-        formPhotos[editingPhotoIdx] = {
-          id: formPhotos[editingPhotoIdx].id || uid("p"),
-          raw: stageRaw,
-          strokes: stageStrokes.slice(),
-          final: stageRaw
-        };
+        commitCurrentDrawPhoto();
         closeStage();
         renderPhotosGrid();
         saveDraft();
@@ -3764,9 +4078,11 @@
       // если открыли draw без editIndex (fallback) — добавить как новое
       formPhotos.push({
         id: uid("p"),
+        url: "",
         raw: stageRaw,
         strokes: stageStrokes.slice(),
-        final: stageRaw
+        final: stageRaw,
+        noStamp: false
       });
       closeStage();
       renderPhotosGrid();
@@ -3779,11 +4095,14 @@
 
     function renderPhotosGrid() {
       els.photosGrid.innerHTML = formPhotos.map((p, idx) => {
-        const src = p.final || p.raw || "";
+        const src = photoDisplaySrc(p);
         return (
           '<div class="photo-thumb" data-idx="' + idx + '">' +
-            '<img src="' + escapeAttr(src) + '" alt="Фото ' + (idx + 1) + '" />' +
+            (src
+              ? '<img src="' + escapeAttr(src) + '" alt="Фото ' + (idx + 1) + '" />'
+              : '<div class="card-photo placeholder" style="position:absolute;inset:0;display:grid;place-items:center;font-size:11px;color:#888;">—</div>') +
             '<button type="button" class="btn-remove-photo" data-remove="' + idx + '" aria-label="Удалить">×</button>' +
+            (p.noStamp ? '<span class="photo-badge">без штампа</span>' : "") +
           "</div>"
         );
       }).join("");
@@ -3801,13 +4120,13 @@
     function saveDraft() {
       if (suppressDraft) return true;
       if (!els.formOverlay.classList.contains("open")) return true;
+      // Без photos — не раздуваем localStorage и не возвращаем старые фото через «Добавить»
       const draft = {
         editingId: editingId,
         location: els.locationSelect.value,
         weight: els.weightSelect.value,
         tapeColor: els.tapeSelect.value,
         note: els.noteInput.value,
-        photos: formPhotos,
         geo: currentGeo,
         address: currentAddress
       };
@@ -3836,9 +4155,7 @@
       els.weightSelect.value = draft.weight != null ? String(draft.weight) : "0.5";
       els.tapeSelect.value = draft.tapeColor || "yellow";
       els.noteInput.value = draft.note || "";
-      formPhotos = Array.isArray(draft.photos)
-        ? draft.photos.map(migratePhoto).filter(Boolean)
-        : [];
+      // photos не восстанавливаем из draft
       if (draft.geo) {
         currentGeo = normalizeFix(Object.assign({}, draft.geo, { source: draft.geo.source || "browser" }));
         if (currentGeo) geoSamples = [currentGeo];
@@ -3884,7 +4201,7 @@
 
       if (options.editItem) {
         const item = options.editItem;
-        // если есть черновик именно этой позиции — восстановить его
+        // если есть черновик именно этой позиции — восстановить поля (без фото)
         const restoredEdit = loadDraftIntoForm({
           allowEdit: true,
           requireEditingId: item.id
@@ -3896,7 +4213,6 @@
           els.weightSelect.value = String(item.weight != null ? item.weight : "0.5");
           els.tapeSelect.value = item.tapeColor || "yellow";
           els.noteInput.value = item.note || "";
-          formPhotos = (item.photos || []).map(migratePhoto).filter(Boolean);
           if (item.geo) {
             currentGeo = normalizeFix(Object.assign({}, item.geo, { source: item.geo.source || "browser" }));
             if (currentGeo) {
@@ -3907,10 +4223,13 @@
               }
             }
           }
-          renderPhotosGrid();
           updateHeavyAlert();
           renderGeoUi();
+        } else {
+          // draft restored fields; still load photos from item
         }
+        formPhotos = (item.photos || []).map(migratePhoto).filter(Boolean);
+        renderPhotosGrid();
       } else if (options.repeatLast) {
         const last = loadJSON(migrateScopedStorage(STORAGE_LAST_BASE), null);
         if (last) {
@@ -3923,13 +4242,10 @@
           showToast("повтор — фото");
         }
       } else {
-        // «Добавить» — только черновик новой позиции (без editingId)
-        const restored = loadDraftIntoForm({ allowEdit: false });
-        if (restored) showToast("draft");
-        else {
-          editingId = null;
-          els.formTitle.textContent = "Новая позиция";
-        }
+        // «Добавить» — всегда чистая форма
+        clearDraft();
+        editingId = null;
+        els.formTitle.textContent = "Новая позиция";
       }
 
       suppressDraft = false;
@@ -3939,7 +4255,8 @@
     }
 
     function closeForm(saveDraftFlag) {
-      if (saveDraftFlag) saveDraft();
+      if (saveDraftFlag && editingId) saveDraft();
+      else clearDraft();
       if (stageOpen) closeStage();
       stopGeoWatch();
       geoBusy = false;
@@ -4047,7 +4364,8 @@
 
     async function syncToServer(options) {
       options = options || {};
-      if (!items.length) {
+      const sourceItems = options.itemsOverride || items;
+      if (!sourceItems.length) {
         if (!options.silent) showToast("пусто");
         return false;
       }
@@ -4068,7 +4386,7 @@
       const payload = {
         userId: userId || 0,
         initData: initData,
-        items: items.map((i) => ({
+        items: sourceItems.map((i) => ({
           id: i.id,
           location: i.location,
           weight: i.weight,
@@ -4079,7 +4397,9 @@
           updatedAt: i.updatedAt,
           photos: (i.photos || []).map((p) => ({
             id: p.id,
-            final: p.final || p.raw || ""
+            final: isDataUrl(p.final) ? p.final : (isDataUrl(p.raw) ? p.raw : ""),
+            raw: "",
+            noStamp: !!p.noStamp
           }))
         }))
       };
@@ -4109,8 +4429,16 @@
         if (data.userId) {
           try { localStorage.setItem(STORAGE_TG_UID, String(data.userId)); } catch (_) { /* ignore */ }
         }
+
+        const stripped = stripItemsToUrls(sourceItems);
+        if (saveJSON(migrateScopedStorage(STORAGE_ITEMS_BASE), stripped)) {
+          items = stripped;
+        } else {
+          items = stripped;
+        }
+
         if (!options.silent) {
-          showToast("sync " + (data.saved || 0) + " +фото");
+          showToast("sync " + (data.saved || 0));
           haptic("ok");
         }
         if (options.notifyBot) notifyBotMeta();
@@ -4338,6 +4666,15 @@
       updateDrawButtons();
       haptic("light");
     });
+    if (els.btnToggleStamp) {
+      els.btnToggleStamp.addEventListener("click", () => toggleCurrentPhotoStamp());
+    }
+    if (els.btnDrawPrev) {
+      els.btnDrawPrev.addEventListener("click", () => switchDrawPhoto(-1));
+    }
+    if (els.btnDrawNext) {
+      els.btnDrawNext.addEventListener("click", () => switchDrawPhoto(1));
+    }
     els.btnCancelStage.addEventListener("click", () => closeStage());
     const btnCancelDraw = $("btnCancelDraw");
     if (btnCancelDraw) {
@@ -4467,6 +4804,8 @@
         address: currentAddress || ""
       };
 
+      const prevItems = items.slice();
+      let savedId = editingId;
       if (editingId) {
         const idx = items.findIndex((i) => i.id === editingId);
         if (idx >= 0) {
@@ -4479,10 +4818,12 @@
             geo: geoPayload,
             updatedAt: now
           });
+          savedId = items[idx].id;
         }
       } else {
+        savedId = uid("i");
         items.push({
-          id: uid("i"),
+          id: savedId,
           location: els.locationSelect.value,
           weight: weight,
           tapeColor: els.tapeSelect.value,
@@ -4494,7 +4835,9 @@
         });
       }
 
-      if (!saveItemsPersistent(items)) {
+      const persisted = await persistItemsWithQuotaRelief(items);
+      if (!persisted) {
+        items = prevItems;
         els.btnSaveItem.disabled = false;
         return;
       }
@@ -4521,8 +4864,9 @@
         showToast(wasEdit ? "updated" : "saved");
         haptic("ok");
       }
-      // фото на сервер сразу после сохранения
-      syncToServer({ silent: true, notifyBot: false });
+      // фото на сервер сразу после сохранения (и strip base64)
+      await syncToServer({ silent: true, notifyBot: false });
+      renderAll();
     });
 
     [els.formOverlay, els.menuOverlay, els.settingsOverlay].forEach((overlay) => {
@@ -4613,7 +4957,16 @@
     }
 
     async function pullInventoryIfEmpty() {
-      if (items.length > 0) return false;
+      const localEmpty = !items.length;
+      const localSeedOnly =
+        items.length > 0 &&
+        items.every((it) => {
+          const id = String((it && it.id) || "");
+          const photos = (it && it.photos) || [];
+          const noPhotos = !photos.length;
+          return id.indexOf("seed_") === 0 || noPhotos;
+        });
+      if (!localEmpty && !localSeedOnly) return false;
       const userId = resolveTelegramUserId();
       const initData = getTelegramInitData();
       try {

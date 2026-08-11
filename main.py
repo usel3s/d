@@ -142,6 +142,56 @@ async def handle_inventory(request: web.Request) -> web.Response:
     )
 
 
+def _resolve_query_user_id(request: web.Request) -> int:
+    from utils.webapp_auth import resolve_webapp_user_id
+
+    settings = request.app["settings"]
+    init_data = str(
+        request.rel_url.query.get("initData")
+        or request.headers.get("X-Telegram-Init-Data")
+        or ""
+    )
+    if not init_data:
+        return 0
+    resolved = resolve_webapp_user_id(init_data, settings.bot_token)
+    if not resolved:
+        return 0
+    try:
+        query_uid = int(request.rel_url.query.get("userId") or 0)
+    except (TypeError, ValueError):
+        query_uid = 0
+    if query_uid and query_uid != resolved:
+        return 0
+    return int(resolved)
+
+
+async def handle_photo(request: web.Request) -> web.Response:
+    """Отдать JPEG с диска для галереи WebApp (<img src>)."""
+    media_store = request.app["media_store"]
+    item_id = str(request.match_info.get("item_id") or "").strip()
+    photo_id = str(request.match_info.get("photo_id") or "").strip()
+    if not item_id or not photo_id:
+        return web.json_response({"ok": False, "error": "bad_path"}, status=400)
+
+    user_id = _resolve_query_user_id(request)
+    if not user_id:
+        return web.json_response({"ok": False, "error": "no_user"}, status=401)
+    if not _is_admin_user(request, user_id):
+        return web.json_response({"ok": False, "error": "forbidden"}, status=403)
+
+    path = media_store.resolve_photo_file(user_id, item_id, photo_id)
+    if not path:
+        return web.json_response({"ok": False, "error": "not_found"}, status=404)
+
+    return web.FileResponse(
+        path,
+        headers={
+            "Cache-Control": "private, max-age=86400",
+            "Content-Type": "image/jpeg",
+        },
+    )
+
+
 async def run() -> None:
     logging.basicConfig(
         level=logging.INFO,
@@ -164,6 +214,7 @@ async def run() -> None:
     app.router.add_post("/api/auth", handle_auth)
     app.router.add_post("/api/sync-items", handle_sync_items)
     app.router.add_post("/api/inventory", handle_inventory)
+    app.router.add_get("/api/photo/{item_id}/{photo_id}", handle_photo)
 
     runner = web.AppRunner(app)
     await runner.setup()

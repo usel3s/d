@@ -6,13 +6,15 @@ from typing import Any
 
 # Сводки по админам (кол-во / локации), пока нет живого синка с фото.
 SEED_INVENTORIES: dict[int, dict[str, Any]] = {
+    # Реальные клады из «Готово штампы» (импорт с фото через tools/import_stamped_inventory.py).
+    # Seed без фото — только если каталог пуст.
     8647494349: {
         "weight": 0.5,
         "price_per_item": 850,
-        "tape_color": "yellow",
+        "tape_color": "black",
         "by_location": {
-            "pickup": 21,
-            "warehouse_1": 9,
+            "pickup": 6,
+            "warehouse_1": 14,
         },
     },
 }
