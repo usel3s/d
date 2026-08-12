@@ -11,18 +11,11 @@ import numpy as np
 from PIL import Image, ImageChops, ImageDraw, ImageFont
 
 TAPE_LABELS = {
-    "yellow": "Жёлтый",
-    "red": "Красный",
-    "white": "Белый",
-    "blue": "Синий",
-    "black": "Чёрный",
-    "green": "Зелёный",
-    "orange": "Оранжевый",
-    "gray": "Серый",
-    "brown": "Коричневый",
-    "purple": "Фиолетовый",
-    "pink": "Розовый",
-    "transparent": "Прозрачный",
+    "red": "Красная",
+    "blue": "Синяя",
+    "yellow": "Жёлтая",
+    "white": "Белая",
+    "black": "Чёрная",
 }
 LOC_LABELS = {
     "warehouse_1": "Тайник",

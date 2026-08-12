@@ -1604,10 +1604,6 @@
                 <div class="geo-meta" id="geoMeta">—</div>
               </div>
             </div>
-            <div class="geo-actions">
-              <button type="button" id="btnRefreshGeo">Обновить</button>
-              <button type="button" id="btnGeoSettings">Доступ</button>
-            </div>
           </div>
         </div>
 
@@ -1639,18 +1635,11 @@
         <div class="field">
           <label for="tapeSelect">#tape <span class="req">*</span></label>
           <select id="tapeSelect" required>
-            <option value="yellow">Жёлтый</option>
-            <option value="red">Красный</option>
-            <option value="white">Белый</option>
-            <option value="blue">Синий</option>
-            <option value="black">Чёрный</option>
-            <option value="green">Зелёный</option>
-            <option value="orange">Оранжевый</option>
-            <option value="gray">Серый</option>
-            <option value="brown">Коричневый</option>
-            <option value="purple">Фиолетовый</option>
-            <option value="pink">Розовый</option>
-            <option value="transparent">Прозрачный</option>
+            <option value="red">Красная</option>
+            <option value="blue">Синяя</option>
+            <option value="yellow">Жёлтая</option>
+            <option value="white">Белая</option>
+            <option value="black">Чёрная</option>
           </select>
         </div>
 
@@ -1853,18 +1842,11 @@
     ];
 
     const TAPE_COLORS = [
-      { id: "yellow", label: "Жёлтый", hex: "#f0d000" },
-      { id: "red", label: "Красный", hex: "#ff3b30" },
-      { id: "white", label: "Белый", hex: "#ffffff" },
-      { id: "blue", label: "Синий", hex: "#0a84ff" },
-      { id: "black", label: "Чёрный", hex: "#1c1c1e" },
-      { id: "green", label: "Зелёный", hex: "#34c759" },
-      { id: "orange", label: "Оранжевый", hex: "#ff9500" },
-      { id: "gray", label: "Серый", hex: "#8e8e93" },
-      { id: "brown", label: "Коричневый", hex: "#a2845e" },
-      { id: "purple", label: "Фиолетовый", hex: "#af52de" },
-      { id: "pink", label: "Розовый", hex: "#ff2d55" },
-      { id: "transparent", label: "Прозрачный", hex: "#c7c7cc" }
+      { id: "red", label: "Красная", hex: "#ff3b30" },
+      { id: "blue", label: "Синяя", hex: "#0a84ff" },
+      { id: "yellow", label: "Жёлтая", hex: "#f0d000" },
+      { id: "white", label: "Белая", hex: "#ffffff" },
+      { id: "black", label: "Чёрная", hex: "#1c1c1e" }
     ];
 
     const WEIGHTS = [0.5, 1, 2, 3, 4, 5];
@@ -1954,8 +1936,6 @@
       geoDot: $("geoDot"),
       geoTitle: $("geoTitle"),
       geoMeta: $("geoMeta"),
-      btnRefreshGeo: $("btnRefreshGeo"),
-      btnGeoSettings: $("btnGeoSettings"),
       locationSelect: $("locationSelect"),
       weightSelect: $("weightSelect"),
       tapeSelect: $("tapeSelect"),
@@ -2692,14 +2672,16 @@
       if (geoBusy && !currentGeo) {
         dot.classList.add("pending");
         els.geoTitle.textContent = "GPS…";
-        els.geoMeta.textContent = "—";
+        els.geoMeta.textContent = "ждём координаты — без GPS фото нельзя";
+        updatePhotoGate();
         return;
       }
 
       if (!currentGeo) {
         dot.classList.add("bad");
         els.geoTitle.textContent = "нет GPS";
-        els.geoMeta.innerHTML = '<span class="warn">нужен доступ</span>';
+        els.geoMeta.innerHTML = '<span class="warn">фото недоступно без геолокации</span>';
+        updatePhotoGate();
         return;
       }
 
@@ -2710,15 +2692,51 @@
       els.geoMeta.innerHTML =
         '<span class="' + (good ? "ok" : ok ? "gold" : "warn") + '">±' +
         escapeHtml(formatAccuracy(currentGeo.accuracy)) +
-        "</span> · " +
-        escapeHtml(sourceLabel(currentGeo.source)) +
-        (geoBusy ? " · уточняем…" : good ? " · высокая точность" : " · можно уточнить") +
+        "</span> · авто при съёмке" +
+        (geoBusy ? " · уточняем…" : good ? " · ок" : ok ? "" : " · слишком слабо для фото") +
         (currentGeo.altitude != null
           ? "<br/>высота ~" + escapeHtml(String(Math.round(currentGeo.altitude))) + " м"
           : "") +
         (currentAddress
           ? "<br/><span class=\"gold\">" + escapeHtml(currentAddress) + "</span>"
           : "");
+      updatePhotoGate();
+    }
+
+    function geoReadyForPhoto() {
+      return !!(
+        currentGeo &&
+        isFinite(currentGeo.latitude) &&
+        isFinite(currentGeo.longitude) &&
+        currentGeo.accuracy <= GEO_ACCEPTABLE_M
+      );
+    }
+
+    function requireGeoForPhoto() {
+      if (geoReadyForPhoto()) return true;
+      ensureAutoGeo();
+      if (!currentGeo) {
+        showToast("нет GPS — фото нельзя", true);
+      } else if (currentGeo.accuracy > GEO_ACCEPTABLE_M) {
+        showToast("GPS слабо — фото нельзя", true);
+      } else {
+        showToast("ждём GPS…", true);
+      }
+      haptic("warn");
+      updatePhotoGate();
+      return false;
+    }
+
+    function updatePhotoGate() {
+      if (!els.btnAddPhoto) return;
+      const full = formPhotos.length >= MAX_PHOTOS;
+      const ready = geoReadyForPhoto();
+      els.btnAddPhoto.disabled = full || !ready;
+      els.btnAddPhoto.textContent = !ready ? "Нужен GPS" : "Снять";
+      if (els.btnCapture) {
+        els.btnCapture.disabled = !ready && editingPhotoIdx == null;
+        els.btnCapture.style.opacity = els.btnCapture.disabled ? "0.35" : "";
+      }
     }
 
     function stopGeoWatch() {
@@ -2856,6 +2874,7 @@
 
     async function acquirePreciseGeo(options) {
       options = options || {};
+      const quiet = !!options.quiet;
       stopGeoWatch();
       if (!options.keepBest) {
         currentGeo = null;
@@ -2879,29 +2898,37 @@
 
       if (geoCollectTimer) clearTimeout(geoCollectTimer);
       geoCollectTimer = setTimeout(() => {
-        stopGeoWatch();
+        // оставляем watch, пока открыта форма/камера — координаты уточняются сами
+        const formOpen = els.formOverlay.classList.contains("open");
+        if (!formOpen && !stageOpen) {
+          stopGeoWatch();
+        }
         geoBusy = false;
-        if (currentGeo && currentGeo.accuracy > GEO_ACCEPTABLE_M) {
-          showToast("GPS ±" + formatAccuracy(currentGeo.accuracy), true);
-        } else if (!currentGeo) {
-          showToast("нет GPS", true);
-        } else if (currentGeo.accuracy <= GEO_TARGET_ACCURACY_M) {
-          showToast("GPS ok");
-          haptic("ok");
+        if (!quiet) {
+          if (currentGeo && currentGeo.accuracy > GEO_ACCEPTABLE_M) {
+            showToast("GPS ±" + formatAccuracy(currentGeo.accuracy), true);
+          } else if (!currentGeo) {
+            showToast("нет GPS", true);
+          } else if (currentGeo.accuracy <= GEO_TARGET_ACCURACY_M) {
+            showToast("GPS ok");
+            haptic("ok");
+          }
         }
         renderGeoUi();
         saveDraft();
       }, GEO_COLLECT_MS);
     }
 
-    function openTelegramGeoSettings() {
-      if (tg && tg.LocationManager && typeof tg.LocationManager.openSettings === "function") {
-        try {
-          tg.LocationManager.openSettings();
-          return;
-        } catch (_) { /* fallthrough */ }
+    function ensureAutoGeo() {
+      if (geoBusy) return;
+      const needBetter =
+        !currentGeo ||
+        currentGeo.accuracy > GEO_TARGET_ACCURACY_M;
+      if (!needBetter && geoWatchId != null) {
+        renderGeoUi();
+        return;
       }
-      showToast("нужен доступ к GPS");
+      acquirePreciseGeo({ keepBest: !!currentGeo, quiet: true });
     }
 
     /* ── Stats / list ── */
@@ -3796,6 +3823,10 @@
         showToast("max " + MAX_PHOTOS);
         return;
       }
+      // Новое фото только с GPS; правку обводки существующего — можно
+      if (options.editIndex == null && !requireGeoForPhoto()) {
+        return;
+      }
 
       editingPhotoIdx = options.editIndex != null ? options.editIndex : null;
       stageOpen = true;
@@ -3831,6 +3862,8 @@
       els.stageImage.classList.add("hidden");
       els.stageIdle.classList.remove("hidden");
       updateCamShotHint();
+      // GPS подтягивается сам на время съёмки — без кнопки «Обновить»
+      ensureAutoGeo();
       await startCamera();
     }
 
@@ -4027,6 +4060,7 @@
     }
 
     function capturePhoto() {
+      if (!requireGeoForPhoto()) return;
       if (formPhotos.length >= MAX_PHOTOS && editingPhotoIdx == null) {
         showToast("max " + MAX_PHOTOS);
         return;
@@ -4050,6 +4084,7 @@
         return;
       }
       flashCaptureFeedback();
+      ensureAutoGeo();
       // быстрый режим: сразу в галерею формы, камера продолжает работать
       addQuickPhoto(dataUrl).then(() => {
         if (formPhotos.length >= MAX_PHOTOS) {
@@ -4106,7 +4141,7 @@
           "</div>"
         );
       }).join("");
-      els.btnAddPhoto.disabled = formPhotos.length >= MAX_PHOTOS;
+      updatePhotoGate();
       els.photosHint.textContent = formPhotos.length + " / " + MAX_PHOTOS;
     }
 
@@ -4251,7 +4286,7 @@
       suppressDraft = false;
       openOverlay(els.formOverlay);
       haptic("light");
-      acquirePreciseGeo({ keepBest: !!currentGeo });
+      acquirePreciseGeo({ keepBest: !!currentGeo, quiet: true });
     }
 
     function closeForm(saveDraftFlag) {
@@ -4620,7 +4655,10 @@
       openStage({ editIndex: idx });
     });
 
-    els.btnAddPhoto.addEventListener("click", () => openStage());
+    els.btnAddPhoto.addEventListener("click", () => {
+      if (!requireGeoForPhoto()) return;
+      openStage();
+    });
 
     els.weightSelect.addEventListener("change", () => {
       updateHeavyAlert();
@@ -4725,6 +4763,10 @@
     });
 
     els.photoInput.addEventListener("change", async () => {
+      if (!requireGeoForPhoto()) {
+        els.photoInput.value = "";
+        return;
+      }
       const file = els.photoInput.files && els.photoInput.files[0];
       els.photoInput.value = "";
       if (!file) return;
@@ -4755,13 +4797,6 @@
       }
     });
 
-    els.btnRefreshGeo.addEventListener("click", () => {
-      acquirePreciseGeo({ keepBest: false });
-      haptic("light");
-    });
-
-    els.btnGeoSettings.addEventListener("click", () => openTelegramGeoSettings());
-
     els.itemForm.addEventListener("submit", async (e) => {
       e.preventDefault();
 
@@ -4770,15 +4805,10 @@
         haptic("warn");
         return;
       }
-      if (!currentGeo) {
-        showToast("нужен GPS");
+      if (!geoReadyForPhoto()) {
+        showToast(!currentGeo ? "нет GPS — фото нельзя" : "GPS слабо — фото нельзя", true);
         haptic("warn");
-        acquirePreciseGeo({ keepBest: false });
-        return;
-      }
-      if (currentGeo.accuracy > GEO_ACCEPTABLE_M) {
-        showToast("GPS слабо", true);
-        haptic("warn");
+        ensureAutoGeo();
         return;
       }
 
