@@ -8,6 +8,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
   <style>
     :root {
       --bg: #e9ebef;
@@ -98,6 +101,12 @@
       align-items: center;
       gap: 10px;
       min-width: 0;
+    }
+
+    .brand-text {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
     }
 
     .brand-mark {
@@ -526,7 +535,7 @@
       max-width: 520px;
       margin: 0 auto;
       display: grid;
-      grid-template-columns: 1fr auto;
+      grid-template-columns: 1.2fr auto auto;
       gap: 8px;
     }
 
@@ -937,6 +946,514 @@
 
     .price-row:last-child { margin-bottom: 0; }
     .price-row span { font-size: 13px; color: var(--ink-soft); font-weight: 700; }
+
+    .tpl-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .tpl-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .tpl-row span {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--ink);
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: var(--bg-soft);
+      border: 1px solid var(--line);
+    }
+
+    .tpl-row button {
+      border: none;
+      background: var(--danger-dim);
+      color: var(--danger);
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .tpl-add {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+    }
+
+    .tpl-add input {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px 12px;
+      font: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      background: #fff;
+    }
+
+    .tpl-add button {
+      border: none;
+      background: var(--ink);
+      color: #fff;
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .note-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .note-chip {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.85);
+      color: var(--ink-soft);
+      border-radius: 999px;
+      padding: 7px 11px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .note-chip:active {
+      background: var(--ink);
+      color: #fff;
+      border-color: var(--ink);
+    }
+
+    .admin-badge {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--ink-soft);
+      letter-spacing: 0.02em;
+      margin-top: 2px;
+    }
+
+    .map-screen {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 90;
+      background: var(--bg);
+      flex-direction: column;
+    }
+
+    .map-screen.open {
+      display: flex;
+    }
+
+    .map-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 12px 14px 8px;
+      padding-top: calc(12px + env(safe-area-inset-top, 0px));
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(18px) saturate(1.15);
+      -webkit-backdrop-filter: blur(18px) saturate(1.15);
+      border-bottom: 1px solid var(--line);
+      color: var(--ink);
+    }
+
+    .map-top h2 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .map-top .sub {
+      font-size: 11px;
+      color: var(--ink-soft);
+      font-weight: 600;
+      margin-top: 2px;
+    }
+
+    .map-canvas-wrap {
+      flex: 1;
+      min-height: 0;
+      width: 100%;
+      position: relative;
+      overflow: hidden;
+      background: var(--bg-soft);
+    }
+
+    .map-canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    .map-layers {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+      padding: 8px 14px 10px;
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(18px) saturate(1.15);
+      -webkit-backdrop-filter: blur(18px) saturate(1.15);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .map-layer-btn {
+      border: 1px solid var(--line-strong);
+      background: var(--surface-solid);
+      color: var(--ink-soft);
+      border-radius: 999px;
+      padding: 7px 11px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: var(--shadow-soft);
+    }
+
+    .map-layer-btn.active {
+      background: var(--danger-dim);
+      border-color: rgba(214, 69, 69, 0.35);
+      color: var(--danger);
+    }
+
+    .map-layer-btn[data-layer="spacing"].active {
+      background: rgba(196, 138, 18, 0.12);
+      border-color: rgba(196, 138, 18, 0.35);
+      color: var(--warning);
+    }
+
+    .map-layer-btn[data-layer="warn"].active {
+      background: rgba(196, 138, 18, 0.08);
+      border-color: rgba(196, 138, 18, 0.28);
+      color: var(--gold);
+    }
+
+    .map-legend {
+      pointer-events: none;
+      position: absolute;
+      left: 10px;
+      top: 10px;
+      z-index: 800;
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid var(--glass-edge);
+      border-radius: 14px;
+      padding: 9px 11px;
+      color: var(--ink);
+      font-size: 10px;
+      font-weight: 700;
+      line-height: 1.45;
+      max-width: min(72vw, 240px);
+      box-shadow: var(--shadow-soft);
+    }
+
+    .map-legend .row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 4px;
+      color: var(--ink-soft);
+    }
+
+    .map-legend .row:first-child { margin-top: 0; }
+
+    .map-legend .swatch {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      flex: 0 0 auto;
+      border: 1.5px solid var(--line-strong);
+    }
+
+    .map-legend .swatch.crit {
+      background: rgba(214, 69, 69, 0.35);
+      border-color: var(--danger);
+    }
+    .map-legend .swatch.warn {
+      background: transparent;
+      border: 1.5px dashed var(--warning);
+    }
+    .map-legend .swatch.space {
+      background: rgba(196, 138, 18, 0.28);
+      border-color: var(--warning);
+    }
+
+    .map-basemap {
+      display: flex;
+      gap: 0;
+      margin-left: auto;
+      border-radius: 999px;
+      overflow: hidden;
+      border: 1px solid var(--line-strong);
+      flex: 0 0 auto;
+      background: var(--surface-solid);
+      box-shadow: var(--shadow-soft);
+    }
+
+    .map-basemap button {
+      border: 0;
+      background: transparent;
+      color: var(--ink-soft);
+      padding: 7px 11px;
+      font-size: 11px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .map-basemap button.active {
+      background: var(--ink);
+      color: #fff;
+    }
+
+    .map-sheet {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 900;
+      display: flex;
+      flex-direction: column;
+      height: min(72vh, 560px);
+      max-height: min(72vh, 560px);
+      background: rgba(255, 255, 255, 0.96);
+      backdrop-filter: blur(18px) saturate(1.1);
+      -webkit-backdrop-filter: blur(18px) saturate(1.1);
+      border-radius: 22px 22px 0 0;
+      border-top: 1px solid var(--glass-edge);
+      box-shadow: 0 -12px 36px rgba(20, 24, 33, 0.12);
+      transform: translate3d(0, calc(100% - 68px), 0);
+      transition: transform 0.34s cubic-bezier(0.22, 1, 0.36, 1);
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+      will-change: transform;
+      touch-action: none;
+    }
+
+    .map-sheet.open {
+      transform: translate3d(0, 0, 0);
+      touch-action: auto;
+    }
+
+    .map-sheet.dragging {
+      transition: none;
+    }
+
+    .map-sheet-handle {
+      flex: 0 0 auto;
+      padding: 10px 14px 8px;
+      cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .map-sheet-grip {
+      width: 40px;
+      height: 4px;
+      border-radius: 99px;
+      background: rgba(17, 17, 20, 0.16);
+      margin: 0 auto 10px;
+    }
+
+    .map-sheet-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .map-sheet-head .title {
+      color: var(--ink);
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    .map-sheet-head .hint {
+      color: var(--ink-soft);
+      font-size: 11px;
+      font-weight: 600;
+      margin-top: 2px;
+    }
+
+    .map-sheet-toggle {
+      border: 1px solid var(--line-strong);
+      background: var(--accent-dim);
+      color: var(--ink);
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .map-sheet-body {
+      flex: 1;
+      min-height: 0;
+      overflow: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 4px 12px 14px;
+      overscroll-behavior: contain;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+
+    .map-sheet.open .map-sheet-body {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .map-stash-card {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: start;
+      padding: 12px 12px;
+      border-radius: 16px;
+      background: var(--bg-soft);
+      margin-bottom: 8px;
+      color: var(--ink);
+      cursor: pointer;
+      border: 1px solid var(--line);
+      transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+      box-shadow: var(--shadow-soft);
+    }
+
+    .map-stash-card:active {
+      transform: scale(0.985);
+      background: #fff;
+    }
+
+    .map-stash-card.active {
+      border-color: var(--ink);
+      background: #fff;
+    }
+
+    .map-stash-card.warn-crit {
+      border-color: rgba(214, 69, 69, 0.35);
+      background: var(--danger-dim);
+    }
+
+    .map-stash-card.warn-space {
+      border-color: rgba(196, 138, 18, 0.3);
+      background: rgba(196, 138, 18, 0.08);
+    }
+
+    .map-stash-card .addr {
+      font-size: 13px;
+      font-weight: 800;
+      line-height: 1.25;
+    }
+
+    .map-stash-card .meta {
+      margin-top: 4px;
+      font-size: 11px;
+      color: var(--ink-soft);
+      font-weight: 600;
+    }
+
+    .map-stash-card .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 8px;
+    }
+
+    .map-stash-card .tag {
+      font-size: 10px;
+      font-weight: 800;
+      padding: 3px 7px;
+      border-radius: 7px;
+      background: rgba(17, 17, 20, 0.06);
+      color: var(--ink-soft);
+    }
+
+    .map-stash-card .tag.crit {
+      background: var(--danger-dim);
+      color: var(--danger);
+    }
+
+    .map-stash-card .tag.space {
+      background: rgba(196, 138, 18, 0.12);
+      color: var(--warning);
+    }
+
+    .map-stash-card .side {
+      text-align: right;
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--ink);
+      padding-top: 2px;
+    }
+
+    .leaflet-container {
+      font: inherit;
+      background: var(--bg-soft);
+    }
+
+    .leaflet-popup-content-wrapper {
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--line);
+      color: var(--ink);
+      font-family: "Manrope", sans-serif;
+    }
+
+    .leaflet-popup-tip {
+      box-shadow: none;
+    }
+
+    .map-pin {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      border: 2px solid #fff;
+      box-shadow: 0 1px 4px rgba(20, 24, 33, 0.28);
+      background: var(--ink);
+    }
+
+    .map-pin.crit { background: var(--danger); }
+    .map-pin.space { background: var(--warning); }
+    .map-pin.both {
+      background: linear-gradient(135deg, var(--danger) 50%, var(--warning) 50%);
+    }
+
+    .map-zone-label-wrap {
+      background: transparent !important;
+      border: none !important;
+    }
+
+    .map-zone-label {
+      background: rgba(255, 255, 255, 0.94);
+      color: var(--danger);
+      border: 1px solid rgba(214, 69, 69, 0.28);
+      border-radius: 8px;
+      padding: 2px 7px;
+      font-size: 10px;
+      font-weight: 800;
+      white-space: nowrap;
+      box-shadow: var(--shadow-soft);
+      font-family: "Manrope", sans-serif;
+    }
+
+    .map-zone-label.space {
+      color: var(--warning);
+      border-color: rgba(196, 138, 18, 0.3);
+    }
+
 
     .menu-list { display: grid; gap: 8px; }
 
@@ -1457,6 +1974,47 @@
       min-height: 14px;
     }
 
+    .cam-zoom-row {
+      display: none;
+      position: absolute;
+      left: 50%;
+      bottom: calc(118px + env(safe-area-inset-bottom, 0px));
+      transform: translateX(-50%);
+      z-index: 6;
+      gap: 8px;
+      padding: 5px;
+      border-radius: 999px;
+      background: rgba(0, 0, 0, 0.38);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      align-items: center;
+      justify-content: center;
+    }
+
+    .stage.mode-camera.streaming .cam-zoom-row {
+      display: inline-flex;
+    }
+
+    .cam-zoom-btn {
+      min-width: 40px;
+      height: 40px;
+      border: none;
+      border-radius: 50%;
+      background: transparent;
+      color: rgba(255, 255, 255, 0.78);
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      cursor: pointer;
+      padding: 0 8px;
+    }
+
+    .cam-zoom-btn.active {
+      background: rgba(255, 214, 10, 0.95);
+      color: #111;
+    }
+
     .btn-shutter {
       width: 74px;
       height: 74px;
@@ -1535,7 +2093,10 @@
         <div class="brand-mark" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5l1.7 5.2H19l-4.2 3.1 1.6 5.2L12 12.9 7.6 16l1.6-5.2L5 7.7h5.3L12 2.5z"/></svg>
         </div>
-        <h1>ЧудоБот - Логистика</h1>
+        <div class="brand-text">
+          <h1>ЧудоБот - Логистика</h1>
+          <div class="admin-badge" id="adminBadge"></div>
+        </div>
       </div>
       <button type="button" class="icon-btn" id="btnMenu" aria-label="Меню" title="Меню">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1563,6 +2124,7 @@
   <div class="fab-bar">
     <div class="fab-row">
       <button type="button" class="btn-primary" id="btnAdd">Добавить</button>
+      <button type="button" class="btn-secondary" id="btnMap" title="Карта">Карта</button>
       <button type="button" class="btn-secondary" id="btnRepeat" disabled title="Повторить">Повтор</button>
     </div>
   </div>
@@ -1646,6 +2208,7 @@
         <div class="field">
           <label for="noteInput">#note</label>
           <textarea id="noteInput" maxlength="500" placeholder="note"></textarea>
+          <div class="note-chips" id="noteChips"></div>
         </div>
 
         <div class="form-actions">
@@ -1669,13 +2232,13 @@
         </button>
       </div>
       <div class="menu-list">
-        <button type="button" class="menu-item" id="btnOpenSettings">
-          <span>Цены</span>
-          <span class="hint">₽</span>
+        <button type="button" class="menu-item" id="btnOpenMap">
+          <span>Карта</span>
+          <span class="hint">GPS</span>
         </button>
-        <button type="button" class="menu-item" id="btnExportCsv">
-          <span>CSV</span>
-          <span class="hint">export</span>
+        <button type="button" class="menu-item" id="btnOpenSettings">
+          <span>Настройки</span>
+          <span class="hint">цены · шаблоны</span>
         </button>
         <button type="button" class="menu-item" id="btnSyncServer">
           <span>Sync</span>
@@ -1711,7 +2274,66 @@
         <div id="priceRows"></div>
       </div>
 
+      <div class="settings-block">
+        <h3>Шаблоны описания</h3>
+        <div class="tpl-list" id="tplList"></div>
+        <div class="tpl-add">
+          <input type="text" id="tplInput" maxlength="80" placeholder="например: под камнем" />
+          <button type="button" id="btnAddTpl">+</button>
+        </div>
+      </div>
+
+      <div class="settings-block">
+        <h3>Склад</h3>
+        <div class="admin-badge" id="settingsWarehouseHint" style="margin:0;font-size:12px;line-height:1.45"></div>
+      </div>
+
       <button type="button" class="btn-primary" id="btnSaveSettings" style="width:100%">Сохранить настройки</button>
+    </div>
+  </div>
+
+  <!-- MAP -->
+  <div class="map-screen" id="mapScreen" aria-hidden="true">
+    <div class="map-top">
+      <div>
+        <h2>Карта кладов</h2>
+        <div class="sub" id="mapSub">—</div>
+      </div>
+      <button type="button" class="icon-btn" id="btnCloseMap" aria-label="Закрыть">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M6 6l12 12M18 6L6 18" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+    <div class="map-layers" id="mapLayers" role="toolbar" aria-label="Слои карты">
+      <button type="button" class="map-layer-btn active" data-layer="zones">Зоны 50м</button>
+      <button type="button" class="map-layer-btn active" data-layer="warn">Кольцо 150м</button>
+      <button type="button" class="map-layer-btn active" data-layer="spacing">Дистанция 25м</button>
+      <div class="map-basemap" id="mapBasemap" role="group" aria-label="Вид карты">
+        <button type="button" class="active" data-basemap="scheme">Схема</button>
+        <button type="button" data-basemap="sat">Спутник</button>
+      </div>
+    </div>
+    <div class="map-canvas-wrap">
+      <div class="map-canvas" id="mapCanvas"></div>
+      <div class="map-legend" id="mapLegend">
+        <div class="row"><span class="swatch crit"></span>запрет &lt;50 м (школа, сад, МВД…)</div>
+        <div class="row"><span class="swatch warn"></span>осторожно до ~150 м</div>
+        <div class="row"><span class="swatch space"></span>между кладами &lt;25 м</div>
+      </div>
+      <div class="map-sheet" id="mapSheet" aria-expanded="false">
+        <div class="map-sheet-handle" id="mapSheetHandle">
+          <div class="map-sheet-grip"></div>
+          <div class="map-sheet-head">
+            <div>
+              <div class="title" id="mapSheetTitle">Список кладов</div>
+              <div class="hint" id="mapSheetHint">нажми, чтобы открыть</div>
+            </div>
+            <button type="button" class="map-sheet-toggle" id="mapSheetToggle">Открыть</button>
+          </div>
+        </div>
+        <div class="map-sheet-body" id="mapSheetBody"></div>
+      </div>
     </div>
   </div>
 
@@ -1727,6 +2349,7 @@
       <video id="stageVideo" class="hidden" playsinline muted autoplay></video>
       <img id="stageImage" class="stage-img hidden" alt="Снимок" />
       <canvas id="stageCanvas"></canvas>
+      <div class="cam-zoom-row act-cam" id="camZoomRow" aria-label="Зум"></div>
     </div>
     <div class="stage-bar">
       <div class="stage-hint" id="stageHint"></div>
@@ -1824,6 +2447,8 @@
 
   <div class="toast" id="toast"></div>
 
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
   <script>
   (function () {
     "use strict";
@@ -1832,8 +2457,10 @@
     const STORAGE_PRICES_BASE = "logistics_prices_v3";
     const STORAGE_DRAFT_BASE = "logistics_draft_v2";
     const STORAGE_LAST_BASE = "logistics_last_v2";
+    const STORAGE_NOTES_BASE = "logistics_note_templates_v1";
     const STORAGE_TG_UID = "logistics_tg_uid";
     const MAX_PHOTOS = 5;
+    const DEFAULT_NOTE_TEMPLATES = ["под камнем", "1–2 см", "под колесом"];
 
     const LOCATIONS = [
       { id: "warehouse_1", label: "Тайник" },
@@ -1865,10 +2492,57 @@
 
     /** @type {Array<Object>} */
     let items = [];
+    let isLocalDevSession = false;
     let prices = { ...DEFAULT_PRICES };
+    let noteTemplates = DEFAULT_NOTE_TEMPLATES.slice();
     let activeFilter = "all";
     let suppressDraft = false;
     let editingId = null;
+    let mapInstance = null;
+    let mapCluster = null;
+    let mapMarkersByStreet = {};
+    let mapMarkersById = {};
+    let mapZonesLayer = null;
+    let mapWarnLayer = null;
+    let mapSpacingLayer = null;
+    let mapLayerState = { zones: true, warn: true, spacing: true };
+    let mapCriticalZones = [];
+    let mapBaseMode = "scheme";
+    let mapTileLayer = null;
+    let mapSheetOpen = false;
+    let mapSheetRiskById = {};
+    let mapSheetGeoItems = [];
+    let mapSheetDrag = null;
+    let mapAbortController = null;
+    let mapItemsFingerprint = "";
+    let mapCanvasRenderer = null;
+    let mapZoneLabelsLayer = null;
+    let mapLabelZones = [];
+    let mapOpenSeq = 0;
+    const mapOverpassCache = {};
+    const mapOverpassInflight = {};
+
+    const MAP_CRIT_M = 50;
+    const MAP_WARN_M = 150;
+    const MAP_STASH_MIN_M = 25;
+    const MAP_OVERPASS_PAD_M = 450;
+    const MAP_ZONES_TTL_MS = 12 * 60 * 60 * 1000;
+    const MAP_ZONES_STORAGE = "logistics_map_zones_v1";
+    const MAP_LABEL_ZOOM = 14;
+    const OVERPASS_URLS = [
+      "https://overpass.kumi.systems/api/interpreter",
+      "https://overpass-api.de/api/interpreter"
+    ];
+    const MAP_TILES = {
+      scheme: {
+        url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+        options: { maxZoom: 19, updateWhenIdle: true, keepBuffer: 2 }
+      },
+      sat: {
+        url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+        options: { maxZoom: 19, updateWhenIdle: true, keepBuffer: 2 }
+      }
+    };
 
     /** Form photos being composed */
     let formPhotos = [];
@@ -1876,6 +2550,11 @@
     /** Stage state */
     let mediaStream = null;
     let torchOn = false;
+    let camZoomLevel = 1;
+    let camZoomCaps = null;
+    let camZoomHardware = false;
+    let camPinchStartDist = 0;
+    let camPinchStartZoom = 1;
     let stageRaw = "";
     let stageStrokes = [];
     let stageCurrent = null;
@@ -1942,6 +2621,7 @@
       noteInput: $("noteInput"),
       heavyAlert: $("heavyAlert"),
       btnAdd: $("btnAdd"),
+      btnMap: $("btnMap"),
       btnRepeat: $("btnRepeat"),
       btnCloseForm: $("btnCloseForm"),
       btnCancelForm: $("btnCancelForm"),
@@ -1949,17 +2629,37 @@
       btnMenu: $("btnMenu"),
       btnCloseMenu: $("btnCloseMenu"),
       btnOpenSettings: $("btnOpenSettings"),
+      btnOpenMap: $("btnOpenMap"),
       btnCloseSettings: $("btnCloseSettings"),
       btnSaveSettings: $("btnSaveSettings"),
-      btnExportCsv: $("btnExportCsv"),
       btnSyncServer: $("btnSyncServer"),
       btnSendToBot: $("btnSendToBot"),
       btnCloseApp: $("btnCloseApp"),
+      mapScreen: $("mapScreen"),
+      mapCanvas: $("mapCanvas"),
+      mapSheet: $("mapSheet"),
+      mapSheetHandle: $("mapSheetHandle"),
+      mapSheetBody: $("mapSheetBody"),
+      mapSheetTitle: $("mapSheetTitle"),
+      mapSheetHint: $("mapSheetHint"),
+      mapSheetToggle: $("mapSheetToggle"),
+      mapBasemap: $("mapBasemap"),
+      mapSub: $("mapSub"),
+      mapLayers: $("mapLayers"),
+      mapLegend: $("mapLegend"),
+      btnCloseMap: $("btnCloseMap"),
+      noteChips: $("noteChips"),
+      tplList: $("tplList"),
+      tplInput: $("tplInput"),
+      btnAddTpl: $("btnAddTpl"),
+      adminBadge: $("adminBadge"),
+      settingsWarehouseHint: $("settingsWarehouseHint"),
       toast: $("toast"),
       stage: $("stage"),
       stageViewport: $("stageViewport"),
       stageIdle: $("stageIdle"),
       stageVideo: $("stageVideo"),
+      camZoomRow: $("camZoomRow"),
       stageImage: $("stageImage"),
       stageCanvas: $("stageCanvas"),
       stageHint: $("stageHint"),
@@ -2037,14 +2737,35 @@
     }
 
     function migrateScopedStorage(base) {
-      const scoped = storageKey(base);
-      if (scoped === base) return scoped;
-      try {
-        if (!localStorage.getItem(scoped) && localStorage.getItem(base)) {
-          localStorage.setItem(scoped, localStorage.getItem(base));
-        }
-      } catch (_) { /* ignore */ }
-      return scoped;
+      // Только ключи своего Telegram ID — склады админов не смешиваем.
+      return storageKey(base);
+    }
+
+    function loadNoteTemplates() {
+      const raw = loadJSON(migrateScopedStorage(STORAGE_NOTES_BASE), null);
+      if (Array.isArray(raw) && raw.length) {
+        noteTemplates = raw
+          .map((t) => String(t || "").trim())
+          .filter(Boolean)
+          .slice(0, 24);
+      } else {
+        noteTemplates = DEFAULT_NOTE_TEMPLATES.slice();
+      }
+      return noteTemplates;
+    }
+
+    function saveNoteTemplates() {
+      return saveJSON(migrateScopedStorage(STORAGE_NOTES_BASE), noteTemplates.slice(0, 24));
+    }
+
+    function updateAdminBadge() {
+      const uid = resolveTelegramUserId();
+      const text = uid ? ("склад · " + uid) : "склад · —";
+      if (els.adminBadge) els.adminBadge.textContent = text;
+      if (els.settingsWarehouseHint) {
+        els.settingsWarehouseHint.textContent =
+          "Позиции и фото только вашего Telegram ID. Другие админы видят свой склад отдельно.";
+      }
     }
 
     function getTelegramInitData() {
@@ -2105,24 +2826,27 @@
       return "/api/photo/" + encodeURIComponent(itemId) + "/" + encodeURIComponent(photoId);
     }
 
+    function photoApiPath(url) {
+      if (!url || isDataUrl(url)) return "";
+      const q = String(url).indexOf("?");
+      return q >= 0 ? String(url).slice(0, q) : String(url);
+    }
+
     function authPhotoUrl(url) {
+      // Не кладём initData в query — Telegram initData слишком длинный для <img src>.
+      // Авторизация идёт через fetch + заголовок (hydrateCardPhotos / fetchPhotoAsDataUrl).
       if (!url || isDataUrl(url)) return url || "";
       if (/^https?:\/\//i.test(url)) return url;
+      const path = photoApiPath(url) || url;
       const userId = resolveTelegramUserId() || 0;
-      const initData = getTelegramInitData() || "";
-      const sep = url.indexOf("?") >= 0 ? "&" : "?";
-      return (
-        url +
-        sep +
-        "userId=" + encodeURIComponent(String(userId)) +
-        "&initData=" + encodeURIComponent(initData)
-      );
+      return path + (path.indexOf("?") >= 0 ? "&" : "?") + "userId=" + encodeURIComponent(String(userId));
     }
 
     function photoDisplaySrc(photo) {
       if (!photo) return "";
       if (isDataUrl(photo.final)) return photo.final;
       if (isDataUrl(photo.raw)) return photo.raw;
+      if (photo._blobUrl) return photo._blobUrl;
       if (photo.url) return authPhotoUrl(photo.url);
       if (photo.final) return authPhotoUrl(photo.final);
       if (photo.raw) return authPhotoUrl(photo.raw);
@@ -2133,6 +2857,7 @@
       if (!photo) return "";
       if (isDataUrl(photo.raw)) return photo.raw;
       if (isDataUrl(photo.final)) return photo.final;
+      if (photo._blobUrl) return photo._blobUrl;
       if (photo.url) return authPhotoUrl(photo.url);
       if (photo.raw) return authPhotoUrl(photo.raw);
       if (photo.final) return authPhotoUrl(photo.final);
@@ -2222,11 +2947,13 @@
       const slim = slimItemsForStorage(nextItems);
       if (saveJSON(migrateScopedStorage(STORAGE_ITEMS_BASE), slim)) {
         items = slim;
+        mapItemsFingerprint = "";
         return true;
       }
       const urlsOnly = stripItemsToUrls(nextItems);
       if (saveJSON(migrateScopedStorage(STORAGE_ITEMS_BASE), urlsOnly)) {
         items = urlsOnly;
+        mapItemsFingerprint = "";
         return true;
       }
       showToast("Мало места — удалите старые или синхронизируйте", true);
@@ -2406,6 +3133,18 @@
       let photos = [];
       if (Array.isArray(raw.photos) && raw.photos.length) {
         photos = raw.photos.map(migratePhoto).filter(Boolean);
+        photos.forEach((p) => {
+          if (
+            p &&
+            !p.url &&
+            raw.id &&
+            p.id &&
+            !isDataUrl(p.final) &&
+            !isDataUrl(p.raw)
+          ) {
+            p.url = photoApiUrl(raw.id, p.id);
+          }
+        });
       } else if (raw.photo) {
         photos = [migratePhoto(raw.photo, 0)].filter(Boolean);
       }
@@ -2580,16 +3319,65 @@
       if (!addr) return "";
       const raw = String(addr).trim();
       if (!raw || raw === "Определяем адрес…" || raw === "Адрес не найден") return "";
-      const dropPart = /(район|область|обл\.?|республика|край|округ|^г\.|город|муницип|село|деревня|посёл|поселок|пгт)/i;
-      const parts = raw.split(",").map((p) => p.trim()).filter(Boolean);
-      const kept = parts.filter((p) => !dropPart.test(p));
-      const streetish = kept.filter((p) =>
-        /^(ул\.|улица|пер\.|переулок|просп|пр-т|пр\.|ш\.|шоссе|наб\.|бул|бульвар|дом|д\.|проезд|пл\.|площадь)/i.test(p) ||
-        /^\d+[а-яa-z]?$/i.test(p)
-      );
-      // только улица/дом — без города и района
-      if (streetish.length) return streetish.slice(0, 2).join(", ");
-      return "";
+
+      const dropPart =
+        /(район|область|обл\.?|республика|край|округ|^г\.|^город\b|муницип|село|деревня|посёл|поселок|пгт|^ru$|^россия$|^иваново$)/i;
+      const parts = raw
+        .split(",")
+        .map((p) => p.trim())
+        .filter(Boolean)
+        .filter((p) => !dropPart.test(p));
+
+      const isHouse = (p) =>
+        /^(д\.?\s*)?\d+[а-яa-z]?(?:\s*[\/\-]\s*\d+[а-яa-z]?)?$/i.test(String(p || "").trim()) ||
+        /^стр\.?\s*\d+/i.test(String(p || "").trim()) ||
+        /^\d+\s*с\d+/i.test(String(p || "").trim());
+
+      const isStreet = (p) => {
+        const s = String(p || "").trim();
+        if (!s || isHouse(s)) return false;
+        return (
+          /^(ул\.|улица|пер\.|переулок|просп|пр-т|пр\.|ш\.|шоссе|наб\.|бул|бульвар|проезд|пл\.|площадь|аллея|тракт|линия)/i.test(s) ||
+          /(ул\.|улица|пер\.|переулок|проспект|пр-т|шоссе|набережная|бульвар|проезд|площадь|аллея)\s*$/i.test(s) ||
+          /\b(улица|переулок|проспект|шоссе|набережная|бульвар|проезд|площадь)\b/i.test(s)
+        );
+      };
+
+      for (let i = 0; i < parts.length; i++) {
+        if (!isStreet(parts[i])) continue;
+        const out = [parts[i]];
+        if (parts[i + 1] && isHouse(parts[i + 1])) out.push(parts[i + 1]);
+        return out.join(", ");
+      }
+
+      // «7, Яблочная улица» → улица, дом
+      if (parts.length >= 2 && isHouse(parts[0]) && isStreet(parts[1])) {
+        return parts[1] + ", " + parts[0];
+      }
+
+      // Не возвращаем голый номер дома
+      if (parts.length === 1 && isHouse(parts[0])) return "";
+      if (!parts.length) return "";
+      if (isHouse(parts[0])) {
+        const rest = parts.filter((p) => !isHouse(p));
+        return rest[0] || "";
+      }
+      return parts.slice(0, 2).join(", ");
+    }
+
+    function itemDisplayAddress(item) {
+      const raw = (item && item.geo && item.geo.address) || "";
+      return streetOnlyAddress(raw) || String(raw || "").trim() || "без адреса";
+    }
+
+    function itemStreetName(item) {
+      const full = itemDisplayAddress(item);
+      if (!full || full === "без адреса") return "без адреса";
+      const stripped = full
+        .replace(/,\s*(д\.?\s*)?\d+[а-яa-z]?(?:\s*[\/\-]\s*\d+[а-яa-z]?)?$/i, "")
+        .replace(/,\s*\d+\s*с\d+$/i, "")
+        .trim();
+      return stripped || full;
     }
 
     function buildAddressFromGeoData(data) {
@@ -2970,6 +3758,7 @@
 
       els.locStats.innerHTML = LOCATIONS.map((l) => {
         const s = byLoc[l.id];
+        if (!s || !s.count) return "";
         return (
           '<div class="loc-stat">' +
             '<div class="name">#' + escapeHtml(l.label.toLowerCase()) + "</div>" +
@@ -2982,8 +3771,14 @@
 
     function renderFilters() {
       const chips = [{ id: "all", label: "Все" }].concat(
-        LOCATIONS.map((l) => ({ id: l.id, label: l.label }))
+        LOCATIONS.filter((l) => {
+          const s = computeStats().byLoc[l.id];
+          return s && s.count > 0;
+        }).map((l) => ({ id: l.id, label: l.label }))
       );
+      if (activeFilter !== "all" && !chips.some((c) => c.id === activeFilter)) {
+        activeFilter = "all";
+      }
       els.filterChips.innerHTML = chips.map((c) => {
         const active = c.id === activeFilter ? " active" : "";
         return (
@@ -2998,6 +3793,15 @@
       return photoDisplaySrc(item.photos[0]);
     }
 
+    function firstPhotoFetchPath(item) {
+      if (!item.photos || !item.photos.length) return "";
+      const p = item.photos[0];
+      if (!p) return "";
+      if (isDataUrl(p.final) || isDataUrl(p.raw) || p._blobUrl) return "";
+      const raw = p.url || photoApiUrl(item.id, p.id || "p1");
+      return photoApiPath(raw) || raw;
+    }
+
     function renderList() {
       const list = getFilteredItems();
       if (!list.length) {
@@ -3010,6 +3814,7 @@
         const revenue = itemRevenue(item);
         const heavy = Number(item.weight) > HEAVY_WEIGHT_G;
         const thumb = firstPhotoSrc(item);
+        const fetchPath = firstPhotoFetchPath(item);
         const loc = locationLabel(item.location);
         const pill =
           formatGrams(item.weight) + " · " + formatRub(revenue) +
@@ -3022,8 +3827,10 @@
             '</div>' +
             '<div class="card-code" aria-hidden="true"></div>' +
             '<div class="card-glass">' +
-              (thumb
-                ? '<img class="card-photo" src="' + escapeAttr(thumb) + '" alt="" />'
+              (thumb || fetchPath
+                ? '<img class="card-photo" src="' + escapeAttr(thumb || "") + '"' +
+                  (fetchPath ? ' data-fetch="' + escapeAttr(fetchPath) + '"' : "") +
+                  ' alt="" />'
                 : '<div class="card-photo placeholder">—</div>') +
             '</div>' +
             '<div class="card-foot">' +
@@ -3054,6 +3861,7 @@
       renderFilters();
       renderList();
       updateRepeatButton();
+      hydrateCardPhotos();
     }
 
     function updateRepeatButton() {
@@ -3082,10 +3890,22 @@
       }).join("");
     }
 
-    function openGallery(itemId, startIndex) {
+    async function openGallery(itemId, startIndex) {
       const item = items.find((i) => i.id === itemId);
       if (!item) return;
-      const sources = itemPhotoSources(item);
+      const sources = [];
+      for (let i = 0; i < (item.photos || []).length; i++) {
+        const p = item.photos[i];
+        let src = photoDisplaySrc(p);
+        if (src && !isDataUrl(src) && String(src).indexOf("blob:") !== 0) {
+          try {
+            src = await fetchPhotoAsDataUrl(p.url || src);
+          } catch (_) {
+            src = "";
+          }
+        }
+        if (src) sources.push(src);
+      }
       if (!sources.length) {
         showToast("нет фото");
         return;
@@ -3511,7 +4331,17 @@
     async function fetchPhotoAsDataUrl(src) {
       if (!src) return "";
       if (isDataUrl(src)) return src;
-      const res = await fetch(src);
+      if (String(src).indexOf("blob:") === 0) return src;
+      const path = photoApiPath(src) || src;
+      const userId = resolveTelegramUserId() || 0;
+      const initData = getTelegramInitData() || "";
+      const url =
+        path +
+        (path.indexOf("?") >= 0 ? "&" : "?") +
+        "userId=" + encodeURIComponent(String(userId));
+      const res = await fetch(url, {
+        headers: { "X-Telegram-Init-Data": initData }
+      });
       if (!res.ok) throw new Error("photo fetch failed");
       const blob = await res.blob();
       return await new Promise((resolve, reject) => {
@@ -3520,6 +4350,29 @@
         reader.onerror = () => reject(new Error("read failed"));
         reader.readAsDataURL(blob);
       });
+    }
+
+    async function hydrateCardPhotos() {
+      const imgs = els.itemsList.querySelectorAll("img.card-photo[data-fetch]");
+      for (let i = 0; i < imgs.length; i++) {
+        const img = imgs[i];
+        const path = img.getAttribute("data-fetch") || "";
+        if (!path) continue;
+        try {
+          const dataUrl = await fetchPhotoAsDataUrl(path);
+          if (dataUrl) {
+            img.src = dataUrl;
+            img.removeAttribute("data-fetch");
+          }
+        } catch (_) {
+          img.replaceWith(
+            Object.assign(document.createElement("div"), {
+              className: "card-photo placeholder",
+              textContent: "—"
+            })
+          );
+        }
+      }
     }
 
     /* ── Stage (fullscreen static camera + draw) ── */
@@ -3626,10 +4479,146 @@
         mediaStream = null;
       }
       torchOn = false;
+      camZoomCaps = null;
+      camZoomHardware = false;
+      camZoomLevel = 1;
+      if (els.stageVideo) els.stageVideo.style.transform = "";
+      if (els.camZoomRow) els.camZoomRow.innerHTML = "";
       els.stageVideo.srcObject = null;
       els.stageVideo.classList.add("hidden");
       els.stage.classList.remove("streaming");
       updateFlashButton();
+    }
+
+    function refreshCamZoomCaps() {
+      camZoomCaps = null;
+      camZoomHardware = false;
+      const track = getCameraTrack();
+      if (!track || typeof track.getCapabilities !== "function") return;
+      try {
+        const caps = track.getCapabilities() || {};
+        if (caps.zoom && typeof caps.zoom.min === "number" && typeof caps.zoom.max === "number") {
+          camZoomCaps = {
+            min: Number(caps.zoom.min),
+            max: Number(caps.zoom.max),
+            step: Number(caps.zoom.step) || 0.1
+          };
+          camZoomHardware = camZoomCaps.max > camZoomCaps.min;
+        }
+      } catch (_) { /* ignore */ }
+    }
+
+    function camZoomLevels() {
+      const levels = [1];
+      if (camZoomHardware && camZoomCaps) {
+        if (camZoomCaps.min <= 0.7) levels.unshift(0.5);
+        if (camZoomCaps.max >= 1.8) levels.push(2);
+        if (camZoomCaps.max >= 2.8) levels.push(3);
+      } else {
+        // цифровой зум, если аппаратный недоступен
+        levels.unshift(0.5);
+        levels.push(2);
+      }
+      return levels;
+    }
+
+    function formatZoomLabel(level) {
+      if (level === 0.5) return "0.5";
+      if (level === 1) return "1×";
+      return String(level) + "×";
+    }
+
+    function renderCamZoomUi() {
+      if (!els.camZoomRow) return;
+      const levels = camZoomLevels();
+      els.camZoomRow.innerHTML = levels.map((z) => {
+        const active = Math.abs(z - camZoomLevel) < 0.05 ? " active" : "";
+        return (
+          '<button type="button" class="cam-zoom-btn' + active + '" data-zoom="' +
+          z + '" aria-label="Зум ' + formatZoomLabel(z) + '">' +
+          formatZoomLabel(z) +
+          "</button>"
+        );
+      }).join("");
+    }
+
+    function hardwareZoomValue(level) {
+      if (!camZoomCaps) return level;
+      if (level <= 0.5) return camZoomCaps.min;
+      if (level <= 1) {
+        // «1×» — базовый зум (часто 1, иначе ближайшее к 1 в диапазоне)
+        return Math.min(camZoomCaps.max, Math.max(camZoomCaps.min, 1));
+      }
+      return Math.min(camZoomCaps.max, Math.max(camZoomCaps.min, level));
+    }
+
+    async function applyCamZoom(level, options) {
+      options = options || {};
+      const levels = camZoomLevels();
+      let next = Number(level);
+      if (!isFinite(next)) next = 1;
+      if (!options.free) {
+        // snap к ближайшему пресету
+        next = levels.reduce((best, z) =>
+          Math.abs(z - next) < Math.abs(best - next) ? z : best
+        , levels[0]);
+      } else {
+        const minL = Math.min.apply(null, levels);
+        const maxL = Math.max.apply(null, levels);
+        next = Math.min(maxL, Math.max(minL, next));
+      }
+      camZoomLevel = next;
+
+      const track = getCameraTrack();
+      let hwOk = false;
+      if (camZoomHardware && track) {
+        const zoomVal = hardwareZoomValue(next);
+        try {
+          await track.applyConstraints({ advanced: [{ zoom: zoomVal }] });
+          hwOk = true;
+        } catch (_) {
+          try {
+            await track.applyConstraints({ zoom: zoomVal });
+            hwOk = true;
+          } catch (_2) {
+            hwOk = false;
+          }
+        }
+      }
+
+      if (els.stageVideo) {
+        if (hwOk) {
+          els.stageVideo.style.transform = "";
+        } else {
+          // цифровой зум: 0.5 = шире (scale down + later crop? for 0.5 we show more = scale < 1 with letterbox)
+          // для простоты: 0.5 → scale(1) с object-fit cover уже «широкий»; 2 → scale(2)
+          const digital = next <= 1 ? 1 : next;
+          els.stageVideo.style.transform = digital > 1.01 ? "scale(" + digital + ")" : "";
+          els.stageVideo.style.transformOrigin = "center center";
+        }
+      }
+      renderCamZoomUi();
+    }
+
+    function captureZoomCrop(video) {
+      const vw = video.videoWidth;
+      const vh = video.videoHeight;
+      const level = camZoomLevel > 1 && !camZoomHardware ? camZoomLevel : 1;
+      if (level <= 1.01) {
+        return { sx: 0, sy: 0, sw: vw, sh: vh };
+      }
+      const sw = Math.max(1, Math.floor(vw / level));
+      const sh = Math.max(1, Math.floor(vh / level));
+      const sx = Math.floor((vw - sw) / 2);
+      const sy = Math.floor((vh - sh) / 2);
+      return { sx: sx, sy: sy, sw: sw, sh: sh };
+    }
+
+    function pinchDistance(touches) {
+      if (!touches || touches.length < 2) return 0;
+      const dx = touches[0].clientX - touches[1].clientX;
+      const dy = touches[0].clientY - touches[1].clientY;
+      return Math.hypot(dx, dy);
     }
 
     function updateDrawButtons() {
@@ -3898,6 +4887,7 @@
       els.stageImage.classList.add("hidden");
       els.stageIdle.classList.remove("hidden");
       torchOn = false;
+      camZoomLevel = 1;
       updateFlashButton();
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         els.photoInput.click();
@@ -3909,8 +4899,8 @@
           audio: false,
           video: {
             facingMode: { ideal: "environment" },
-            width: { ideal: 1280 },
-            height: { ideal: 960 }
+            width: { ideal: 1920 },
+            height: { ideal: 1080 }
           }
         });
         els.stageVideo.srcObject = mediaStream;
@@ -3918,6 +4908,8 @@
         els.stage.classList.add("streaming");
         els.stageVideo.classList.remove("hidden");
         els.stageIdle.classList.add("hidden");
+        refreshCamZoomCaps();
+        await applyCamZoom(1);
         updateFlashButton();
         haptic("light");
       } catch (_) {
@@ -4072,10 +5064,11 @@
         return;
       }
       const canvas = document.createElement("canvas");
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
+      const crop = captureZoomCrop(video);
+      canvas.width = crop.sw;
+      canvas.height = crop.sh;
       const ctx = canvas.getContext("2d");
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      ctx.drawImage(video, crop.sx, crop.sy, crop.sw, crop.sh, 0, 0, crop.sw, crop.sh);
       let dataUrl;
       try {
         dataUrl = canvas.toDataURL("image/jpeg", 0.8);
@@ -4284,6 +5277,7 @@
       }
 
       suppressDraft = false;
+      renderNoteChips();
       openOverlay(els.formOverlay);
       haptic("light");
       acquirePreciseGeo({ keepBest: !!currentGeo, quiet: true });
@@ -4300,6 +5294,8 @@
 
     function openSettings() {
       renderPriceSettings();
+      renderTemplateSettings();
+      updateAdminBadge();
       closeOverlay(els.menuOverlay);
       openOverlay(els.settingsOverlay);
     }
@@ -4318,6 +5314,902 @@
           "</div>"
         );
       }).join("");
+    }
+
+    function renderTemplateSettings() {
+      if (!els.tplList) return;
+      loadNoteTemplates();
+      els.tplList.innerHTML = noteTemplates.map((t, idx) => {
+        return (
+          '<div class="tpl-row" data-idx="' + idx + '">' +
+            "<span>" + escapeHtml(t) + "</span>" +
+            '<button type="button" data-del-tpl="' + idx + '">✕</button>' +
+          "</div>"
+        );
+      }).join("") || '<div class="admin-badge" style="margin:0">пока пусто — добавьте шаблон</div>';
+    }
+
+    function renderNoteChips() {
+      if (!els.noteChips) return;
+      loadNoteTemplates();
+      els.noteChips.innerHTML = noteTemplates.map((t) => {
+        return (
+          '<button type="button" class="note-chip" data-note-tpl="' +
+          escapeAttr(t) + '">' + escapeHtml(t) + "</button>"
+        );
+      }).join("");
+    }
+
+    function applyNoteTemplate(text) {
+      const t = String(text || "").trim();
+      if (!t || !els.noteInput) return;
+      const cur = String(els.noteInput.value || "").trim();
+      els.noteInput.value = cur ? (cur + (cur.endsWith(".") ? " " : ", ") + t) : t;
+      saveDraft();
+      haptic("light");
+    }
+
+    function itemStreetKey(item) {
+      return itemStreetName(item);
+    }
+
+    function itemsWithGeo() {
+      return (items || []).filter((it) => {
+        const g = it && it.geo;
+        return g && isFinite(Number(g.latitude)) && isFinite(Number(g.longitude));
+      });
+    }
+
+    function groupItemsByStreet(list) {
+      const map = {};
+      list.forEach((it) => {
+        const key = itemStreetKey(it);
+        if (!map[key]) map[key] = [];
+        map[key].push(it);
+      });
+      return Object.keys(map)
+        .map((street) => ({
+          street: street,
+          items: map[street],
+          count: map[street].length,
+          lat: map[street].reduce((s, i) => s + Number(i.geo.latitude), 0) / map[street].length,
+          lon: map[street].reduce((s, i) => s + Number(i.geo.longitude), 0) / map[street].length
+        }))
+        .sort((a, b) => b.count - a.count || a.street.localeCompare(b.street, "ru"));
+    }
+
+    function haversineM(aLat, aLon, bLat, bLon) {
+      const R = 6371000;
+      const toR = Math.PI / 180;
+      const dLat = (bLat - aLat) * toR;
+      const dLon = (bLon - aLon) * toR;
+      const x =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(aLat * toR) * Math.cos(bLat * toR) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      return 2 * R * Math.asin(Math.min(1, Math.sqrt(x)));
+    }
+
+    function expandBBox(bounds, padM) {
+      const midLat = (bounds.south + bounds.north) / 2;
+      const dLat = padM / 111320;
+      const dLon = padM / (111320 * Math.max(0.2, Math.cos(midLat * Math.PI / 180)));
+      return {
+        south: bounds.south - dLat,
+        north: bounds.north + dLat,
+        west: bounds.west - dLon,
+        east: bounds.east + dLon
+      };
+    }
+
+    function geoItemsBBox(geoItems) {
+      let south = Infinity;
+      let north = -Infinity;
+      let west = Infinity;
+      let east = -Infinity;
+      geoItems.forEach((it) => {
+        const lat = Number(it.geo.latitude);
+        const lon = Number(it.geo.longitude);
+        if (lat < south) south = lat;
+        if (lat > north) north = lat;
+        if (lon < west) west = lon;
+        if (lon > east) east = lon;
+      });
+      if (!isFinite(south)) return null;
+      if (south === north) {
+        south -= 0.002;
+        north += 0.002;
+      }
+      if (west === east) {
+        west -= 0.002;
+        east += 0.002;
+      }
+      return expandBBox({ south, north, west, east }, MAP_OVERPASS_PAD_M);
+    }
+
+    function classifyCriticalTags(tags) {
+      tags = tags || {};
+      if (tags.amenity === "school" || tags.amenity === "college") {
+        return { kind: "school", label: "школа" };
+      }
+      if (tags.amenity === "kindergarten" || tags.amenity === "childcare") {
+        return { kind: "kindergarten", label: "детсад" };
+      }
+      if (tags.leisure === "playground") {
+        return { kind: "playground", label: "площадка" };
+      }
+      if (
+        tags.amenity === "police" ||
+        (tags.office === "government" && String(tags.government || "") === "police")
+      ) {
+        return { kind: "police", label: "МВД" };
+      }
+      if (tags.amenity === "place_of_worship" || tags.building === "church" || tags.building === "cathedral") {
+        return { kind: "worship", label: "храм" };
+      }
+      if (tags.landuse === "cemetery" || tags.amenity === "grave_yard") {
+        return { kind: "cemetery", label: "кладбище" };
+      }
+      if (tags.historic === "memorial" || tags.historic === "monument") {
+        return { kind: "memorial", label: "мемориал" };
+      }
+      return null;
+    }
+
+    function criticalZoneTitle(zone) {
+      const name = String((zone && zone.name) || "").trim();
+      const label = (zone && zone.label) || "объект";
+      return name ? (label + " · " + name) : label;
+    }
+
+    function parseOverpassElements(elements) {
+      const out = [];
+      const seen = {};
+      (elements || []).forEach((el) => {
+        const cls = classifyCriticalTags(el.tags);
+        if (!cls) return;
+        let lat = null;
+        let lon = null;
+        if (el.type === "node") {
+          lat = el.lat;
+          lon = el.lon;
+        } else if (el.center) {
+          lat = el.center.lat;
+          lon = el.center.lon;
+        }
+        if (!isFinite(lat) || !isFinite(lon)) return;
+        const key = cls.kind + ":" + lat.toFixed(5) + "," + lon.toFixed(5);
+        if (seen[key]) return;
+        seen[key] = true;
+        out.push({
+          id: String(el.type) + "/" + String(el.id),
+          kind: cls.kind,
+          label: cls.label,
+          name: String((el.tags && (el.tags.name || el.tags["name:ru"])) || "").trim(),
+          lat: Number(lat),
+          lon: Number(lon)
+        });
+      });
+      return out;
+    }
+
+    function bboxCacheKey(bbox) {
+      return [
+        bbox.south.toFixed(3),
+        bbox.west.toFixed(3),
+        bbox.north.toFixed(3),
+        bbox.east.toFixed(3)
+      ].join(":");
+    }
+
+    function readZonesDiskCache(key) {
+      try {
+        const raw = localStorage.getItem(MAP_ZONES_STORAGE);
+        if (!raw) return null;
+        const all = JSON.parse(raw);
+        const hit = all && all[key];
+        if (!hit || !Array.isArray(hit.zones)) return null;
+        if (Date.now() - Number(hit.ts || 0) > MAP_ZONES_TTL_MS) return null;
+        return hit.zones;
+      } catch (_) {
+        return null;
+      }
+    }
+
+    function writeZonesDiskCache(key, zones) {
+      try {
+        let all = {};
+        try {
+          all = JSON.parse(localStorage.getItem(MAP_ZONES_STORAGE) || "{}") || {};
+        } catch (_) {
+          all = {};
+        }
+        const now = Date.now();
+        Object.keys(all).forEach((k) => {
+          if (now - Number((all[k] && all[k].ts) || 0) > MAP_ZONES_TTL_MS) delete all[k];
+        });
+        all[key] = { ts: now, zones: zones };
+        localStorage.setItem(MAP_ZONES_STORAGE, JSON.stringify(all));
+      } catch (_) { /* quota / private mode */ }
+    }
+
+    function getCachedZones(bbox) {
+      if (!bbox) return null;
+      const key = bboxCacheKey(bbox);
+      if (mapOverpassCache[key]) return mapOverpassCache[key];
+      const disk = readZonesDiskCache(key);
+      if (disk) {
+        mapOverpassCache[key] = disk;
+        return disk;
+      }
+      return null;
+    }
+
+    async function fetchCriticalZones(bbox, signal) {
+      const key = bboxCacheKey(bbox);
+      const cached = getCachedZones(bbox);
+      if (cached) return cached;
+      if (mapOverpassInflight[key]) return mapOverpassInflight[key];
+
+      const bb =
+        bbox.south.toFixed(5) + "," +
+        bbox.west.toFixed(5) + "," +
+        bbox.north.toFixed(5) + "," +
+        bbox.east.toFixed(5);
+      // Компактный запрос: меньше селекторов → быстрее Overpass
+      const query =
+        "[out:json][timeout:20];\n" +
+        "(\n" +
+        '  nwr["amenity"~"^(school|college|kindergarten|childcare|police|place_of_worship|grave_yard)$"](' + bb + ");\n" +
+        '  nwr["leisure"="playground"](' + bb + ");\n" +
+        '  nwr["landuse"="cemetery"](' + bb + ");\n" +
+        '  nwr["historic"~"^(memorial|monument)$"](' + bb + ");\n" +
+        '  nwr["building"~"^(church|cathedral)$"](' + bb + ");\n" +
+        '  nwr["office"="government"]["government"="police"](' + bb + ");\n" +
+        ");\nout center tags;";
+
+      mapOverpassInflight[key] = (async () => {
+        let lastErr = null;
+        for (let i = 0; i < OVERPASS_URLS.length; i++) {
+          if (signal && signal.aborted) throw new DOMException("aborted", "AbortError");
+          try {
+            const res = await fetch(OVERPASS_URLS[i], {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+                "Accept": "application/json"
+              },
+              body: "data=" + encodeURIComponent(query),
+              signal: signal || undefined
+            });
+            if (!res.ok) {
+              lastErr = new Error("overpass " + res.status);
+              continue;
+            }
+            const data = await res.json();
+            const zones = parseOverpassElements(data.elements || []);
+            mapOverpassCache[key] = zones;
+            writeZonesDiskCache(key, zones);
+            return zones;
+          } catch (err) {
+            if (err && err.name === "AbortError") throw err;
+            lastErr = err;
+          }
+        }
+        throw lastErr || new Error("overpass failed");
+      })();
+
+      try {
+        return await mapOverpassInflight[key];
+      } finally {
+        delete mapOverpassInflight[key];
+      }
+    }
+
+    function prefetchMapZones() {
+      try {
+        const geoItems = itemsWithGeo();
+        const bbox = geoItemsBBox(geoItems);
+        if (!bbox || getCachedZones(bbox)) return;
+        fetchCriticalZones(bbox).catch(() => { /* quiet */ });
+      } catch (_) { /* ignore */ }
+    }
+
+    function nearestCritical(lat, lon, zones) {
+      let best = null;
+      (zones || []).forEach((z) => {
+        const d = haversineM(lat, lon, z.lat, z.lon);
+        if (!best || d < best.dist) best = { zone: z, dist: d };
+      });
+      return best;
+    }
+
+    function analyzeStashRisks(geoItems, zones) {
+      const byId = {};
+      geoItems.forEach((it) => {
+        const lat = Number(it.geo.latitude);
+        const lon = Number(it.geo.longitude);
+        const near = nearestCritical(lat, lon, zones);
+        const critical = !!(near && near.dist <= MAP_CRIT_M);
+        const soft = !!(near && near.dist <= MAP_WARN_M);
+        byId[it.id] = {
+          item: it,
+          lat,
+          lon,
+          near,
+          critical,
+          soft,
+          neighbors: []
+        };
+      });
+
+      const ids = Object.keys(byId);
+      for (let i = 0; i < ids.length; i++) {
+        for (let j = i + 1; j < ids.length; j++) {
+          const a = byId[ids[i]];
+          const b = byId[ids[j]];
+          const d = haversineM(a.lat, a.lon, b.lat, b.lon);
+          if (d < MAP_STASH_MIN_M) {
+            a.neighbors.push({ id: ids[j], dist: d });
+            b.neighbors.push({ id: ids[i], dist: d });
+          }
+        }
+      }
+      return byId;
+    }
+
+    function stashPinClass(risk) {
+      if (!risk) return "map-pin";
+      if (risk.critical && risk.neighbors.length) return "map-pin both";
+      if (risk.critical) return "map-pin crit";
+      if (risk.neighbors.length) return "map-pin space";
+      return "map-pin";
+    }
+
+    function itemsGeoFingerprint(geoItems) {
+      return (geoItems || [])
+        .map((it) => {
+          return String(it.id) + ":" + Number(it.geo.latitude).toFixed(5) + ":" + Number(it.geo.longitude).toFixed(5);
+        })
+        .join("|");
+    }
+
+    function applyMapLayerVisibility() {
+      if (!mapInstance) return;
+      if (mapZonesLayer) {
+        if (mapLayerState.zones) {
+          if (!mapInstance.hasLayer(mapZonesLayer)) mapInstance.addLayer(mapZonesLayer);
+        } else if (mapInstance.hasLayer(mapZonesLayer)) {
+          mapInstance.removeLayer(mapZonesLayer);
+        }
+      }
+      if (mapWarnLayer) {
+        if (mapLayerState.warn) {
+          if (!mapInstance.hasLayer(mapWarnLayer)) mapInstance.addLayer(mapWarnLayer);
+        } else if (mapInstance.hasLayer(mapWarnLayer)) {
+          mapInstance.removeLayer(mapWarnLayer);
+        }
+      }
+      if (mapSpacingLayer) {
+        if (mapLayerState.spacing) {
+          if (!mapInstance.hasLayer(mapSpacingLayer)) mapInstance.addLayer(mapSpacingLayer);
+        } else if (mapInstance.hasLayer(mapSpacingLayer)) {
+          mapInstance.removeLayer(mapSpacingLayer);
+        }
+      }
+      refreshZoneLabelsVisibility();
+      if (els.mapLayers) {
+        els.mapLayers.querySelectorAll("[data-layer]").forEach((btn) => {
+          const key = btn.getAttribute("data-layer");
+          btn.classList.toggle("active", !!mapLayerState[key]);
+        });
+      }
+    }
+
+    function zoneNearAnyStash(z, geoItems, maxDist) {
+      for (let i = 0; i < geoItems.length; i++) {
+        const g = geoItems[i].geo;
+        if (haversineM(Number(g.latitude), Number(g.longitude), z.lat, z.lon) <= maxDist) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    function refreshZoneLabelsVisibility() {
+      if (!mapInstance || !mapZoneLabelsLayer) return;
+      const show =
+        mapLayerState.zones &&
+        mapInstance.getZoom() >= MAP_LABEL_ZOOM;
+      if (show) {
+        if (!mapInstance.hasLayer(mapZoneLabelsLayer)) mapInstance.addLayer(mapZoneLabelsLayer);
+      } else if (mapInstance.hasLayer(mapZoneLabelsLayer)) {
+        mapInstance.removeLayer(mapZoneLabelsLayer);
+      }
+    }
+
+    function clearZoneLayers() {
+      if (!mapInstance) {
+        mapZonesLayer = null;
+        mapWarnLayer = null;
+        mapZoneLabelsLayer = null;
+        return;
+      }
+      [mapZonesLayer, mapWarnLayer, mapZoneLabelsLayer].forEach((layer) => {
+        if (layer && mapInstance.hasLayer(layer)) {
+          try { mapInstance.removeLayer(layer); } catch (_) { /* ignore */ }
+        }
+      });
+      mapZonesLayer = null;
+      mapWarnLayer = null;
+      mapZoneLabelsLayer = null;
+      mapLabelZones = [];
+    }
+
+    function drawCriticalLayers(zones, geoItems) {
+      clearZoneLayers();
+      if (!mapInstance) return;
+
+      if (!mapCanvasRenderer) {
+        mapCanvasRenderer = L.canvas({ padding: 0.5 });
+      }
+
+      mapZonesLayer = L.layerGroup();
+      mapWarnLayer = L.layerGroup();
+      mapZoneLabelsLayer = L.layerGroup();
+      mapLabelZones = [];
+
+      const list = zones || [];
+      const labelMax = MAP_WARN_M + 120;
+
+      for (let i = 0; i < list.length; i++) {
+        const z = list[i];
+        const title = criticalZoneTitle(z);
+        L.circle([z.lat, z.lon], {
+          radius: MAP_CRIT_M,
+          color: "#d64545",
+          weight: 1.5,
+          fillColor: "#d64545",
+          fillOpacity: 0.14,
+          interactive: true,
+          renderer: mapCanvasRenderer
+        })
+          .bindPopup("<b>" + escapeHtml(title) + "</b><br/>запрет &lt; " + MAP_CRIT_M + " м")
+          .addTo(mapZonesLayer);
+
+        L.circle([z.lat, z.lon], {
+          radius: MAP_WARN_M,
+          color: "#c48a12",
+          weight: 1.25,
+          dashArray: "4 6",
+          fill: false,
+          interactive: false,
+          renderer: mapCanvasRenderer
+        }).addTo(mapWarnLayer);
+
+        // Подписи только у зон рядом с кладами — меньше DOM
+        if (zoneNearAnyStash(z, geoItems || [], labelMax)) {
+          mapLabelZones.push(z);
+          L.marker([z.lat, z.lon], {
+            interactive: false,
+            keyboard: false,
+            icon: L.divIcon({
+              className: "map-zone-label-wrap",
+              html: '<div class="map-zone-label">' + escapeHtml(z.label) + "</div>",
+              iconSize: [72, 18],
+              iconAnchor: [36, 9]
+            })
+          }).addTo(mapZoneLabelsLayer);
+        }
+      }
+    }
+
+    function drawSpacingLayer(riskById) {
+      mapSpacingLayer = L.layerGroup();
+      const drawn = {};
+      Object.keys(riskById || {}).forEach((id) => {
+        const a = riskById[id];
+        (a.neighbors || []).forEach((n) => {
+          const key = id < n.id ? id + "|" + n.id : n.id + "|" + id;
+          if (drawn[key]) return;
+          drawn[key] = true;
+          const b = riskById[n.id];
+          if (!b) return;
+          const midLat = (a.lat + b.lat) / 2;
+          const midLon = (a.lon + b.lon) / 2;
+          L.polyline(
+            [
+              [a.lat, a.lon],
+              [b.lat, b.lon]
+            ],
+            {
+              color: "#c48a12",
+              weight: 2.5,
+              opacity: 0.75,
+              dashArray: "6 6"
+            }
+          )
+            .bindPopup("между кладами " + Math.round(n.dist) + " м · мин. " + MAP_STASH_MIN_M + " м")
+            .addTo(mapSpacingLayer);
+
+          L.marker([midLat, midLon], {
+            interactive: false,
+            keyboard: false,
+            icon: L.divIcon({
+              className: "",
+              html:
+                '<div class="map-zone-label space">' +
+                Math.round(n.dist) +
+                " м</div>",
+              iconSize: [48, 18],
+              iconAnchor: [24, 9]
+            })
+          }).addTo(mapSpacingLayer);
+        });
+      });
+    }
+
+    function setMapBasemap(mode) {
+      mapBaseMode = mode === "sat" ? "sat" : "scheme";
+      if (!mapInstance || typeof L === "undefined") return;
+      const conf = MAP_TILES[mapBaseMode] || MAP_TILES.scheme;
+      if (mapTileLayer) {
+        try { mapInstance.removeLayer(mapTileLayer); } catch (_) { /* ignore */ }
+      }
+      mapTileLayer = L.tileLayer(conf.url, conf.options || {}).addTo(mapInstance);
+      if (els.mapBasemap) {
+        els.mapBasemap.querySelectorAll("[data-basemap]").forEach((btn) => {
+          btn.classList.toggle("active", btn.getAttribute("data-basemap") === mapBaseMode);
+        });
+      }
+    }
+
+    function setMapSheetOpen(open) {
+      mapSheetOpen = !!open;
+      if (!els.mapSheet) return;
+      els.mapSheet.classList.toggle("open", mapSheetOpen);
+      els.mapSheet.setAttribute("aria-expanded", mapSheetOpen ? "true" : "false");
+      if (els.mapSheetToggle) {
+        els.mapSheetToggle.textContent = mapSheetOpen ? "Свернуть" : "Открыть";
+      }
+      if (els.mapSheetHint) {
+        els.mapSheetHint.textContent = mapSheetOpen
+          ? "листай список · тап по карточке"
+          : "нажми, чтобы открыть";
+      }
+      setTimeout(() => {
+        if (mapInstance) mapInstance.invalidateSize({ animate: false });
+      }, 360);
+    }
+
+    function renderMapSheetList(geoItems, riskById) {
+      mapSheetGeoItems = geoItems || [];
+      mapSheetRiskById = riskById || {};
+      if (els.mapSheetTitle) {
+        els.mapSheetTitle.textContent = "Список · " + mapSheetGeoItems.length;
+      }
+      if (!els.mapSheetBody) return;
+
+      const sorted = mapSheetGeoItems.slice().sort((a, b) => {
+        const sa = itemDisplayAddress(a);
+        const sb = itemDisplayAddress(b);
+        return sa.localeCompare(sb, "ru");
+      });
+
+      els.mapSheetBody.innerHTML = sorted.map((it) => {
+        const risk = riskById[it.id] || {};
+        const addr = itemDisplayAddress(it);
+        const hasCrit = !!risk.critical;
+        const hasSpace = !!(risk.neighbors && risk.neighbors.length);
+        const cls =
+          "map-stash-card" +
+          (hasCrit ? " warn-crit" : "") +
+          (hasSpace ? " warn-space" : "");
+        let tags =
+          '<span class="tag">' + escapeHtml(locationLabel(it.location)) + "</span>" +
+          '<span class="tag">' + escapeHtml(tapeLabel(it.tapeColor)) + "</span>";
+        if (hasCrit && risk.near) {
+          tags +=
+            '<span class="tag crit">' +
+            Math.round(risk.near.dist) + " м · " +
+            escapeHtml((risk.near.zone && risk.near.zone.label) || "зона") +
+            "</span>";
+        }
+        if (hasSpace) {
+          const closest = risk.neighbors.slice().sort((a, b) => a.dist - b.dist)[0];
+          tags += '<span class="tag space">' + Math.round(closest.dist) + " м до соседа</span>";
+        }
+        const note = String(it.note || "").trim();
+        return (
+          '<div class="' + cls + '" data-stash-id="' + escapeAttr(it.id) + '">' +
+            "<div>" +
+              '<div class="addr">' + escapeHtml(addr) + "</div>" +
+              '<div class="meta">' +
+                (note ? escapeHtml(note.slice(0, 64)) : escapeHtml(itemStreetName(it))) +
+              "</div>" +
+              '<div class="tags">' + tags + "</div>" +
+            "</div>" +
+            '<div class="side">' + escapeHtml(formatGrams(it.weight)) + "</div>" +
+          "</div>"
+        );
+      }).join("");
+    }
+
+    function focusStashOnMap(itemId, options) {
+      options = options || {};
+      const marker = mapMarkersById[itemId];
+      if (!mapInstance || !marker) return;
+      mapInstance.setView(marker.getLatLng(), Math.max(mapInstance.getZoom(), 17), { animate: true });
+      marker.openPopup();
+      if (els.mapSheetBody) {
+        els.mapSheetBody.querySelectorAll(".map-stash-card").forEach((el) => {
+          el.classList.toggle("active", el.getAttribute("data-stash-id") === itemId);
+        });
+      }
+      if (options.collapseSheet) setMapSheetOpen(false);
+      haptic("light");
+    }
+
+    function stashPopupHtml(it, risk) {
+      const addr = itemDisplayAddress(it);
+      let riskHtml = "";
+      if (risk && risk.near && risk.near.dist <= MAP_WARN_M) {
+        riskHtml +=
+          "<br/><span style=\"color:#d64545\">" +
+          Math.round(risk.near.dist) + " м · " +
+          escapeHtml(criticalZoneTitle(risk.near.zone)) +
+          (risk.critical ? " · запрет" : " · близко") +
+          "</span>";
+      }
+      if (risk && risk.neighbors && risk.neighbors.length) {
+        const closest = risk.neighbors.slice().sort((a, b) => a.dist - b.dist)[0];
+        riskHtml +=
+          "<br/><span style=\"color:#c48a12\">" +
+          Math.round(closest.dist) + " м до соседнего клада (мин. " + MAP_STASH_MIN_M + " м)</span>";
+      }
+      return (
+        "<b>" + escapeHtml(locationLabel(it.location)) + "</b><br/>" +
+        escapeHtml(formatGrams(it.weight)) + " · " + escapeHtml(tapeLabel(it.tapeColor)) +
+        (it.note ? "<br/>" + escapeHtml(it.note) : "") +
+        "<br/><i>" + escapeHtml(addr) + "</i>" +
+        riskHtml
+      );
+    }
+
+    function updateMapSub(geoItems, zones, riskById) {
+      if (!els.mapSub) return;
+      let critCount = 0;
+      let spaceCount = 0;
+      Object.keys(riskById || {}).forEach((id) => {
+        const r = riskById[id];
+        if (r.critical) critCount += 1;
+        if (r.neighbors && r.neighbors.length) spaceCount += 1;
+      });
+      const zoneN = (zones && zones.length) || 0;
+      els.mapSub.textContent =
+        geoItems.length + " точек · " +
+        zoneN + " зон · " +
+        critCount + " в 50м · " +
+        spaceCount + " ближе 25м";
+    }
+
+    function buildStashMarkers(geoItems, riskById) {
+      if (mapCluster && mapInstance && mapInstance.hasLayer(mapCluster)) {
+        try { mapInstance.removeLayer(mapCluster); } catch (_) { /* ignore */ }
+      }
+      mapCluster = (L.markerClusterGroup
+        ? L.markerClusterGroup({
+            showCoverageOnHover: false,
+            maxClusterRadius: 48,
+            animate: false,
+            chunkedLoading: true
+          })
+        : L.layerGroup()
+      );
+      mapMarkersByStreet = {};
+      mapMarkersById = {};
+      const bounds = [];
+
+      geoItems.forEach((it) => {
+        const risk = riskById[it.id] || {
+          lat: Number(it.geo.latitude),
+          lon: Number(it.geo.longitude),
+          neighbors: []
+        };
+        const lat = risk.lat;
+        const lon = risk.lon;
+        const street = itemStreetKey(it);
+        const icon = L.divIcon({
+          className: "",
+          html: '<div class="' + stashPinClass(risk) + '"></div>',
+          iconSize: [14, 14],
+          iconAnchor: [7, 7]
+        });
+        const marker = L.marker([lat, lon], { icon: icon });
+        marker.bindPopup(stashPopupHtml(it, risk));
+        marker.on("click", () => {
+          marker.openPopup();
+          if (els.mapSheetBody) {
+            els.mapSheetBody.querySelectorAll(".map-stash-card").forEach((el) => {
+              el.classList.toggle("active", el.getAttribute("data-stash-id") === it.id);
+            });
+          }
+        });
+        mapCluster.addLayer(marker);
+        mapMarkersById[it.id] = marker;
+        if (!mapMarkersByStreet[street]) mapMarkersByStreet[street] = [];
+        mapMarkersByStreet[street].push(marker);
+        bounds.push([lat, lon]);
+      });
+
+      if (mapInstance) mapInstance.addLayer(mapCluster);
+      return bounds;
+    }
+
+    function applyZonesToOpenMap(geoItems, zones, seq) {
+      if (!mapInstance || seq !== mapOpenSeq) return;
+      mapCriticalZones = zones || [];
+      const riskById = analyzeStashRisks(geoItems, mapCriticalZones);
+      drawCriticalLayers(mapCriticalZones, geoItems);
+      applyMapLayerVisibility();
+      buildStashMarkers(geoItems, riskById);
+      renderMapSheetList(geoItems, riskById);
+      updateMapSub(geoItems, mapCriticalZones, riskById);
+    }
+
+    function destroyMap() {
+      if (mapAbortController) {
+        try { mapAbortController.abort(); } catch (_) { /* ignore */ }
+        mapAbortController = null;
+      }
+      if (mapInstance) {
+        try { mapInstance.off("zoomend"); } catch (_) { /* ignore */ }
+        try { mapInstance.remove(); } catch (_) { /* ignore */ }
+      }
+      mapInstance = null;
+      mapCluster = null;
+      mapTileLayer = null;
+      mapCanvasRenderer = null;
+      mapMarkersByStreet = {};
+      mapMarkersById = {};
+      mapZonesLayer = null;
+      mapWarnLayer = null;
+      mapZoneLabelsLayer = null;
+      mapSpacingLayer = null;
+      mapCriticalZones = [];
+      mapLabelZones = [];
+      mapSheetRiskById = {};
+      mapSheetGeoItems = [];
+      mapItemsFingerprint = "";
+      setMapSheetOpen(false);
+    }
+
+    async function openMapScreen() {
+      const geoItems = itemsWithGeo();
+      if (!geoItems.length) {
+        showToast("нет GPS на позициях", true);
+        return;
+      }
+      if (typeof L === "undefined") {
+        showToast("карта недоступна", true);
+        return;
+      }
+
+      const fp = itemsGeoFingerprint(geoItems);
+      closeOverlay(els.menuOverlay);
+      els.mapScreen.classList.add("open");
+      els.mapScreen.setAttribute("aria-hidden", "false");
+      if (tg && tg.BackButton) tg.BackButton.show();
+      setVerticalSwipes(false);
+
+      // Быстрый повторный вход — карта уже готова
+      if (mapInstance && mapItemsFingerprint === fp) {
+        setTimeout(() => {
+          if (mapInstance) mapInstance.invalidateSize({ animate: false });
+        }, 60);
+        if (!mapCriticalZones.length) {
+          const bbox = geoItemsBBox(geoItems);
+          const cached = bbox ? getCachedZones(bbox) : null;
+          if (cached && cached.length) {
+            applyZonesToOpenMap(geoItems, cached, mapOpenSeq);
+          } else if (bbox) {
+            if (els.mapSub) els.mapSub.textContent = geoItems.length + " точек · зоны…";
+            if (!mapAbortController || mapAbortController.signal.aborted) {
+              mapAbortController = typeof AbortController !== "undefined" ? new AbortController() : null;
+            }
+            const sig = mapAbortController ? mapAbortController.signal : null;
+            const seq = mapOpenSeq;
+            fetchCriticalZones(bbox, sig)
+              .then((zones) => {
+                if (seq !== mapOpenSeq || !mapInstance) return;
+                applyZonesToOpenMap(geoItems, zones, seq);
+              })
+              .catch((err) => {
+                if (err && err.name === "AbortError") return;
+              });
+          }
+        }
+        haptic("light");
+        return;
+      }
+
+      const seq = ++mapOpenSeq;
+      destroyMap();
+      mapOpenSeq = seq;
+      mapItemsFingerprint = fp;
+      mapAbortController = typeof AbortController !== "undefined" ? new AbortController() : null;
+      const liveSignal = mapAbortController ? mapAbortController.signal : null;
+
+      if (els.mapSub) {
+        els.mapSub.textContent = geoItems.length + " точек";
+      }
+
+      mapInstance = L.map(els.mapCanvas, {
+        zoomControl: false,
+        attributionControl: false,
+        preferCanvas: true
+      });
+      setMapBasemap(mapBaseMode);
+      L.control.zoom({ position: "bottomright" }).addTo(mapInstance);
+      mapInstance.on("zoomend", () => refreshZoneLabelsVisibility());
+
+      // 1) Мгновенно: клады + дистанция 25м (без ожидания OSM)
+      const riskQuick = analyzeStashRisks(geoItems, []);
+      drawSpacingLayer(riskQuick);
+      const bounds = buildStashMarkers(geoItems, riskQuick);
+      applyMapLayerVisibility();
+      renderMapSheetList(geoItems, riskQuick);
+      updateMapSub(geoItems, [], riskQuick);
+      if (bounds.length) {
+        mapInstance.fitBounds(bounds, { padding: [36, 36], maxZoom: 16, paddingBottomRight: [24, 80] });
+      }
+      setMapSheetOpen(false);
+      setTimeout(() => {
+        if (mapInstance && seq === mapOpenSeq) mapInstance.invalidateSize({ animate: false });
+      }, 50);
+      haptic("light");
+
+      // 2) Зоны: кэш → сеть в фоне
+      const bbox = geoItemsBBox(geoItems);
+      if (!bbox || seq !== mapOpenSeq) return;
+
+      const cached = getCachedZones(bbox);
+      if (cached && cached.length) {
+        applyZonesToOpenMap(geoItems, cached, seq);
+      } else if (els.mapSub) {
+        els.mapSub.textContent = geoItems.length + " точек · зоны…";
+      }
+
+      try {
+        const zones = await fetchCriticalZones(bbox, liveSignal);
+        if (seq !== mapOpenSeq || !mapInstance) return;
+        applyZonesToOpenMap(geoItems, zones, seq);
+      } catch (err) {
+        if (err && err.name === "AbortError") return;
+        if (seq !== mapOpenSeq) return;
+        if (!cached) {
+          showToast("зоны OSM недоступны", true);
+          if (els.mapSub) updateMapSub(geoItems, [], riskQuick);
+        }
+      }
+    }
+
+    function closeMapScreen() {
+      els.mapScreen.classList.remove("open");
+      els.mapScreen.setAttribute("aria-hidden", "true");
+      // Карту оставляем в памяти для мгновенного повторного открытия.
+      // Зоны продолжают грузиться в фоне и кэшируются.
+      setMapSheetOpen(false);
+      setVerticalSwipes(true);
+      if (
+        tg &&
+        tg.BackButton &&
+        !els.formOverlay.classList.contains("open") &&
+        !els.menuOverlay.classList.contains("open") &&
+        !els.settingsOverlay.classList.contains("open")
+      ) {
+        tg.BackButton.hide();
+      }
     }
 
     /* ── Export / sync ── */
@@ -4500,6 +6392,7 @@
       if (els.btnRepeat.disabled) return;
       openForm({ repeatLast: true });
     });
+    if (els.btnMap) els.btnMap.addEventListener("click", () => openMapScreen());
 
     els.btnCloseForm.addEventListener("click", () => closeForm(true));
     els.btnCancelForm.addEventListener("click", () => closeForm(true));
@@ -4507,7 +6400,149 @@
     els.btnMenu.addEventListener("click", () => openOverlay(els.menuOverlay));
     els.btnCloseMenu.addEventListener("click", () => closeOverlay(els.menuOverlay));
     els.btnOpenSettings.addEventListener("click", openSettings);
+    if (els.btnOpenMap) {
+      els.btnOpenMap.addEventListener("click", () => openMapScreen());
+    }
     els.btnCloseSettings.addEventListener("click", () => closeOverlay(els.settingsOverlay));
+    if (els.btnCloseMap) els.btnCloseMap.addEventListener("click", () => closeMapScreen());
+
+    if (els.mapSheetBody) {
+      els.mapSheetBody.addEventListener("click", (e) => {
+        const card = e.target.closest("[data-stash-id]");
+        if (!card) return;
+        focusStashOnMap(card.getAttribute("data-stash-id") || "", { collapseSheet: true });
+      });
+    }
+
+    function bindMapSheetGestures() {
+      const sheet = els.mapSheet;
+      const handle = els.mapSheetHandle;
+      if (!sheet || !handle) return;
+      let ignoreClickUntil = 0;
+
+      const onToggle = (e) => {
+        if (Date.now() < ignoreClickUntil) return;
+        e.preventDefault();
+        setMapSheetOpen(!mapSheetOpen);
+        haptic("light");
+      };
+      if (els.mapSheetToggle) els.mapSheetToggle.addEventListener("click", onToggle);
+      handle.addEventListener("click", (e) => {
+        if (e.target.closest("#mapSheetToggle")) return;
+        onToggle(e);
+      });
+
+      const startDrag = (clientY) => {
+        mapSheetDrag = {
+          startY: clientY,
+          lastY: clientY,
+          moved: false,
+          wasOpen: mapSheetOpen
+        };
+        sheet.classList.add("dragging");
+      };
+      const moveDrag = (clientY) => {
+        if (!mapSheetDrag) return;
+        mapSheetDrag.lastY = clientY;
+        const dy = clientY - mapSheetDrag.startY;
+        if (Math.abs(dy) > 6) mapSheetDrag.moved = true;
+        const h = sheet.offsetHeight || 1;
+        const collapsed = Math.max(0, h - 68);
+        const base = mapSheetDrag.wasOpen ? 0 : collapsed;
+        const next = Math.min(collapsed, Math.max(0, base + dy));
+        sheet.style.transform = "translate3d(0," + next + "px,0)";
+      };
+      const endDrag = () => {
+        if (!mapSheetDrag) return;
+        const dy = mapSheetDrag.lastY - mapSheetDrag.startY;
+        const moved = mapSheetDrag.moved;
+        const wasOpen = mapSheetDrag.wasOpen;
+        mapSheetDrag = null;
+        sheet.classList.remove("dragging");
+        sheet.style.transform = "";
+        if (!moved) return;
+        ignoreClickUntil = Date.now() + 280;
+        if (wasOpen && dy > 70) setMapSheetOpen(false);
+        else if (!wasOpen && dy < -70) setMapSheetOpen(true);
+        else setMapSheetOpen(wasOpen);
+      };
+
+      handle.addEventListener("touchstart", (e) => {
+        if (!e.touches || !e.touches[0]) return;
+        startDrag(e.touches[0].clientY);
+      }, { passive: true });
+      handle.addEventListener("touchmove", (e) => {
+        if (!mapSheetDrag || !e.touches || !e.touches[0]) return;
+        moveDrag(e.touches[0].clientY);
+      }, { passive: true });
+      handle.addEventListener("touchend", () => endDrag());
+      handle.addEventListener("touchcancel", () => endDrag());
+    }
+    bindMapSheetGestures();
+
+    if (els.mapBasemap) {
+      els.mapBasemap.addEventListener("click", (e) => {
+        const btn = e.target.closest("[data-basemap]");
+        if (!btn) return;
+        setMapBasemap(btn.getAttribute("data-basemap") || "scheme");
+        haptic("light");
+      });
+    }
+
+    if (els.mapLayers) {
+      els.mapLayers.addEventListener("click", (e) => {
+        const btn = e.target.closest("[data-layer]");
+        if (!btn) return;
+        const key = btn.getAttribute("data-layer");
+        if (!key || !(key in mapLayerState)) return;
+        mapLayerState[key] = !mapLayerState[key];
+        applyMapLayerVisibility();
+        haptic("light");
+      });
+    }
+
+    if (els.noteChips) {
+      els.noteChips.addEventListener("click", (e) => {
+        const chip = e.target.closest("[data-note-tpl]");
+        if (!chip) return;
+        applyNoteTemplate(chip.getAttribute("data-note-tpl") || "");
+      });
+    }
+
+    if (els.tplList) {
+      els.tplList.addEventListener("click", (e) => {
+        const btn = e.target.closest("[data-del-tpl]");
+        if (!btn) return;
+        const idx = Number(btn.getAttribute("data-del-tpl"));
+        if (!isFinite(idx)) return;
+        noteTemplates.splice(idx, 1);
+        saveNoteTemplates();
+        renderTemplateSettings();
+        renderNoteChips();
+        haptic("light");
+      });
+    }
+
+    if (els.btnAddTpl) {
+      els.btnAddTpl.addEventListener("click", () => {
+        const raw = String((els.tplInput && els.tplInput.value) || "").trim();
+        if (!raw) {
+          showToast("пустой шаблон", true);
+          return;
+        }
+        if (noteTemplates.some((t) => t.toLowerCase() === raw.toLowerCase())) {
+          showToast("уже есть", true);
+          return;
+        }
+        noteTemplates.push(raw.slice(0, 80));
+        saveNoteTemplates();
+        if (els.tplInput) els.tplInput.value = "";
+        renderTemplateSettings();
+        renderNoteChips();
+        showToast("шаблон +");
+        haptic("ok");
+      });
+    }
 
     els.btnSaveSettings.addEventListener("click", () => {
       const next = {};
@@ -4518,19 +6553,12 @@
       });
       prices = next;
       saveJSON(migrateScopedStorage(STORAGE_PRICES_BASE), prices);
+      saveNoteTemplates();
       closeOverlay(els.settingsOverlay);
+      renderNoteChips();
       renderAll();
       showToast("ok");
       haptic("ok");
-    });
-
-    els.btnExportCsv.addEventListener("click", () => {
-      closeOverlay(els.menuOverlay);
-      if (!items.length) {
-        showToast("пусто");
-        return;
-      }
-      exportCsv();
     });
 
     els.btnSyncServer.addEventListener("click", () => {
@@ -4571,6 +6599,8 @@
           renderAll();
           showToast("удалено");
           haptic("light");
+          // чтобы системные/серверные позиции не вернулись после pull
+          syncToServer({ silent: true, notifyBot: false });
           return;
         }
         if (action === "edit") {
@@ -4690,6 +6720,56 @@
     if (els.btnFlash) {
       els.btnFlash.addEventListener("click", () => toggleTorch());
     }
+
+    if (els.camZoomRow) {
+      els.camZoomRow.addEventListener("click", (e) => {
+        const btn = e.target.closest("[data-zoom]");
+        if (!btn) return;
+        const z = Number(btn.getAttribute("data-zoom"));
+        applyCamZoom(z);
+        haptic("light");
+      });
+    }
+
+    (function bindCamPinchZoom() {
+      const vp = els.stageViewport;
+      if (!vp) return;
+      vp.addEventListener(
+        "touchstart",
+        (e) => {
+          if (!els.stage.classList.contains("mode-camera") || !els.stage.classList.contains("streaming")) return;
+          if (e.touches.length === 2) {
+            camPinchStartDist = pinchDistance(e.touches);
+            camPinchStartZoom = camZoomLevel;
+          }
+        },
+        { passive: true }
+      );
+      vp.addEventListener(
+        "touchmove",
+        (e) => {
+          if (!els.stage.classList.contains("mode-camera") || !els.stage.classList.contains("streaming")) return;
+          if (e.touches.length !== 2 || camPinchStartDist <= 0) return;
+          e.preventDefault();
+          const dist = pinchDistance(e.touches);
+          if (dist <= 0) return;
+          const ratio = dist / camPinchStartDist;
+          applyCamZoom(camPinchStartZoom * ratio, { free: true });
+        },
+        { passive: false }
+      );
+      vp.addEventListener(
+        "touchend",
+        () => {
+          if (camPinchStartDist > 0) {
+            camPinchStartDist = 0;
+            applyCamZoom(camZoomLevel); // snap to preset
+            haptic("light");
+          }
+        },
+        { passive: true }
+      );
+    })();
     if (els.btnFinishCam) {
       els.btnFinishCam.addEventListener("click", () => {
         closeStage();
@@ -4917,6 +6997,10 @@
           closeGallery();
           return;
         }
+        if (els.mapScreen && els.mapScreen.classList.contains("open")) {
+          closeMapScreen();
+          return;
+        }
         if (els.formOverlay.classList.contains("open")) {
           closeForm(true);
           return;
@@ -4953,8 +7037,24 @@
 
     async function ensureAdminAccess() {
       initTelegram();
-      const userId = resolveTelegramUserId();
+      let userId = resolveTelegramUserId();
       const initData = getTelegramInitData();
+      const isLocalHost =
+        location.hostname === "localhost" ||
+        location.hostname === "127.0.0.1" ||
+        location.hostname === "[::1]";
+
+      // Локальный тест в браузере без Telegram WebApp
+      if (!userId && !initData && isLocalHost) {
+        try {
+          const params = new URLSearchParams(location.search);
+          const fromQuery = Number(params.get("userId") || 0) || 0;
+          userId = fromQuery || Number(localStorage.getItem(STORAGE_TG_UID) || 0) || 8647494349;
+          localStorage.setItem(STORAGE_TG_UID, String(userId));
+        } catch (_) {
+          userId = 8647494349;
+        }
+      }
 
       if (!userId && !initData) {
         showAccessGate("нет доступа", "открой Mini App из бота");
@@ -4979,6 +7079,10 @@
           try { localStorage.setItem(STORAGE_TG_UID, String(data.userId)); } catch (_) { /* ignore */ }
         }
         hideAccessGate();
+        if (data.localDev) {
+          isLocalDevSession = true;
+          showToast("local dev · " + data.userId);
+        }
         return true;
       } catch (_) {
         showAccessGate("нет доступа", "сервер недоступен");
@@ -4988,6 +7092,12 @@
 
     async function pullInventoryIfEmpty() {
       const localEmpty = !items.length;
+      const localDemoOrSeed =
+        items.length > 0 &&
+        items.every((it) => {
+          const id = String((it && it.id) || "");
+          return id.indexOf("seed_") === 0 || id.indexOf("demo_") === 0;
+        });
       const localSeedOnly =
         items.length > 0 &&
         items.every((it) => {
@@ -4996,7 +7106,11 @@
           const noPhotos = !photos.length;
           return id.indexOf("seed_") === 0 || noPhotos;
         });
-      if (!localEmpty && !localSeedOnly) return false;
+      const hasSeedJunk = items.some((it) => String((it && it.id) || "").indexOf("seed_") === 0);
+      // В localDev всегда тянем серверный склад (свежий импорт), иначе demo/seed в LS перебивают.
+      if (!isLocalDevSession && !localEmpty && !localSeedOnly && !localDemoOrSeed && !hasSeedJunk) {
+        return false;
+      }
       const userId = resolveTelegramUserId();
       const initData = getTelegramInitData();
       try {
@@ -5034,6 +7148,9 @@
       const allowed = await ensureAdminAccess();
       if (!allowed) return;
 
+      updateAdminBadge();
+      loadNoteTemplates();
+      renderNoteChips();
       items = loadItems();
       const storedPrices = loadJSON(migrateScopedStorage(STORAGE_PRICES_BASE), {});
       prices = {};
@@ -5043,7 +7160,9 @@
         prices[key] = raw != null ? Math.max(0, Number(raw) || 0) : DEFAULT_PRICES[key];
       });
       await pullInventoryIfEmpty();
+      updateAdminBadge();
       renderAll();
+      prefetchMapZones();
     })();
   })();
   </script>

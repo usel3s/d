@@ -42,31 +42,55 @@ async def handle_health(_: web.Request) -> web.Response:
     return web.json_response({"ok": True, "service": "logistics-bot"})
 
 
+def _is_loopback(request: web.Request) -> bool:
+    peer = str(request.remote or "")
+    return peer in {"127.0.0.1", "::1", "localhost"}
+
+
 def _resolve_request_user_id(request: web.Request, payload: dict | None = None) -> int:
     from utils.webapp_auth import resolve_webapp_user_id
 
     settings = request.app["settings"]
     payload = payload or {}
-    user_id = int(payload.get("userId") or 0)
+    try:
+        user_id = int(payload.get("userId") or 0)
+    except (TypeError, ValueError):
+        user_id = 0
     init_data = str(
         payload.get("initData")
         or request.headers.get("X-Telegram-Init-Data")
         or ""
     )
-    if not user_id and init_data:
+    if init_data:
         resolved = resolve_webapp_user_id(init_data, settings.bot_token)
         if resolved:
-            user_id = resolved
-    return user_id
+            # initData всегда побеждает — нельзя подменить чужой userId
+            return int(resolved)
+    if user_id:
+        return user_id
+    # Локальный браузер без Telegram
+    if settings.local_dev and _is_loopback(request) and settings.local_dev_user:
+        return int(settings.local_dev_user)
+    return 0
 
 
 def _is_admin_user(request: web.Request, user_id: int) -> bool:
     settings = request.app["settings"]
-    return bool(user_id) and user_id in settings.admin_ids
+    if bool(user_id) and user_id in settings.admin_ids:
+        return True
+    if (
+        settings.local_dev
+        and _is_loopback(request)
+        and user_id
+        and user_id == settings.local_dev_user
+    ):
+        return True
+    return False
 
 
 async def handle_auth(request: web.Request) -> web.Response:
-    """Проверка: доступ в WebApp только у ADMIN_IDS."""
+    """Проверка: доступ в WebApp только у ADMIN_IDS (или LOCAL_DEV)."""
+    settings = request.app["settings"]
     try:
         payload = await request.json()
     except Exception:
@@ -84,7 +108,14 @@ async def handle_auth(request: web.Request) -> web.Response:
             {"ok": False, "admin": False, "userId": user_id, "error": "forbidden"},
             status=403,
         )
-    return web.json_response({"ok": True, "admin": True, "userId": user_id})
+    return web.json_response(
+        {
+            "ok": True,
+            "admin": True,
+            "userId": user_id,
+            "localDev": bool(settings.local_dev and _is_loopback(request)),
+        }
+    )
 
 
 async def handle_sync_items(request: web.Request) -> web.Response:
@@ -151,18 +182,19 @@ def _resolve_query_user_id(request: web.Request) -> int:
         or request.headers.get("X-Telegram-Init-Data")
         or ""
     )
-    if not init_data:
-        return 0
-    resolved = resolve_webapp_user_id(init_data, settings.bot_token)
-    if not resolved:
-        return 0
+    if init_data:
+        resolved = resolve_webapp_user_id(init_data, settings.bot_token)
+        if resolved:
+            return int(resolved)
     try:
         query_uid = int(request.rel_url.query.get("userId") or 0)
     except (TypeError, ValueError):
         query_uid = 0
-    if query_uid and query_uid != resolved:
-        return 0
-    return int(resolved)
+    if query_uid and query_uid in settings.admin_ids:
+        return query_uid
+    if settings.local_dev and _is_loopback(request) and settings.local_dev_user:
+        return int(settings.local_dev_user)
+    return 0
 
 
 async def handle_photo(request: web.Request) -> web.Response:

@@ -110,11 +110,6 @@ def admin_keyboard() -> InlineKeyboardMarkup:
                     callback_data="admin:photos:0",
                     icon_custom_emoji_id=pe_id("file"),
                 ),
-                InlineKeyboardButton(
-                    text="Экспорт",
-                    callback_data="admin:export",
-                    icon_custom_emoji_id=pe_id("coins"),
-                ),
             ],
             [
                 InlineKeyboardButton(

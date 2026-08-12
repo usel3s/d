@@ -19,8 +19,6 @@ from utils.emoji import pe
 from utils.formatting import (
     TAPE_LABELS,
     format_grams,
-    format_items_export,
-    format_manual_export,
     format_money,
     location_label,
 )
@@ -32,17 +30,6 @@ PAGE_SIZE = 5
 
 def _is_admin(user_id: int, settings: Settings) -> bool:
     return user_id in settings.admin_ids
-
-
-def _export_text(user_id: int, media_store: MediaStore) -> str:
-    media_store.ensure_seed(user_id)
-    items = media_store.list_items(user_id=user_id)
-    if items:
-        return format_items_export(items, DEFAULT_PRICES, user_id=user_id)
-    manual = manual_export_kwargs(user_id)
-    if manual:
-        return format_manual_export(user_id=user_id, **manual)
-    return format_items_export([], DEFAULT_PRICES, user_id=user_id)
 
 
 def _user_inventory_stats(user_id: int, media_store: MediaStore) -> dict[str, float | int | str]:
@@ -100,18 +87,12 @@ async def cmd_admin(message: Message, settings: Settings) -> None:
 
 
 @router.message(Command("export"))
-async def cmd_export(
-    message: Message,
-    settings: Settings,
-    media_store: MediaStore,
-) -> None:
+async def cmd_export(message: Message, settings: Settings) -> None:
     user = message.from_user
     if user is None or not _is_admin(user.id, settings):
         await message.answer(f"{pe('lock')} Недостаточно прав.")
         return
-
-    text = f"{pe('coins')} {_export_text(user.id, media_store)}"
-    await message.answer(text)
+    await message.answer(f"{pe('error')} Экспорт отключён.")
 
 
 @router.callback_query(F.data == "admin:home")
@@ -128,19 +109,11 @@ async def admin_home(callback: CallbackQuery, settings: Settings) -> None:
 
 
 @router.callback_query(F.data == "admin:export")
-async def admin_export(
-    callback: CallbackQuery,
-    settings: Settings,
-    media_store: MediaStore,
-) -> None:
+async def admin_export(callback: CallbackQuery, settings: Settings) -> None:
     if not _is_admin(callback.from_user.id, settings):
         await callback.answer("Нет доступа", show_alert=True)
         return
-
-    text = f"{pe('coins')} {_export_text(callback.from_user.id, media_store)}"
-    if callback.message:
-        await callback.message.edit_text(text, reply_markup=admin_keyboard())
-    await callback.answer()
+    await callback.answer("Экспорт отключён", show_alert=True)
 
 
 @router.callback_query(F.data == "admin:stats")
@@ -160,7 +133,7 @@ async def admin_stats(
     inv = _user_inventory_stats(uid, media_store)
     text = (
         f"{pe('stats')} <b>Статистика</b>\n"
-        f"<i>только ваши позиции</i>\n\n"
+        f"<i>ваш склад · <code>{uid}</code></i>\n\n"
         f"{pe('package')} Позиции: <b>{inv['count']}</b>\n"
         f"{pe('analytics')} Вес: <b>{format_grams(inv['weight'])}</b>\n"
         f"{pe('coins')} Сумма: <b>{format_money(inv['revenue'])}</b>\n"

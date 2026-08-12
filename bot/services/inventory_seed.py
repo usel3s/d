@@ -4,19 +4,8 @@ from datetime import datetime, timezone
 from typing import Any
 
 
-# Сводки по админам (кол-во / локации), пока нет живого синка с фото.
-SEED_INVENTORIES: dict[int, dict[str, Any]] = {
-    # Старый учёт (30 без фото) + клады из «Готово штампы» (20 с фото).
-    8647494349: {
-        "weight": 0.5,
-        "price_per_item": 850,
-        "tape_color": "black",
-        "by_location": {
-            "pickup": 27,  # 21 + 6
-            "warehouse_1": 23,  # 9 + 14
-        },
-    },
-}
+# Больше не засеваем «системные» позиции без фото — только живой каталог.
+SEED_INVENTORIES: dict[int, dict[str, Any]] = {}
 
 DEFAULT_PRICES: dict[str, float] = {
     "0.5": 850,

@@ -35,6 +35,8 @@ class Settings:
     database_path: str
     host: str
     port: int
+    local_dev: bool
+    local_dev_user: int
 
 
 def load_settings() -> Settings:
@@ -64,11 +66,22 @@ def load_settings() -> Settings:
     if not db_file.is_absolute():
         db_file = (_BOT_DIR / db_path).resolve()
 
+    admin_ids = _parse_admin_ids(os.getenv("ADMIN_IDS", ""))
+    local_dev = (os.getenv("LOCAL_DEV") or "").strip().lower() in {"1", "true", "yes", "on"}
+    try:
+        local_dev_user = int((os.getenv("LOCAL_DEV_USER") or "0").strip() or 0)
+    except ValueError:
+        local_dev_user = 0
+    if local_dev and not local_dev_user and admin_ids:
+        local_dev_user = sorted(admin_ids)[0]
+
     return Settings(
         bot_token=token,
         webapp_url=webapp_url,
-        admin_ids=_parse_admin_ids(os.getenv("ADMIN_IDS", "")),
+        admin_ids=admin_ids,
         database_path=str(db_file),
         host=host,
         port=port,
+        local_dev=local_dev,
+        local_dev_user=local_dev_user,
     )
