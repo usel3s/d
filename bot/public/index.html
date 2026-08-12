@@ -3283,25 +3283,43 @@
     function considerFix(fix) {
       const n = normalizeFix(fix);
       if (!n) return;
+      if (n.accuracy > GEO_REJECT_ACCURACY_M) return;
+
+      if (currentGeo) {
+        const moved = haversineM(
+          currentGeo.latitude,
+          currentGeo.longitude,
+          n.latitude,
+          n.longitude
+        );
+        if (moved > 20) {
+          geoSamples = [];
+          if (moved > 35) {
+            currentAddress = "";
+            lastAddressCoords = null;
+          }
+        }
+      }
+
       geoSamples.push(n);
       if (geoSamples.length > GEO_SAMPLE_LIMIT) geoSamples.shift();
 
-      if (
-        !currentGeo ||
-        n.accuracy + 0.5 < currentGeo.accuracy ||
-        (Math.abs(n.accuracy - currentGeo.accuracy) <= 0.5 && n.timestamp > currentGeo.timestamp)
-      ) {
-        currentGeo = fuseBestSamples() || n;
+      const movedFar = !!(
+        currentGeo &&
+        haversineM(currentGeo.latitude, currentGeo.longitude, n.latitude, n.longitude) > 12
+      );
+      const better = !currentGeo || n.accuracy + 0.5 < currentGeo.accuracy;
+      const similarNewer =
+        !!currentGeo &&
+        Math.abs(n.accuracy - currentGeo.accuracy) <= 12 &&
+        n.timestamp >= currentGeo.timestamp;
+
+      if (!currentGeo || better || movedFar || similarNewer) {
+        currentGeo = movedFar ? n : (fuseBestSamples() || n);
         renderGeoUi();
         scheduleAddressLookup();
         saveDraft();
       } else {
-        renderGeoUi();
-      }
-
-      if (currentGeo && currentGeo.accuracy <= GEO_TARGET_ACCURACY_M) {
-        stopGeoWatch();
-        geoBusy = false;
         renderGeoUi();
       }
     }
@@ -3708,15 +3726,31 @@
     }
 
     function ensureAutoGeo() {
-      if (geoBusy) return;
-      const needBetter =
+      if (!navigator.geolocation) return;
+      if (geoWatchId == null) startBrowserWatch();
+      const stale =
         !currentGeo ||
-        currentGeo.accuracy > GEO_TARGET_ACCURACY_M;
-      if (!needBetter && geoWatchId != null) {
+        Date.now() - Number(currentGeo.timestamp || 0) > 8000;
+      const needBetter = !currentGeo || currentGeo.accuracy > GEO_TARGET_ACCURACY_M;
+      if (geoBusy && !stale) {
         renderGeoUi();
         return;
       }
-      acquirePreciseGeo({ keepBest: !!currentGeo, quiet: true });
+      if (needBetter || stale) {
+        acquirePreciseGeo({ keepBest: !!currentGeo, quiet: true });
+      } else {
+        renderGeoUi();
+      }
+    }
+
+    async function snapshotGeoForCapture() {
+      if (geoWatchId == null) startBrowserWatch();
+      const fresh = await requestBrowserFixOnce(4000);
+      if (fresh) considerFix(fresh);
+      if (geoReadyForPhoto()) {
+        return Object.assign({}, currentGeo, { timestamp: Date.now() });
+      }
+      return null;
     }
 
     /* ── Stats / list ── */
@@ -5034,15 +5068,17 @@
       setTimeout(() => flash.remove(), 120);
     }
 
-    async function addQuickPhoto(dataUrl) {
+    async function addQuickPhoto(dataUrl, geoSnap) {
       const compressed = await compressImage(dataUrl, 960, 0.65);
+      const geo = geoSnap || (currentGeo ? Object.assign({}, currentGeo) : null);
       formPhotos.push({
         id: uid("p"),
         url: "",
         raw: compressed,
         strokes: [],
         final: compressed,
-        noStamp: false
+        noStamp: false,
+        geo: geo
       });
       renderPhotosGrid();
       updateCamShotHint();
@@ -5051,15 +5087,22 @@
       haptic("ok");
     }
 
-    function capturePhoto() {
-      if (!requireGeoForPhoto()) return;
+    async function capturePhoto() {
+      const snap = await snapshotGeoForCapture();
+      if (!snap) {
+        requireGeoForPhoto();
+        return;
+      }
+      currentGeo = snap;
+      renderGeoUi();
+      scheduleAddressLookup();
+
       if (formPhotos.length >= MAX_PHOTOS && editingPhotoIdx == null) {
         showToast("max " + MAX_PHOTOS);
         return;
       }
       const video = els.stageVideo;
       if (!mediaStream || !video.videoWidth) {
-        // fallback: системная камера / галерея
         els.photoInput.click();
         return;
       }
@@ -5077,9 +5120,7 @@
         return;
       }
       flashCaptureFeedback();
-      ensureAutoGeo();
-      // быстрый режим: сразу в галерею формы, камера продолжает работать
-      addQuickPhoto(dataUrl).then(() => {
+      addQuickPhoto(dataUrl, snap).then(() => {
         if (formPhotos.length >= MAX_PHOTOS) {
           showToast("max 5");
         }
@@ -6289,6 +6330,100 @@
       return false;
     }
 
+    function authHeaders() {
+      return {
+        "Content-Type": "application/json",
+        "X-Telegram-Init-Data": getTelegramInitData()
+      };
+    }
+
+    function itemHasPhotoBlob(item) {
+      return ((item && item.photos) || []).some((p) => isDataUrl(p.final) || isDataUrl(p.raw));
+    }
+
+    function itemSyncPayload(item) {
+      return {
+        id: item.id,
+        location: item.location,
+        weight: item.weight,
+        tapeColor: item.tapeColor,
+        note: item.note,
+        geo: item.geo || null,
+        createdAt: item.createdAt,
+        updatedAt: item.updatedAt,
+        photos: (item.photos || []).map((p) => ({
+          id: p.id,
+          final: isDataUrl(p.final) ? p.final : (isDataUrl(p.raw) ? p.raw : ""),
+          raw: "",
+          noStamp: !!p.noStamp
+        }))
+      };
+    }
+
+    function markItemSyncedLocal(item) {
+      const idx = items.findIndex((i) => i.id === item.id);
+      if (idx < 0) return;
+      const stripped = stripItemsToUrls([items[idx]])[0];
+      items[idx] = stripped;
+      saveJSON(migrateScopedStorage(STORAGE_ITEMS_BASE), stripItemsToUrls(items));
+    }
+
+    async function syncItemToServer(item, options) {
+      options = options || {};
+      if (!item || !item.id) return false;
+      let userId = resolveTelegramUserId();
+      const initData = getTelegramInitData();
+      if (!userId && !initData) {
+        if (!options.silent) showToast("открой из бота", true);
+        return false;
+      }
+      try {
+        const res = await fetch("/api/sync-item", {
+          method: "POST",
+          headers: authHeaders(),
+          body: JSON.stringify({
+            userId: userId || 0,
+            initData: initData,
+            item: itemSyncPayload(item)
+          })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.ok) {
+          if (!options.silent) showToast("sync fail", true);
+          return false;
+        }
+        if (data.userId) {
+          try { localStorage.setItem(STORAGE_TG_UID, String(data.userId)); } catch (_) { /* ignore */ }
+        }
+        markItemSyncedLocal(item);
+        return true;
+      } catch (_) {
+        if (!options.silent) showToast("offline", true);
+        return false;
+      }
+    }
+
+    async function deleteItemOnServer(itemId) {
+      let userId = resolveTelegramUserId();
+      const initData = getTelegramInitData();
+      if (!userId && !initData) return false;
+      try {
+        const res = await fetch("/api/delete-item", {
+          method: "POST",
+          headers: authHeaders(),
+          body: JSON.stringify({
+            userId: userId || 0,
+            initData: initData,
+            itemId: itemId
+          })
+        });
+        const data = await res.json().catch(() => ({}));
+        return !!(res.ok && data.ok);
+      } catch (_) {
+        return false;
+      }
+    }
+
     async function syncToServer(options) {
       options = options || {};
       const sourceItems = options.itemsOverride || items;
@@ -6303,80 +6438,45 @@
 
       let userId = resolveTelegramUserId();
       const initData = getTelegramInitData();
-
       if (!userId && !initData) {
         if (!options.silent) showToast("открой из бота", true);
         return false;
       }
 
       if (!options.silent) showToast("sync…");
-      const payload = {
-        userId: userId || 0,
-        initData: initData,
-        items: sourceItems.map((i) => ({
-          id: i.id,
-          location: i.location,
-          weight: i.weight,
-          tapeColor: i.tapeColor,
-          note: i.note,
-          geo: i.geo || null,
-          createdAt: i.createdAt,
-          updatedAt: i.updatedAt,
-          photos: (i.photos || []).map((p) => ({
-            id: p.id,
-            final: isDataUrl(p.final) ? p.final : (isDataUrl(p.raw) ? p.raw : ""),
-            raw: "",
-            noStamp: !!p.noStamp
-          }))
-        }))
-      };
 
-      try {
-        const res = await fetch("/api/sync-items", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-Telegram-Init-Data": initData
-          },
-          body: JSON.stringify(payload)
-        });
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok || !data.ok) {
-          if (!options.silent) {
-            const err = data.error || "";
-            const msg =
-              err === "forbidden" ? "нет доступа" :
-              err === "no_user" || err === "bad_payload" ? "открой из бота" :
-              "sync fail";
-            showToast(msg, true);
-            haptic("warn");
-          }
-          return false;
-        }
-        if (data.userId) {
-          try { localStorage.setItem(STORAGE_TG_UID, String(data.userId)); } catch (_) { /* ignore */ }
-        }
-
-        const stripped = stripItemsToUrls(sourceItems);
-        if (saveJSON(migrateScopedStorage(STORAGE_ITEMS_BASE), stripped)) {
-          items = stripped;
-        } else {
-          items = stripped;
-        }
-
-        if (!options.silent) {
-          showToast("sync " + (data.saved || 0));
-          haptic("ok");
-        }
-        if (options.notifyBot) notifyBotMeta();
-        return true;
-      } catch (_) {
-        if (!options.silent) {
-          showToast("offline", true);
-          haptic("warn");
-        }
-        return false;
+      const withBlobs = sourceItems.filter(itemHasPhotoBlob);
+      let saved = 0;
+      for (let i = 0; i < withBlobs.length; i++) {
+        const ok = await syncItemToServer(withBlobs[i], { silent: true });
+        if (ok) saved += 1;
       }
+
+      const rest = sourceItems.filter((it) => !itemHasPhotoBlob(it));
+      if (rest.length) {
+        try {
+          const res = await fetch("/api/sync-items", {
+            method: "POST",
+            headers: authHeaders(),
+            body: JSON.stringify({
+              userId: userId || 0,
+              initData: initData,
+              items: rest.map(itemSyncPayload)
+            })
+          });
+          const data = await res.json().catch(() => ({}));
+          if (res.ok && data.ok) saved += Number(data.saved || 0) || rest.length;
+        } catch (_) { /* pull below */ }
+      }
+
+      await pullInventoryFromServer({ silent: true });
+
+      if (!options.silent) {
+        showToast("sync " + saved);
+        haptic("ok");
+      }
+      if (options.notifyBot) notifyBotMeta();
+      return saved > 0 || sourceItems.length > 0;
     }
 
     async function sendDataToBot() {
@@ -6599,8 +6699,7 @@
           renderAll();
           showToast("удалено");
           haptic("light");
-          // чтобы системные/серверные позиции не вернулись после pull
-          syncToServer({ silent: true, notifyBot: false });
+          deleteItemOnServer(id);
           return;
         }
         if (action === "edit") {
@@ -6843,10 +6942,14 @@
     });
 
     els.photoInput.addEventListener("change", async () => {
-      if (!requireGeoForPhoto()) {
+      const snap = await snapshotGeoForCapture();
+      if (!snap) {
+        requireGeoForPhoto();
         els.photoInput.value = "";
         return;
       }
+      currentGeo = snap;
+      renderGeoUi();
       const file = els.photoInput.files && els.photoInput.files[0];
       els.photoInput.value = "";
       if (!file) return;
@@ -6871,7 +6974,7 @@
           els.stage.setAttribute("aria-hidden", "false");
           setStageMode("camera");
         }
-        await addQuickPhoto(compressed);
+        await addQuickPhoto(compressed, snap);
       } catch (_) {
         showToast("fail");
       }
@@ -6904,14 +7007,31 @@
         bakedPhotos = formPhotos;
       }
 
+      const geoSource = (function () {
+        for (let i = 0; i < formPhotos.length; i++) {
+          const g = formPhotos[i] && formPhotos[i].geo;
+          if (g && isFinite(Number(g.latitude)) && isFinite(Number(g.longitude))) {
+            return g;
+          }
+        }
+        return currentGeo;
+      })();
+      if (!geoSource) {
+        showToast("нет GPS — фото нельзя", true);
+        haptic("warn");
+        ensureAutoGeo();
+        els.btnSaveItem.disabled = false;
+        return;
+      }
+
       const geoPayload = {
-        latitude: currentGeo.latitude,
-        longitude: currentGeo.longitude,
-        accuracy: currentGeo.accuracy,
-        altitude: currentGeo.altitude,
-        source: currentGeo.source,
-        timestamp: currentGeo.timestamp,
-        address: currentAddress || ""
+        latitude: geoSource.latitude,
+        longitude: geoSource.longitude,
+        accuracy: geoSource.accuracy,
+        altitude: geoSource.altitude,
+        source: geoSource.source,
+        timestamp: geoSource.timestamp,
+        address: currentAddress || geoSource.address || ""
       };
 
       const prevItems = items.slice();
@@ -6945,6 +7065,19 @@
         });
       }
 
+      const savedLocal = items.find((i) => i.id === savedId) || {};
+      const toSync = {
+        id: savedId,
+        location: els.locationSelect.value,
+        weight: weight,
+        tapeColor: els.tapeSelect.value,
+        note: (els.noteInput.value || "").trim(),
+        photos: bakedPhotos,
+        geo: geoPayload,
+        createdAt: savedLocal.createdAt || now,
+        updatedAt: now
+      };
+
       const persisted = await persistItemsWithQuotaRelief(items);
       if (!persisted) {
         items = prevItems;
@@ -6974,8 +7107,9 @@
         showToast(wasEdit ? "updated" : "saved");
         haptic("ok");
       }
-      // фото на сервер сразу после сохранения (и strip base64)
-      await syncToServer({ silent: true, notifyBot: false });
+      // фото на сервер сразу после сохранения (одна позиция, без затирания склада)
+      const ok = await syncItemToServer(toSync, { silent: true });
+      if (!ok) showToast("сохранено локально · сервер позже", true);
       renderAll();
     });
 
@@ -7090,44 +7224,41 @@
       }
     }
 
-    async function pullInventoryIfEmpty() {
-      const localEmpty = !items.length;
-      const localDemoOrSeed =
-        items.length > 0 &&
-        items.every((it) => {
-          const id = String((it && it.id) || "");
-          return id.indexOf("seed_") === 0 || id.indexOf("demo_") === 0;
-        });
-      const localSeedOnly =
-        items.length > 0 &&
-        items.every((it) => {
-          const id = String((it && it.id) || "");
-          const photos = (it && it.photos) || [];
-          const noPhotos = !photos.length;
-          return id.indexOf("seed_") === 0 || noPhotos;
-        });
-      const hasSeedJunk = items.some((it) => String((it && it.id) || "").indexOf("seed_") === 0);
-      // В localDev всегда тянем серверный склад (свежий импорт), иначе demo/seed в LS перебивают.
-      if (!isLocalDevSession && !localEmpty && !localSeedOnly && !localDemoOrSeed && !hasSeedJunk) {
-        return false;
-      }
+    async function pullInventoryFromServer(options) {
+      options = options || {};
       const userId = resolveTelegramUserId();
       const initData = getTelegramInitData();
       try {
         const res = await fetch("/api/inventory", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-Telegram-Init-Data": initData
-          },
+          headers: authHeaders(),
           body: JSON.stringify({ userId: userId || 0, initData: initData })
         });
         const data = await res.json().catch(() => ({}));
-        if (!res.ok || !data.ok || !Array.isArray(data.items) || !data.items.length) {
+        if (!res.ok || !data.ok || !Array.isArray(data.items)) {
           return false;
         }
-        const next = data.items.map(migrateItem).filter(Boolean);
-        if (!next.length) return false;
+        const serverItems = data.items.map(migrateItem).filter(Boolean);
+        const byId = {};
+        (items || []).forEach((it) => {
+          if (it && it.id) byId[it.id] = it;
+        });
+        serverItems.forEach((sit) => {
+          const local = byId[sit.id];
+          if (!local) {
+            byId[sit.id] = sit;
+            return;
+          }
+          const localHasBlob = itemHasPhotoBlob(local);
+          const localNewer =
+            localHasBlob &&
+            String(local.updatedAt || "") > String(sit.updatedAt || "");
+          if (localNewer) return;
+          byId[sit.id] = Object.assign({}, sit, {
+            photos: (sit.photos && sit.photos.length) ? sit.photos : local.photos
+          });
+        });
+        const next = Object.keys(byId).map((k) => byId[k]);
         saveItemsPersistent(next);
         if (data.prices && typeof data.prices === "object") {
           WEIGHTS.forEach((w) => {
@@ -7142,6 +7273,10 @@
       } catch (_) {
         return false;
       }
+    }
+
+    async function pullInventoryIfEmpty() {
+      return pullInventoryFromServer();
     }
 
     (async function boot() {

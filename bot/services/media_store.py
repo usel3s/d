@@ -53,70 +53,149 @@ class MediaStore:
         except (TypeError, ValueError):
             return 0
 
-    def upsert_items(self, user_id: int, items: list[dict[str, Any]]) -> int:
-        """Полная замена позиций пользователя (чужие админы не затрагиваются)."""
+    def _photos_from_raw(
+        self,
+        uid: int,
+        item_id: str,
+        raw: dict[str, Any],
+        prev: dict[str, Any] | None,
+    ) -> list[dict[str, Any]]:
+        photos_meta: list[dict[str, Any]] = []
+        incoming = raw.get("photos") or []
+        prev_photos = {
+            str(p.get("id")): dict(p)
+            for p in (prev or {}).get("photos") or []
+            if isinstance(p, dict) and p.get("id")
+        }
+        seen_ids: set[str] = set()
+
+        for idx, photo in enumerate(incoming):
+            if not isinstance(photo, dict):
+                continue
+            photo_id = str(photo.get("id") or f"{item_id}_{idx}")
+            seen_ids.add(photo_id)
+            data_url = photo.get("final") or photo.get("raw") or ""
+            blob = self._decode_photo(data_url)
+            if not blob:
+                kept = prev_photos.get(photo_id)
+                if kept and kept.get("path"):
+                    if "noStamp" in photo or "no_stamp" in photo:
+                        if photo.get("noStamp") or photo.get("no_stamp"):
+                            kept["no_stamp"] = True
+                        else:
+                            kept.pop("no_stamp", None)
+                    photos_meta.append(kept)
+                continue
+
+            rel = f"{uid}/{item_id}/{photo_id}.jpg"
+            path = self.photos_dir / rel
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(blob)
+            meta: dict[str, Any] = {"id": photo_id, "path": str(path)}
+            if photo.get("noStamp") or photo.get("no_stamp"):
+                meta["no_stamp"] = True
+            photos_meta.append(meta)
+
+        # Если клиент прислал позицию без фото-блобов — не теряем уже лежащие файлы
+        if not photos_meta and prev_photos:
+            photos_meta = [prev_photos[k] for k in prev_photos if prev_photos[k].get("path")]
+
+        return photos_meta
+
+    def _record_from_raw(
+        self,
+        uid: int,
+        raw: dict[str, Any],
+        prev: dict[str, Any] | None,
+    ) -> dict[str, Any] | None:
+        item_id = str(raw.get("id") or "").strip()
+        if not item_id:
+            return None
+        photos_meta = self._photos_from_raw(uid, item_id, raw, prev)
+        return {
+            "id": item_id,
+            "user_id": uid,
+            "location": raw.get("location"),
+            "weight": raw.get("weight"),
+            "tape_color": raw.get("tapeColor") or raw.get("tape_color"),
+            "note": raw.get("note") or "",
+            "geo": raw.get("geo") or {},
+            "created_at": raw.get("createdAt") or raw.get("created_at") or (prev or {}).get("created_at"),
+            "updated_at": raw.get("updatedAt") or raw.get("updated_at"),
+            "photos": photos_meta,
+        }
+
+    def _split_user_items(
+        self, user_id: int
+    ) -> tuple[int, list[dict[str, Any]], list[dict[str, Any]], dict[str, dict[str, Any]]]:
         uid = self._uid(user_id)
         existing = self._load_items()
         others = [i for i in existing if self._uid(i.get("user_id")) != uid]
-        prev_by_id = {
-            str(i.get("id")): i
-            for i in existing
-            if self._uid(i.get("user_id")) == uid and i.get("id")
-        }
+        mine = [i for i in existing if self._uid(i.get("user_id")) == uid]
+        prev_by_id = {str(i.get("id")): i for i in mine if i.get("id")}
+        return uid, others, mine, prev_by_id
 
+    def _remove_item_photos(self, uid: int, item_id: str) -> None:
+        folder = self.photos_dir / str(uid) / str(item_id)
+        if not folder.is_dir():
+            return
+        try:
+            import shutil
+
+            shutil.rmtree(folder, ignore_errors=True)
+        except Exception:
+            pass
+
+    def upsert_items(self, user_id: int, items: list[dict[str, Any]]) -> int:
+        """Полная замена позиций пользователя (чужие админы не затрагиваются)."""
+        uid, others, mine, prev_by_id = self._split_user_items(user_id)
+        incoming_ids: set[str] = set()
         new_records: list[dict[str, Any]] = []
         for raw in items:
-            item_id = str(raw.get("id") or "").strip()
-            if not item_id:
+            rec = self._record_from_raw(uid, raw, prev_by_id.get(str(raw.get("id") or "")))
+            if not rec:
                 continue
+            incoming_ids.add(rec["id"])
+            new_records.append(rec)
 
-            photos_meta: list[dict[str, str]] = []
-            for idx, photo in enumerate(raw.get("photos") or []):
-                if not isinstance(photo, dict):
-                    continue
-                photo_id = str(photo.get("id") or f"{item_id}_{idx}")
-                data_url = photo.get("final") or photo.get("raw") or ""
-                blob = self._decode_photo(data_url)
-                if not blob:
-                    prev = prev_by_id.get(item_id) or {}
-                    for p in prev.get("photos") or []:
-                        if p.get("id") == photo_id and p.get("path"):
-                            kept = dict(p)
-                            if "noStamp" in photo or "no_stamp" in photo:
-                                if photo.get("noStamp") or photo.get("no_stamp"):
-                                    kept["no_stamp"] = True
-                                else:
-                                    kept.pop("no_stamp", None)
-                            photos_meta.append(kept)
-                            break
-                    continue
-
-                rel = f"{uid}/{item_id}/{photo_id}.jpg"
-                path = self.photos_dir / rel
-                path.parent.mkdir(parents=True, exist_ok=True)
-                path.write_bytes(blob)
-                meta = {"id": photo_id, "path": str(path)}
-                if photo.get("noStamp") or photo.get("no_stamp"):
-                    meta["no_stamp"] = True
-                photos_meta.append(meta)
-
-            new_records.append(
-                {
-                    "id": item_id,
-                    "user_id": uid,
-                    "location": raw.get("location"),
-                    "weight": raw.get("weight"),
-                    "tape_color": raw.get("tapeColor") or raw.get("tape_color"),
-                    "note": raw.get("note") or "",
-                    "geo": raw.get("geo") or {},
-                    "created_at": raw.get("createdAt") or raw.get("created_at"),
-                    "updated_at": raw.get("updatedAt") or raw.get("updated_at"),
-                    "photos": photos_meta,
-                }
-            )
+        for old in mine:
+            oid = str(old.get("id") or "")
+            if oid and oid not in incoming_ids:
+                self._remove_item_photos(uid, oid)
 
         self._save_items(others + new_records)
         return len(new_records)
+
+    def merge_items(self, user_id: int, items: list[dict[str, Any]]) -> int:
+        """Добавить/обновить позиции по id, остальные клады пользователя не трогать."""
+        uid, others, mine, prev_by_id = self._split_user_items(user_id)
+        merged = dict(prev_by_id)
+        updated = 0
+        for raw in items:
+            rec = self._record_from_raw(uid, raw, prev_by_id.get(str(raw.get("id") or "")))
+            if not rec:
+                continue
+            merged[rec["id"]] = rec
+            updated += 1
+        self._save_items(others + list(merged.values()))
+        return updated
+
+    def delete_item_ids(self, user_id: int, item_ids: list[str]) -> int:
+        uid, others, mine, _prev = self._split_user_items(user_id)
+        drop = {str(x).strip() for x in item_ids if str(x).strip()}
+        if not drop:
+            return 0
+        kept: list[dict[str, Any]] = []
+        removed = 0
+        for item in mine:
+            oid = str(item.get("id") or "")
+            if oid in drop:
+                self._remove_item_photos(uid, oid)
+                removed += 1
+                continue
+            kept.append(item)
+        self._save_items(others + kept)
+        return removed
 
     def ensure_seed(self, user_id: int) -> int:
         """Если у админа пусто — засеять известную сводку (без фото)."""

@@ -119,7 +119,7 @@ async def handle_auth(request: web.Request) -> web.Response:
 
 
 async def handle_sync_items(request: web.Request) -> web.Response:
-    """WebApp → сервер: позиции + фото для админ-галереи."""
+    """WebApp → сервер: merge позиций (не затирает чужие клады того же админа)."""
     media_store = request.app["media_store"]
     try:
         payload = await request.json()
@@ -136,8 +136,68 @@ async def handle_sync_items(request: web.Request) -> web.Response:
     if not isinstance(items, list):
         return web.json_response({"ok": False, "error": "bad_payload"}, status=400)
 
-    saved = media_store.upsert_items(user_id, items)
-    return web.json_response({"ok": True, "saved": saved, "userId": user_id})
+    deleted_ids = payload.get("deletedIds") or payload.get("deleted_ids") or []
+    if isinstance(deleted_ids, list) and deleted_ids:
+        media_store.delete_item_ids(user_id, [str(x) for x in deleted_ids])
+
+    replace = bool(payload.get("replace"))
+    if replace:
+        saved = media_store.upsert_items(user_id, items)
+    else:
+        saved = media_store.merge_items(user_id, items)
+    total = len(media_store.list_items(user_id=user_id))
+    return web.json_response(
+        {"ok": True, "saved": saved, "total": total, "userId": user_id}
+    )
+
+
+async def handle_sync_item(request: web.Request) -> web.Response:
+    """Одна позиция с фото — основной путь автосохранения."""
+    media_store = request.app["media_store"]
+    try:
+        payload = await request.json()
+    except Exception:
+        return web.json_response({"ok": False, "error": "invalid_json"}, status=400)
+
+    user_id = _resolve_request_user_id(request, payload)
+    if not user_id:
+        return web.json_response({"ok": False, "error": "no_user"}, status=401)
+    if not _is_admin_user(request, user_id):
+        return web.json_response({"ok": False, "error": "forbidden"}, status=403)
+
+    item = payload.get("item")
+    if not isinstance(item, dict):
+        return web.json_response({"ok": False, "error": "bad_payload"}, status=400)
+
+    saved = media_store.merge_items(user_id, [item])
+    total = len(media_store.list_items(user_id=user_id))
+    return web.json_response(
+        {"ok": True, "saved": saved, "total": total, "userId": user_id}
+    )
+
+
+async def handle_delete_item(request: web.Request) -> web.Response:
+    media_store = request.app["media_store"]
+    try:
+        payload = await request.json()
+    except Exception:
+        return web.json_response({"ok": False, "error": "invalid_json"}, status=400)
+
+    user_id = _resolve_request_user_id(request, payload)
+    if not user_id:
+        return web.json_response({"ok": False, "error": "no_user"}, status=401)
+    if not _is_admin_user(request, user_id):
+        return web.json_response({"ok": False, "error": "forbidden"}, status=403)
+
+    item_id = str(payload.get("itemId") or payload.get("id") or "").strip()
+    if not item_id:
+        return web.json_response({"ok": False, "error": "bad_payload"}, status=400)
+
+    removed = media_store.delete_item_ids(user_id, [item_id])
+    total = len(media_store.list_items(user_id=user_id))
+    return web.json_response(
+        {"ok": True, "removed": removed, "total": total, "userId": user_id}
+    )
 
 
 async def handle_inventory(request: web.Request) -> web.Response:
@@ -235,7 +295,7 @@ async def run() -> None:
     bot, dp, db, _logistics, media_store = await build_app(settings)
     await bot.delete_webhook(drop_pending_updates=True)
 
-    app = web.Application(client_max_size=40 * 1024 * 1024)
+    app = web.Application(client_max_size=64 * 1024 * 1024)
     app["media_store"] = media_store
     app["bot"] = bot
     app["settings"] = settings
@@ -245,6 +305,8 @@ async def run() -> None:
     app.router.add_get("/health", handle_health)
     app.router.add_post("/api/auth", handle_auth)
     app.router.add_post("/api/sync-items", handle_sync_items)
+    app.router.add_post("/api/sync-item", handle_sync_item)
+    app.router.add_post("/api/delete-item", handle_delete_item)
     app.router.add_post("/api/inventory", handle_inventory)
     app.router.add_get("/api/photo/{item_id}/{photo_id}", handle_photo)
 

@@ -1,0 +1,188 @@
+{
+  "type": "logistics_sync",
+  "exportedAt": "2026-08-12T20:36:22.290Z",
+  "prices": {
+    "1": 1100,
+    "2": 260,
+    "3": 380,
+    "4": 490,
+    "5": 600,
+    "0.5": 850
+  },
+  "stats": {
+    "byLoc": {
+      "warehouse_1": {
+        "weight": 1,
+        "revenue": 1700,
+        "count": 2
+      },
+      "warehouse_2": {
+        "weight": 0,
+        "revenue": 0,
+        "count": 0
+      },
+      "pickup": {
+        "weight": 3,
+        "revenue": 5100,
+        "count": 6
+      }
+    },
+    "totalWeight": 4,
+    "totalRevenue": 6800,
+    "totalCount": 8
+  },
+  "items": [
+    {
+      "id": "i_msqh1vdv_5mvv6h",
+      "location": "pickup",
+      "weight": 0.5,
+      "tapeColor": "black",
+      "note": "точно по метке присыпан землей 1-2см",
+      "createdAt": "2026-08-12T19:17:56.617Z",
+      "updatedAt": "2026-08-12T19:19:49.324Z",
+      "photoCount": 3,
+      "geo": {
+        "latitude": 57.01435702067384,
+        "longitude": 40.96724758969069,
+        "accuracy": 5.841671716869607,
+        "altitude": 122.93794822692871,
+        "source": "browser",
+        "timestamp": 1786562246971,
+        "address": "ул. ица Шестернина"
+      }
+    },
+    {
+      "id": "i_msqh9mau_fpbqq5",
+      "location": "warehouse_1",
+      "weight": 0.5,
+      "tapeColor": "black",
+      "note": "точно по метке",
+      "createdAt": "2026-08-12T19:23:58.179Z",
+      "updatedAt": "2026-08-12T19:23:58.179Z",
+      "photoCount": 3,
+      "geo": {
+        "latitude": 57.01539671755738,
+        "longitude": 40.964058345199184,
+        "accuracy": 12.843885412190218,
+        "altitude": 99.18025779724121,
+        "source": "browser",
+        "timestamp": 1786562571027,
+        "address": "ул. ица Дзержинского"
+      }
+    },
+    {
+      "id": "i_msqiko3i_1y0yyp",
+      "location": "pickup",
+      "weight": 0.5,
+      "tapeColor": "black",
+      "note": "точно по метке присыпан землей 1-2см",
+      "createdAt": "2026-08-12T20:00:33.456Z",
+      "updatedAt": "2026-08-12T20:00:33.456Z",
+      "photoCount": 2,
+      "geo": {
+        "latitude": 57.01517735495836,
+        "longitude": 40.97157093676697,
+        "accuracy": 5.207278885033489,
+        "altitude": 133.06972312927246,
+        "source": "browser",
+        "timestamp": 1786564657283,
+        "address": "ул. проспект Ленина"
+      }
+    },
+    {
+      "id": "i_msqisvvt_5vyz94",
+      "location": "pickup",
+      "weight": 0.5,
+      "tapeColor": "black",
+      "note": "точно по метке под камнем, присыпан землей 1-2см",
+      "createdAt": "2026-08-12T20:06:56.673Z",
+      "updatedAt": "2026-08-12T20:06:56.673Z",
+      "photoCount": 3,
+      "geo": {
+        "latitude": 57.01537257515467,
+        "longitude": 40.97430413832706,
+        "accuracy": 4.6573975965779955,
+        "altitude": 136.51302154455334,
+        "source": "browser",
+        "timestamp": 1786565161792,
+        "address": "ул. ица Фурманова"
+      }
+    },
+    {
+      "id": "i_msqixdjt_w5gl8m",
+      "location": "pickup",
+      "weight": 0.5,
+      "tapeColor": "black",
+      "note": "точно по метке под камнем, присыпан землей 1-2см",
+      "createdAt": "2026-08-12T20:10:26.303Z",
+      "updatedAt": "2026-08-12T20:10:26.303Z",
+      "photoCount": 3,
+      "geo": {
+        "latitude": 57.015080188325165,
+        "longitude": 40.976428891395834,
+        "accuracy": 12.392509455971899,
+        "altitude": 126.16890525817871,
+        "source": "browser",
+        "timestamp": 1786565367024,
+        "address": "ул. Октябрьская улица"
+      }
+    },
+    {
+      "id": "i_msqj31vp_3frvtm",
+      "location": "pickup",
+      "weight": 0.5,
+      "tapeColor": "black",
+      "note": "точно по метке под камнем, присыпан землей 1-2см",
+      "createdAt": "2026-08-12T20:14:51.110Z",
+      "updatedAt": "2026-08-12T20:14:51.110Z",
+      "photoCount": 3,
+      "geo": {
+        "latitude": 57.01521669880641,
+        "longitude": 40.9795637078613,
+        "accuracy": 3.340759548030526,
+        "altitude": 134.05336580518633,
+        "source": "browser",
+        "timestamp": 1786565644661,
+        "address": "ул. ица Фурманова"
+      }
+    },
+    {
+      "id": "i_msqj5c63_7m4z2p",
+      "location": "pickup",
+      "weight": 0.5,
+      "tapeColor": "black",
+      "note": "точно по метке, присыпан землей 1-2см",
+      "createdAt": "2026-08-12T20:16:37.649Z",
+      "updatedAt": "2026-08-12T20:16:37.649Z",
+      "photoCount": 3,
+      "geo": {
+        "latitude": 57.015161521406114,
+        "longitude": 40.98042182099378,
+        "accuracy": 3.9627386456700524,
+        "altitude": 135.76045806799084,
+        "source": "browser",
+        "timestamp": 1786565761631,
+        "address": "ул. ица Фурманова"
+      }
+    },
+    {
+      "id": "i_msqjau0r_34nvfb",
+      "location": "warehouse_1",
+      "weight": 0.5,
+      "tapeColor": "black",
+      "note": "точно по метке",
+      "createdAt": "2026-08-12T20:20:54.189Z",
+      "updatedAt": "2026-08-12T20:33:32.918Z",
+      "photoCount": 2,
+      "geo": {
+        "latitude": 57.01497067527006,
+        "longitude": 40.983549834575314,
+        "accuracy": 3.4752118279420845,
+        "altitude": 131.37453269958496,
+        "source": "browser",
+        "timestamp": 1786566000796,
+        "address": "ул. Шереметевский проспект"
+      }
+    }
+  ]
+}
