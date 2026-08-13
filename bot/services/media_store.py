@@ -11,6 +11,8 @@ from typing import Any
 
 
 _DATA_URL_RE = re.compile(r"^data:image/[^;]+;base64,(.+)$", re.I)
+# Импорт штампов 12.08 (stash_8647494349_01…) — не живой склад Mini App.
+_LEGACY_STAMP_ID_RE = re.compile(r"^stash_\d+_\d+$")
 
 
 class MediaStore:
@@ -292,12 +294,17 @@ class MediaStore:
             self.ensure_seed(user_id)
             return [self.to_webapp_item(i) for i in self.list_items(user_id=user_id)]
 
+    @staticmethod
+    def is_legacy_stamp(item_id: Any) -> bool:
+        return bool(_LEGACY_STAMP_ID_RE.match(str(item_id or "")))
+
     def list_items(self, user_id: int | None = None) -> list[dict[str, Any]]:
         with self._lock:
             items = self._load_items()
             if user_id is not None:
                 uid = self._uid(user_id)
                 items = [i for i in items if self._uid(i.get("user_id")) == uid]
+            items = [i for i in items if not self.is_legacy_stamp(i.get("id"))]
             items.sort(
                 key=lambda x: str(x.get("updated_at") or x.get("created_at") or ""),
                 reverse=True,

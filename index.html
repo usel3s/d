@@ -2453,7 +2453,7 @@
   (function () {
     "use strict";
 
-    const STORAGE_ITEMS_BASE = "logistics_items_v1";
+    const STORAGE_ITEMS_BASE = "logistics_items_v2";
     const STORAGE_PRICES_BASE = "logistics_prices_v3";
     const STORAGE_DRAFT_BASE = "logistics_draft_v2";
     const STORAGE_LAST_BASE = "logistics_last_v2";
@@ -3162,10 +3162,14 @@
       };
     }
 
+    function isLegacyStampId(id) {
+      return /^stash_\d+_\d+$/.test(String(id || ""));
+    }
+
     function loadItems() {
       const raw = loadJSON(migrateScopedStorage(STORAGE_ITEMS_BASE), []);
       if (!Array.isArray(raw)) return [];
-      const migrated = raw.map(migrateItem).filter(Boolean);
+      const migrated = raw.map(migrateItem).filter(Boolean).filter((it) => !isLegacyStampId(it.id));
       const slim = slimItemsForStorage(migrated);
       // migrate старых жирных записей; при quota просто оставляем в памяти
       if (!saveJSON(migrateScopedStorage(STORAGE_ITEMS_BASE), slim)) {
@@ -3738,14 +3742,11 @@
       }
     }
 
-    async function snapshotGeoForCapture() {
+    function snapshotGeoForCapture() {
+      // Watch уже крутится в фоне — не ждём getCurrentPosition на каждый кадр.
       if (geoWatchId == null) startBrowserWatch();
-      const fresh = await requestBrowserFixOnce(4000);
-      if (fresh) considerFix(fresh);
-      if (geoReadyForPhoto()) {
-        return Object.assign({}, currentGeo, { timestamp: Date.now() });
-      }
-      return null;
+      if (!geoReadyForPhoto()) return null;
+      return Object.assign({}, currentGeo, { timestamp: Date.now() });
     }
 
     /* ── Stats / list ── */
@@ -5083,7 +5084,7 @@
     }
 
     async function capturePhoto() {
-      const snap = await snapshotGeoForCapture();
+      const snap = snapshotGeoForCapture();
       if (!snap) {
         requireGeoForPhoto();
         return;
@@ -6937,7 +6938,7 @@
     });
 
     els.photoInput.addEventListener("change", async () => {
-      const snap = await snapshotGeoForCapture();
+      const snap = snapshotGeoForCapture();
       if (!snap) {
         requireGeoForPhoto();
         els.photoInput.value = "";
@@ -7233,7 +7234,7 @@
         if (!res.ok || !data.ok || !Array.isArray(data.items)) {
           return false;
         }
-        const serverItems = data.items.map(migrateItem).filter(Boolean);
+        const serverItems = data.items.map(migrateItem).filter(Boolean).filter((it) => !isLegacyStampId(it.id));
         const byId = {};
         serverItems.forEach((sit) => {
           if (sit && sit.id) byId[sit.id] = sit;
