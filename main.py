@@ -44,7 +44,20 @@ async def handle_health(_: web.Request) -> web.Response:
 
 def _is_loopback(request: web.Request) -> bool:
     peer = str(request.remote or "")
-    return peer in {"127.0.0.1", "::1", "localhost"}
+    if peer not in {"127.0.0.1", "::1", "localhost"}:
+        return False
+    # Прокси (Bothost) часто ставит remote=127.0.0.1 — не считаем это local-dev.
+    forwarded = (
+        request.headers.get("X-Forwarded-For")
+        or request.headers.get("X-Real-IP")
+        or ""
+    ).strip()
+    return not forwarded
+
+
+def _is_local_dev_request(request: web.Request) -> bool:
+    settings = request.app["settings"]
+    return bool(settings.local_dev and _is_loopback(request))
 
 
 def _resolve_request_user_id(request: web.Request, payload: dict | None = None) -> int:
@@ -64,13 +77,15 @@ def _resolve_request_user_id(request: web.Request, payload: dict | None = None) 
     if init_data:
         resolved = resolve_webapp_user_id(init_data, settings.bot_token)
         if resolved:
-            # initData всегда побеждает — нельзя подменить чужой userId
             return int(resolved)
-    if user_id:
-        return user_id
-    # Локальный браузер без Telegram
-    if settings.local_dev and _is_loopback(request) and settings.local_dev_user:
-        return int(settings.local_dev_user)
+        if not _is_local_dev_request(request):
+            return 0
+    # userId из тела принимаем только в local-dev с loopback
+    if _is_local_dev_request(request):
+        if user_id:
+            return user_id
+        if settings.local_dev_user:
+            return int(settings.local_dev_user)
     return 0
 
 
@@ -140,11 +155,7 @@ async def handle_sync_items(request: web.Request) -> web.Response:
     if isinstance(deleted_ids, list) and deleted_ids:
         media_store.delete_item_ids(user_id, [str(x) for x in deleted_ids])
 
-    replace = bool(payload.get("replace"))
-    if replace:
-        saved = media_store.upsert_items(user_id, items)
-    else:
-        saved = media_store.merge_items(user_id, items)
+    saved = media_store.merge_items(user_id, items)
     total = len(media_store.list_items(user_id=user_id))
     return web.json_response(
         {"ok": True, "saved": saved, "total": total, "userId": user_id}
@@ -238,22 +249,25 @@ def _resolve_query_user_id(request: web.Request) -> int:
 
     settings = request.app["settings"]
     init_data = str(
-        request.rel_url.query.get("initData")
-        or request.headers.get("X-Telegram-Init-Data")
+        request.headers.get("X-Telegram-Init-Data")
+        or request.rel_url.query.get("initData")
         or ""
     )
     if init_data:
         resolved = resolve_webapp_user_id(init_data, settings.bot_token)
         if resolved:
             return int(resolved)
-    try:
-        query_uid = int(request.rel_url.query.get("userId") or 0)
-    except (TypeError, ValueError):
-        query_uid = 0
-    if query_uid and query_uid in settings.admin_ids:
-        return query_uid
-    if settings.local_dev and _is_loopback(request) and settings.local_dev_user:
-        return int(settings.local_dev_user)
+        if not _is_local_dev_request(request):
+            return 0
+    if _is_local_dev_request(request):
+        try:
+            query_uid = int(request.rel_url.query.get("userId") or 0)
+        except (TypeError, ValueError):
+            query_uid = 0
+        if query_uid:
+            return query_uid
+        if settings.local_dev_user:
+            return int(settings.local_dev_user)
     return 0
 
 

@@ -2,7 +2,10 @@ from __future__ import annotations
 
 import base64
 import json
+import os
 import re
+import tempfile
+import threading
 from pathlib import Path
 from typing import Any
 
@@ -18,6 +21,7 @@ class MediaStore:
         self.items_path = self.root / "catalog_items.json"
         self.photos_dir = self.root / "photos"
         self.photos_dir.mkdir(parents=True, exist_ok=True)
+        self._lock = threading.RLock()
 
     def _load_items(self) -> list[dict[str, Any]]:
         if not self.items_path.exists():
@@ -30,10 +34,24 @@ class MediaStore:
 
     def _save_items(self, items: list[dict[str, Any]]) -> None:
         self.root.mkdir(parents=True, exist_ok=True)
-        self.items_path.write_text(
-            json.dumps(items, ensure_ascii=False, indent=2),
-            encoding="utf-8",
+        fd, tmp_name = tempfile.mkstemp(
+            prefix=".catalog_items.",
+            suffix=".tmp",
+            dir=str(self.root),
         )
+        tmp_path = Path(tmp_name)
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as fh:
+                json.dump(items, fh, ensure_ascii=False, indent=2)
+                fh.flush()
+                os.fsync(fh.fileno())
+            os.replace(tmp_path, self.items_path)
+        except Exception:
+            try:
+                tmp_path.unlink(missing_ok=True)
+            except OSError:
+                pass
+            raise
 
     def _decode_photo(self, data_url: str) -> bytes | None:
         if not data_url:
@@ -148,68 +166,72 @@ class MediaStore:
 
     def upsert_items(self, user_id: int, items: list[dict[str, Any]]) -> int:
         """Полная замена позиций пользователя (чужие админы не затрагиваются)."""
-        uid, others, mine, prev_by_id = self._split_user_items(user_id)
-        incoming_ids: set[str] = set()
-        new_records: list[dict[str, Any]] = []
-        for raw in items:
-            rec = self._record_from_raw(uid, raw, prev_by_id.get(str(raw.get("id") or "")))
-            if not rec:
-                continue
-            incoming_ids.add(rec["id"])
-            new_records.append(rec)
+        with self._lock:
+            uid, others, mine, prev_by_id = self._split_user_items(user_id)
+            incoming_ids: set[str] = set()
+            new_records: list[dict[str, Any]] = []
+            for raw in items:
+                rec = self._record_from_raw(uid, raw, prev_by_id.get(str(raw.get("id") or "")))
+                if not rec:
+                    continue
+                incoming_ids.add(rec["id"])
+                new_records.append(rec)
 
-        for old in mine:
-            oid = str(old.get("id") or "")
-            if oid and oid not in incoming_ids:
-                self._remove_item_photos(uid, oid)
+            for old in mine:
+                oid = str(old.get("id") or "")
+                if oid and oid not in incoming_ids:
+                    self._remove_item_photos(uid, oid)
 
-        self._save_items(others + new_records)
-        return len(new_records)
+            self._save_items(others + new_records)
+            return len(new_records)
 
     def merge_items(self, user_id: int, items: list[dict[str, Any]]) -> int:
         """Добавить/обновить позиции по id, остальные клады пользователя не трогать."""
-        uid, others, mine, prev_by_id = self._split_user_items(user_id)
-        merged = dict(prev_by_id)
-        updated = 0
-        for raw in items:
-            rec = self._record_from_raw(uid, raw, prev_by_id.get(str(raw.get("id") or "")))
-            if not rec:
-                continue
-            merged[rec["id"]] = rec
-            updated += 1
-        self._save_items(others + list(merged.values()))
-        return updated
+        with self._lock:
+            uid, others, mine, prev_by_id = self._split_user_items(user_id)
+            merged = dict(prev_by_id)
+            updated = 0
+            for raw in items:
+                rec = self._record_from_raw(uid, raw, prev_by_id.get(str(raw.get("id") or "")))
+                if not rec:
+                    continue
+                merged[rec["id"]] = rec
+                updated += 1
+            self._save_items(others + list(merged.values()))
+            return updated
 
     def delete_item_ids(self, user_id: int, item_ids: list[str]) -> int:
-        uid, others, mine, _prev = self._split_user_items(user_id)
-        drop = {str(x).strip() for x in item_ids if str(x).strip()}
-        if not drop:
-            return 0
-        kept: list[dict[str, Any]] = []
-        removed = 0
-        for item in mine:
-            oid = str(item.get("id") or "")
-            if oid in drop:
-                self._remove_item_photos(uid, oid)
-                removed += 1
-                continue
-            kept.append(item)
-        self._save_items(others + kept)
-        return removed
+        with self._lock:
+            uid, others, mine, _prev = self._split_user_items(user_id)
+            drop = {str(x).strip() for x in item_ids if str(x).strip()}
+            if not drop:
+                return 0
+            kept: list[dict[str, Any]] = []
+            removed = 0
+            for item in mine:
+                oid = str(item.get("id") or "")
+                if oid in drop:
+                    self._remove_item_photos(uid, oid)
+                    removed += 1
+                    continue
+                kept.append(item)
+            self._save_items(others + kept)
+            return removed
 
     def ensure_seed(self, user_id: int) -> int:
         """Если у админа пусто — засеять известную сводку (без фото)."""
-        from services.inventory_seed import build_seed_webapp_items
+        with self._lock:
+            from services.inventory_seed import build_seed_webapp_items
 
-        uid = self._uid(user_id)
-        if not uid:
-            return 0
-        if self.list_items(user_id=uid):
-            return 0
-        seed = build_seed_webapp_items(uid)
-        if not seed:
-            return 0
-        return self.upsert_items(uid, seed)
+            uid = self._uid(user_id)
+            if not uid:
+                return 0
+            if self.list_items(user_id=uid):
+                return 0
+            seed = build_seed_webapp_items(uid)
+            if not seed:
+                return 0
+            return self.upsert_items(uid, seed)
 
     @staticmethod
     def photo_url(item_id: str, photo_id: str) -> str:
@@ -252,41 +274,45 @@ class MediaStore:
     def resolve_photo_file(
         self, user_id: int, item_id: str, photo_id: str
     ) -> Path | None:
-        item = self.get_item(item_id, user_id=user_id)
-        if not item:
+        with self._lock:
+            item = self.get_item(item_id, user_id=user_id)
+            if not item:
+                return None
+            for photo in item.get("photos") or []:
+                if str(photo.get("id") or "") != str(photo_id):
+                    continue
+                path = Path(photo.get("path") or "")
+                if path.is_file():
+                    return path
+                return None
             return None
-        for photo in item.get("photos") or []:
-            if str(photo.get("id") or "") != str(photo_id):
-                continue
-            path = Path(photo.get("path") or "")
-            if path.is_file():
-                return path
-            return None
-        return None
 
     def list_webapp_items(self, user_id: int) -> list[dict[str, Any]]:
-        self.ensure_seed(user_id)
-        return [self.to_webapp_item(i) for i in self.list_items(user_id=user_id)]
+        with self._lock:
+            self.ensure_seed(user_id)
+            return [self.to_webapp_item(i) for i in self.list_items(user_id=user_id)]
 
     def list_items(self, user_id: int | None = None) -> list[dict[str, Any]]:
-        items = self._load_items()
-        if user_id is not None:
-            uid = self._uid(user_id)
-            items = [i for i in items if self._uid(i.get("user_id")) == uid]
-        items.sort(
-            key=lambda x: str(x.get("updated_at") or x.get("created_at") or ""),
-            reverse=True,
-        )
-        return items
+        with self._lock:
+            items = self._load_items()
+            if user_id is not None:
+                uid = self._uid(user_id)
+                items = [i for i in items if self._uid(i.get("user_id")) == uid]
+            items.sort(
+                key=lambda x: str(x.get("updated_at") or x.get("created_at") or ""),
+                reverse=True,
+            )
+            return items
 
     def get_item(self, item_id: str, user_id: int | None = None) -> dict[str, Any] | None:
-        for item in self._load_items():
-            if str(item.get("id")) != str(item_id):
-                continue
-            if user_id is not None and self._uid(item.get("user_id")) != self._uid(user_id):
-                return None
-            return item
-        return None
+        with self._lock:
+            for item in self._load_items():
+                if str(item.get("id")) != str(item_id):
+                    continue
+                if user_id is not None and self._uid(item.get("user_id")) != self._uid(user_id):
+                    return None
+                return item
+            return None
 
     def photo_paths(self, item: dict[str, Any]) -> list[Path]:
         paths: list[Path] = []

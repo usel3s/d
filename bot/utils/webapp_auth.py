@@ -41,15 +41,7 @@ def extract_user_id(init_data: str) -> int | None:
 
 
 def resolve_webapp_user_id(init_data: str, bot_token: str) -> int | None:
-    """
-    Достаёт user id из initData.
-    Если подпись валидна — ок. Если подпись битая, но user есть —
-    всё равно возвращаем id (мягкий режим для кастомных клиентов).
-    """
-    uid = extract_user_id(init_data)
-    if not uid:
+    """user id только при валидной подписи Telegram. Без hash — отказ."""
+    if not validate_init_data(init_data, bot_token):
         return None
-    if validate_init_data(init_data, bot_token):
-        return uid
-    # Swiftgram / некоторые клиенты иногда ломают hash — id всё равно нужен для sync
-    return uid
+    return extract_user_id(init_data)

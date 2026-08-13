@@ -2847,9 +2847,7 @@
       if (isDataUrl(photo.final)) return photo.final;
       if (isDataUrl(photo.raw)) return photo.raw;
       if (photo._blobUrl) return photo._blobUrl;
-      if (photo.url) return authPhotoUrl(photo.url);
-      if (photo.final) return authPhotoUrl(photo.final);
-      if (photo.raw) return authPhotoUrl(photo.raw);
+      // /api/photo нельзя в <img src>: нужен заголовок initData (hydrateCardPhotos).
       return "";
     }
 
@@ -2858,9 +2856,6 @@
       if (isDataUrl(photo.raw)) return photo.raw;
       if (isDataUrl(photo.final)) return photo.final;
       if (photo._blobUrl) return photo._blobUrl;
-      if (photo.url) return authPhotoUrl(photo.url);
-      if (photo.raw) return authPhotoUrl(photo.raw);
-      if (photo.final) return authPhotoUrl(photo.final);
       return "";
     }
 
@@ -7240,23 +7235,28 @@
         }
         const serverItems = data.items.map(migrateItem).filter(Boolean);
         const byId = {};
-        (items || []).forEach((it) => {
-          if (it && it.id) byId[it.id] = it;
-        });
         serverItems.forEach((sit) => {
-          const local = byId[sit.id];
-          if (!local) {
-            byId[sit.id] = sit;
+          if (sit && sit.id) byId[sit.id] = sit;
+        });
+        (items || []).forEach((it) => {
+          if (!it || !it.id) return;
+          const server = byId[it.id];
+          if (server) {
+            const localNewer =
+              itemHasPhotoBlob(it) &&
+              String(it.updatedAt || "") > String(server.updatedAt || "");
+            if (localNewer) {
+              byId[it.id] = it;
+              return;
+            }
+            byId[it.id] = Object.assign({}, server, {
+              photos: (server.photos && server.photos.length) ? server.photos : it.photos
+            });
             return;
           }
-          const localHasBlob = itemHasPhotoBlob(local);
-          const localNewer =
-            localHasBlob &&
-            String(local.updatedAt || "") > String(sit.updatedAt || "");
-          if (localNewer) return;
-          byId[sit.id] = Object.assign({}, sit, {
-            photos: (sit.photos && sit.photos.length) ? sit.photos : local.photos
-          });
+          if (itemHasPhotoBlob(it)) {
+            byId[it.id] = it;
+          }
         });
         const next = Object.keys(byId).map((k) => byId[k]);
         saveItemsPersistent(next);
