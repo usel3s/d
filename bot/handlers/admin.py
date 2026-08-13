@@ -11,16 +11,17 @@ from aiogram.types import (
 
 from config import Settings
 from database import Database
-from keyboards import admin_keyboard
+from keyboards import section_keyboard
 from keyboards.menu import photos_list_keyboard
 from services import MediaStore
-from services.inventory_seed import DEFAULT_PRICES, manual_export_kwargs
 from utils.emoji import pe
-from utils.formatting import (
-    TAPE_LABELS,
-    format_grams,
-    format_money,
-    location_label,
+from utils.screens import (
+    item_button_title,
+    item_caption,
+    stats_text,
+    warehouse_empty_text,
+    warehouse_list_text,
+    warehouse_stats,
 )
 
 router = Router(name="admin")
@@ -32,57 +33,106 @@ def _is_admin(user_id: int, settings: Settings) -> bool:
     return user_id in settings.admin_ids
 
 
-def _user_inventory_stats(user_id: int, media_store: MediaStore) -> dict[str, float | int | str]:
-    """Позиции/вес/сумма админа."""
-    media_store.ensure_seed(user_id)
+async def _show_warehouse(
+    *,
+    message: Message,
+    user_id: int,
+    page: int,
+    media_store: MediaStore,
+    edit: bool,
+) -> None:
     items = media_store.list_items(user_id=user_id)
-    if items:
-        weight = 0.0
-        revenue = 0.0
-        photos = 0
-        for item in items:
-            try:
-                w = float(item.get("weight") or 0)
-            except (TypeError, ValueError):
-                w = 0.0
-            weight += w
-            key = str(int(w)) if w.is_integer() else str(w)
-            revenue += float(DEFAULT_PRICES.get(key, 0) or 0)
-            photos += len(item.get("photos") or [])
-        return {
-            "count": len(items),
-            "weight": weight,
-            "revenue": revenue,
-            "photos": photos,
-            "source": "store",
-        }
+    if not items:
+        text = warehouse_empty_text()
+        markup = section_keyboard()
+        if edit:
+            await message.edit_text(text, reply_markup=markup)
+        else:
+            await message.answer(text, reply_markup=markup)
+        return
 
-    manual = manual_export_kwargs(user_id)
-    if manual:
-        count = int(manual["count"])
-        w = float(manual["weight"])
-        price = float(manual["price_per_item"])
-        return {
-            "count": count,
-            "weight": count * w,
-            "revenue": count * price,
-            "photos": 0,
-            "source": "manual",
-        }
+    total_pages = max(1, (len(items) + PAGE_SIZE - 1) // PAGE_SIZE)
+    page = max(0, min(page, total_pages - 1))
+    chunk = items[page * PAGE_SIZE : (page + 1) * PAGE_SIZE]
+    start_index = page * PAGE_SIZE + 1
+    text = warehouse_list_text(
+        chunk,
+        page=page,
+        total_pages=total_pages,
+        total=len(items),
+        start_index=start_index,
+    )
+    buttons = [
+        (str(item.get("id") or ""), item_button_title(item, start_index + idx))
+        for idx, item in enumerate(chunk)
+        if item.get("id")
+    ]
+    markup = photos_list_keyboard(page, total_pages, buttons)
+    if edit:
+        await message.edit_text(text, reply_markup=markup)
+    else:
+        await message.answer(text, reply_markup=markup)
 
-    return {"count": 0, "weight": 0.0, "revenue": 0.0, "photos": 0, "source": "empty"}
+
+async def _show_stats(
+    *,
+    message: Message,
+    user_id: int,
+    db: Database,
+    media_store: MediaStore,
+    edit: bool,
+) -> None:
+    users = await db.count_users()
+    syncs = await db.count_syncs()
+    inv = warehouse_stats(user_id, media_store)
+    text = stats_text(
+        stats=inv,
+        bot_users=users,
+        syncs=syncs,
+    )
+    if edit:
+        await message.edit_text(text, reply_markup=section_keyboard())
+    else:
+        await message.answer(text, reply_markup=section_keyboard())
 
 
 @router.message(Command("admin"))
-async def cmd_admin(message: Message, settings: Settings) -> None:
+@router.message(F.text == "Склад")
+async def cmd_warehouse(
+    message: Message,
+    settings: Settings,
+    media_store: MediaStore,
+) -> None:
     user = message.from_user
     if user is None or not _is_admin(user.id, settings):
         await message.answer(f"{pe('lock')} Недостаточно прав.")
         return
+    await _show_warehouse(
+        message=message,
+        user_id=user.id,
+        page=0,
+        media_store=media_store,
+        edit=False,
+    )
 
-    await message.answer(
-        f"{pe('settings')} <b>admin</b>",
-        reply_markup=admin_keyboard(),
+
+@router.message(F.text == "Сводка")
+async def cmd_stats(
+    message: Message,
+    settings: Settings,
+    db: Database,
+    media_store: MediaStore,
+) -> None:
+    user = message.from_user
+    if user is None or not _is_admin(user.id, settings):
+        await message.answer(f"{pe('lock')} Недостаточно прав.")
+        return
+    await _show_stats(
+        message=message,
+        user_id=user.id,
+        db=db,
+        media_store=media_store,
+        edit=False,
     )
 
 
@@ -92,18 +142,25 @@ async def cmd_export(message: Message, settings: Settings) -> None:
     if user is None or not _is_admin(user.id, settings):
         await message.answer(f"{pe('lock')} Недостаточно прав.")
         return
-    await message.answer(f"{pe('error')} Экспорт отключён.")
+    await message.answer(f"{pe('error')} Экспорт сейчас отключён.")
 
 
 @router.callback_query(F.data == "admin:home")
-async def admin_home(callback: CallbackQuery, settings: Settings) -> None:
+async def admin_home(
+    callback: CallbackQuery,
+    settings: Settings,
+    media_store: MediaStore,
+) -> None:
     if not _is_admin(callback.from_user.id, settings):
         await callback.answer("Нет доступа", show_alert=True)
         return
     if callback.message:
-        await callback.message.edit_text(
-            f"{pe('settings')} <b>admin</b>",
-            reply_markup=admin_keyboard(),
+        await _show_warehouse(
+            message=callback.message,
+            user_id=callback.from_user.id,
+            page=0,
+            media_store=media_store,
+            edit=True,
         )
     await callback.answer()
 
@@ -126,27 +183,18 @@ async def admin_stats(
     if not _is_admin(callback.from_user.id, settings):
         await callback.answer("Нет доступа", show_alert=True)
         return
-
-    uid = callback.from_user.id
-    users = await db.count_users()
-    syncs = await db.count_syncs()
-    inv = _user_inventory_stats(uid, media_store)
-    text = (
-        f"{pe('stats')} <b>Статистика</b>\n"
-        f"<i>ваш склад · <code>{uid}</code></i>\n\n"
-        f"{pe('package')} Позиции: <b>{inv['count']}</b>\n"
-        f"{pe('analytics')} Вес: <b>{format_grams(inv['weight'])}</b>\n"
-        f"{pe('coins')} Сумма: <b>{format_money(inv['revenue'])}</b>\n"
-        f"{pe('file')} Фото: <b>{inv['photos']}</b>\n\n"
-        f"{pe('users')} Пользователи бота: <b>{users}</b>\n"
-        f"{pe('loading')} Синхронизации: <b>{syncs}</b>"
-    )
     if callback.message:
-        await callback.message.edit_text(text, reply_markup=admin_keyboard())
+        await _show_stats(
+            message=callback.message,
+            user_id=callback.from_user.id,
+            db=db,
+            media_store=media_store,
+            edit=True,
+        )
     await callback.answer()
 
 
-@router.callback_query(F.data.startswith("admin:photos:"))
+@router.callback_query(F.data.regexp(r"^admin:photos:\d+$"))
 async def admin_photos_list(
     callback: CallbackQuery,
     settings: Settings,
@@ -155,46 +203,19 @@ async def admin_photos_list(
     if not _is_admin(callback.from_user.id, settings):
         await callback.answer("Нет доступа", show_alert=True)
         return
-
-    page = int(callback.data.split(":")[-1] or 0)
-    items = media_store.list_items(user_id=callback.from_user.id)
-    if not items:
-        await callback.answer("Позиций пока нет", show_alert=True)
-        return
-
-    total_pages = max(1, (len(items) + PAGE_SIZE - 1) // PAGE_SIZE)
-    page = max(0, min(page, total_pages - 1))
-    chunk = items[page * PAGE_SIZE : (page + 1) * PAGE_SIZE]
-
-    lines = [
-        f"{pe('file')} <b>Мои фото</b> · стр. {page + 1}/{total_pages}",
-        f"Позиций: <b>{len(items)}</b>",
-        "",
-    ]
-    for item in chunk:
-        loc = location_label(str(item.get("location") or ""))
-        weight = format_grams(item.get("weight") or 0)
-        tape = item.get("tape_color") or "—"
-        n_photos = len(item.get("photos") or [])
-        note = (item.get("note") or "")[:40]
-        lines.append(
-            f"• <b>{loc}</b> · {weight} · изолента {tape} · фото {n_photos}"
-            + (f"\n  <i>{note}</i>" if note else "")
-        )
-
+    page = int(str(callback.data).rsplit(":", 1)[-1] or 0)
     if callback.message:
-        await callback.message.edit_text(
-            "\n".join(lines),
-            reply_markup=photos_list_keyboard(
-                page,
-                total_pages,
-                [str(i.get("id")) for i in chunk],
-            ),
+        await _show_warehouse(
+            message=callback.message,
+            user_id=callback.from_user.id,
+            page=page,
+            media_store=media_store,
+            edit=True,
         )
     await callback.answer()
 
 
-@router.callback_query(F.data.startswith("admin:photo:"))
+@router.callback_query(F.data.regexp(r"^(?:admin:item:.+|admin:photo:(?!s:).+)$"))
 async def admin_photo_item(
     callback: CallbackQuery,
     settings: Settings,
@@ -204,9 +225,13 @@ async def admin_photo_item(
         await callback.answer("Нет доступа", show_alert=True)
         return
 
-    item_id = callback.data.split(":", 2)[-1]
+    raw = str(callback.data or "")
+    if raw.startswith("admin:item:"):
+        item_id = raw[len("admin:item:") :]
+    else:
+        item_id = raw.split(":", 2)[-1]
     item = media_store.get_item(item_id, user_id=callback.from_user.id)
-    if not item:
+    if not item or media_store.is_legacy_stamp(item_id):
         await callback.answer("Позиция не найдена", show_alert=True)
         return
 
@@ -215,14 +240,7 @@ async def admin_photo_item(
         await callback.answer("Фото нет на сервере", show_alert=True)
         return
 
-    loc = location_label(str(item.get("location") or ""))
-    caption = (
-        f"{pe('package')} <b>{loc}</b>\n"
-        f"Граммовка: {format_grams(item.get('weight') or 0)}\n"
-        f"Изолента: {TAPE_LABELS.get(str(item.get('tape_color') or ''), item.get('tape_color') or '—')}\n"
-        f"Описание: {item.get('note') or '—'}"
-    )
-
+    caption = item_caption(item)
     await callback.answer()
     chat_id = callback.message.chat.id if callback.message else callback.from_user.id
 

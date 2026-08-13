@@ -16,10 +16,20 @@ def main_reply_keyboard(webapp_url: str) -> ReplyKeyboardMarkup:
         keyboard=[
             [
                 KeyboardButton(
-                    text="Открыть учёт",
+                    text="Учёт",
                     web_app=WebAppInfo(url=webapp_url),
                     icon_custom_emoji_id=pe_id("package"),
                 )
+            ],
+            [
+                KeyboardButton(
+                    text="Склад",
+                    icon_custom_emoji_id=pe_id("file"),
+                ),
+                KeyboardButton(
+                    text="Сводка",
+                    icon_custom_emoji_id=pe_id("stats"),
+                ),
             ],
             [
                 KeyboardButton(
@@ -61,10 +71,22 @@ def main_inline_keyboard(webapp_url: str) -> InlineKeyboardMarkup:
         inline_keyboard=[
             [
                 InlineKeyboardButton(
-                    text="Открыть учёт",
+                    text="Учёт",
                     web_app=WebAppInfo(url=webapp_url),
                     icon_custom_emoji_id=pe_id("package"),
                 )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="Склад",
+                    callback_data="admin:photos:0",
+                    icon_custom_emoji_id=pe_id("file"),
+                ),
+                InlineKeyboardButton(
+                    text="Сводка",
+                    callback_data="admin:stats",
+                    icon_custom_emoji_id=pe_id("stats"),
+                ),
             ],
             [
                 InlineKeyboardButton(
@@ -101,26 +123,38 @@ def guest_inline_keyboard() -> InlineKeyboardMarkup:
     )
 
 
-def admin_keyboard() -> InlineKeyboardMarkup:
+def back_home_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [
                 InlineKeyboardButton(
-                    text="Мои фото",
+                    text="В меню",
+                    callback_data="menu:home",
+                    icon_custom_emoji_id=pe_id("home"),
+                )
+            ]
+        ]
+    )
+
+
+def section_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="Склад",
                     callback_data="admin:photos:0",
                     icon_custom_emoji_id=pe_id("file"),
+                ),
+                InlineKeyboardButton(
+                    text="Сводка",
+                    callback_data="admin:stats",
+                    icon_custom_emoji_id=pe_id("stats"),
                 ),
             ],
             [
                 InlineKeyboardButton(
-                    text="Статистика",
-                    callback_data="admin:stats",
-                    icon_custom_emoji_id=pe_id("stats"),
-                )
-            ],
-            [
-                InlineKeyboardButton(
-                    text="Назад",
+                    text="В меню",
                     callback_data="menu:home",
                     icon_custom_emoji_id=pe_id("home"),
                 )
@@ -129,15 +163,22 @@ def admin_keyboard() -> InlineKeyboardMarkup:
     )
 
 
-def photos_list_keyboard(page: int, total_pages: int, item_ids: list[str]) -> InlineKeyboardMarkup:
+def admin_keyboard() -> InlineKeyboardMarkup:
+    return section_keyboard()
+
+
+def photos_list_keyboard(
+    page: int,
+    total_pages: int,
+    buttons: list[tuple[str, str]],
+) -> InlineKeyboardMarkup:
     rows: list[list[InlineKeyboardButton]] = []
-    for item_id in item_ids:
-        short = item_id[-8:]
+    for item_id, title in buttons:
         rows.append(
             [
                 InlineKeyboardButton(
-                    text=f"Позиция …{short}",
-                    callback_data=f"admin:photo:{item_id}",
+                    text=title,
+                    callback_data=f"admin:item:{item_id}",
                     icon_custom_emoji_id=pe_id("package"),
                 )
             ]
@@ -149,7 +190,15 @@ def photos_list_keyboard(page: int, total_pages: int, item_ids: list[str]) -> In
             InlineKeyboardButton(
                 text="Назад",
                 callback_data=f"admin:photos:{page - 1}",
-                icon_custom_emoji_id=pe_id("home"),
+                icon_custom_emoji_id=pe_id("file"),
+            )
+        )
+    if total_pages > 1:
+        nav.append(
+            InlineKeyboardButton(
+                text=f"{page + 1}/{total_pages}",
+                callback_data=f"admin:photos:{page}",
+                icon_custom_emoji_id=pe_id("stats"),
             )
         )
     if page + 1 < total_pages:
@@ -162,14 +211,18 @@ def photos_list_keyboard(page: int, total_pages: int, item_ids: list[str]) -> In
         )
     if nav:
         rows.append(nav)
-
     rows.append(
         [
             InlineKeyboardButton(
-                text="В админку",
-                callback_data="admin:home",
-                icon_custom_emoji_id=pe_id("settings"),
-            )
+                text="Сводка",
+                callback_data="admin:stats",
+                icon_custom_emoji_id=pe_id("stats"),
+            ),
+            InlineKeyboardButton(
+                text="В меню",
+                callback_data="menu:home",
+                icon_custom_emoji_id=pe_id("home"),
+            ),
         ]
     )
     return InlineKeyboardMarkup(inline_keyboard=rows)

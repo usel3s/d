@@ -6,13 +6,14 @@ from aiogram.types import CallbackQuery, Message
 
 from config import Settings
 from keyboards import (
+    back_home_keyboard,
     guest_inline_keyboard,
     guest_reply_keyboard,
     main_inline_keyboard,
     main_reply_keyboard,
 )
-from services import LogisticsService
-from utils.emoji import pe
+from services import LogisticsService, MediaStore
+from utils.screens import help_text, home_text, profile_text, warehouse_stats
 
 router = Router(name="start")
 
@@ -21,13 +22,10 @@ def _is_admin(user_id: int, settings: Settings) -> bool:
     return user_id in settings.admin_ids
 
 
-def _home_text(is_admin: bool) -> str:
+def _home_markup(is_admin: bool, webapp_url: str):
     if is_admin:
-        return f"{pe('package')} <b>Логистика</b>"
-    return (
-        f"{pe('lock')} <b>Доступ закрыт</b>\n"
-        "WebApp только для администраторов."
-    )
+        return main_inline_keyboard(webapp_url)
+    return guest_inline_keyboard()
 
 
 @router.message(CommandStart())
@@ -35,6 +33,7 @@ async def cmd_start(
     message: Message,
     settings: Settings,
     logistics: LogisticsService,
+    media_store: MediaStore,
 ) -> None:
     user = message.from_user
     if user is None:
@@ -47,23 +46,16 @@ async def cmd_start(
     )
 
     admin = _is_admin(user.id, settings)
+    stats = warehouse_stats(user.id, media_store) if admin else None
     if admin:
         await message.answer(
-            _home_text(True),
+            home_text(True, stats),
             reply_markup=main_reply_keyboard(settings.webapp_url),
-        )
-        await message.answer(
-            f"{pe('link')} menu",
-            reply_markup=main_inline_keyboard(settings.webapp_url),
         )
     else:
         await message.answer(
-            _home_text(False),
+            home_text(False),
             reply_markup=guest_reply_keyboard(),
-        )
-        await message.answer(
-            f"{pe('link')} menu",
-            reply_markup=guest_inline_keyboard(),
         )
 
 
@@ -72,18 +64,7 @@ async def cmd_start(
 async def cmd_help(message: Message, settings: Settings) -> None:
     user = message.from_user
     admin = bool(user and _is_admin(user.id, settings))
-    if admin:
-        await message.answer(
-            f"{pe('info')} <b>help</b>\n"
-            "webapp · photo · gps · sync\n"
-            "/admin"
-            " · /export"
-        )
-    else:
-        await message.answer(
-            f"{pe('lock')} <b>help</b>\n"
-            "доступ только у admin"
-        )
+    await message.answer(help_text(admin), reply_markup=back_home_keyboard())
 
 
 @router.message(F.text == "Профиль")
@@ -108,26 +89,20 @@ async def show_profile(
 
     await logistics.register_user(user.id, user.username, user.full_name)
     row = await logistics.latest_sync(user.id)
-    sync_line = (
-        f"sync #{row.id} · {row.items_count}"
-        if row
-        else "sync: —"
+    text = profile_text(
+        user_id=user.id,
+        full_name=user.full_name or "",
+        is_admin=_is_admin(user.id, settings),
+        sync_id=row.id if row else None,
+        sync_items=row.items_count if row else None,
     )
-    role = "admin" if _is_admin(user.id, settings) else "guest"
-
-    text = (
-        f"{pe('profile')} <b>profile</b>\n"
-        f"<code>{user.id}</code>\n"
-        f"{user.full_name}\n"
-        f"role: <b>{role}</b>\n"
-        f"{pe('analytics')} {sync_line}"
-    )
+    markup = back_home_keyboard()
 
     if isinstance(event, CallbackQuery):
-        await message.edit_text(text)
+        await message.edit_text(text, reply_markup=markup)
         await event.answer()
     else:
-        await message.answer(text)
+        await message.answer(text, reply_markup=markup)
 
 
 @router.callback_query(F.data == "menu:help")
@@ -136,33 +111,26 @@ async def cb_help(callback: CallbackQuery, settings: Settings) -> None:
         await callback.answer()
         return
     admin = _is_admin(callback.from_user.id, settings)
-    if admin:
-        await callback.message.edit_text(
-            f"{pe('info')} <b>help</b>\n"
-            "local storage · sync → /api"
-        )
-    else:
-        await callback.message.edit_text(
-            f"{pe('lock')} <b>help</b>\n"
-            "доступ только у admin"
-        )
+    await callback.message.edit_text(
+        help_text(admin),
+        reply_markup=back_home_keyboard(),
+    )
     await callback.answer()
 
 
 @router.callback_query(F.data == "menu:home")
-async def cb_home(callback: CallbackQuery, settings: Settings) -> None:
+async def cb_home(
+    callback: CallbackQuery,
+    settings: Settings,
+    media_store: MediaStore,
+) -> None:
     if callback.message is None:
         await callback.answer()
         return
     admin = _is_admin(callback.from_user.id, settings)
-    if admin:
-        await callback.message.edit_text(
-            _home_text(True),
-            reply_markup=main_inline_keyboard(settings.webapp_url),
-        )
-    else:
-        await callback.message.edit_text(
-            _home_text(False),
-            reply_markup=guest_inline_keyboard(),
-        )
+    stats = warehouse_stats(callback.from_user.id, media_store) if admin else None
+    await callback.message.edit_text(
+        home_text(admin, stats),
+        reply_markup=_home_markup(admin, settings.webapp_url),
+    )
     await callback.answer()

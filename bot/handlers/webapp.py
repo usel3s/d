@@ -27,7 +27,7 @@ async def on_web_app_data(
         return
 
     if user.id not in settings.admin_ids:
-        await message.answer(f"{pe('lock')} нет доступа")
+        await message.answer(f"{pe('lock')} Нет доступа к учёту.")
         return
 
     await logistics.register_user(user.id, user.username, user.full_name)
@@ -37,19 +37,19 @@ async def on_web_app_data(
     except ValueError as exc:
         logger.warning("Invalid web_app_data from %s: %s", user.id, exc)
         await message.answer(
-            f"{pe('error')} Не удалось принять данные из WebApp.\n"
+            f"{pe('error')} Не удалось принять данные из Mini App.\n"
             f"<code>{exc}</code>"
         )
         return
     except Exception:
         logger.exception("Failed to ingest web_app_data")
-        await message.answer(f"{pe('error')} Внутренняя ошибка при сохранении данных.")
+        await message.answer(f"{pe('error')} Не удалось сохранить данные. Попробуйте ещё раз.")
         return
 
     sync_id = payload.get("_sync_id")
     summary = summarize_sync(payload)
     await message.answer(
-        f"{pe('success')} <b>Данные из WebApp получены</b>\n"
-        f"Синхронизация: <code>#{sync_id}</code>\n\n"
+        f"{pe('success')} <b>Склад обновлён</b>\n"
+        f"Синхронизация <code>#{sync_id}</code>\n\n"
         f"{pe('stats')} {summary}"
     )
