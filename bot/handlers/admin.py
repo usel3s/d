@@ -231,7 +231,7 @@ async def admin_photo_item(
     else:
         item_id = raw.split(":", 2)[-1]
     item = media_store.get_item(item_id, user_id=callback.from_user.id)
-    if not item or media_store.is_legacy_stamp(item_id):
+    if not item:
         await callback.answer("Позиция не найдена", show_alert=True)
         return
 

@@ -11,8 +11,7 @@ from typing import Any
 
 
 _DATA_URL_RE = re.compile(r"^data:image/[^;]+;base64,(.+)$", re.I)
-# Импорт штампов 12.08 (stash_8647494349_01…) — не живой склад Mini App.
-_LEGACY_STAMP_ID_RE = re.compile(r"^stash_\d+_\d+$")
+_OWNER_FROM_ID_RE = re.compile(r"^(?:stash|seed)_(\d+)_")
 
 
 class MediaStore:
@@ -72,6 +71,13 @@ class MediaStore:
             return int(value or 0)
         except (TypeError, ValueError):
             return 0
+
+    def _owner_uid(self, item: dict[str, Any]) -> int:
+        uid = self._uid(item.get("user_id"))
+        if uid:
+            return uid
+        match = _OWNER_FROM_ID_RE.match(str(item.get("id") or ""))
+        return self._uid(match.group(1)) if match else 0
 
     def _photos_from_raw(
         self,
@@ -157,8 +163,8 @@ class MediaStore:
     ) -> tuple[int, list[dict[str, Any]], list[dict[str, Any]], dict[str, dict[str, Any]]]:
         uid = self._uid(user_id)
         existing = self._load_items()
-        others = [i for i in existing if self._uid(i.get("user_id")) != uid]
-        mine = [i for i in existing if self._uid(i.get("user_id")) == uid]
+        others = [i for i in existing if self._owner_uid(i) != uid]
+        mine = [i for i in existing if self._owner_uid(i) == uid]
         prev_by_id = {str(i.get("id")): i for i in mine if i.get("id")}
         return uid, others, mine, prev_by_id
 
@@ -301,17 +307,12 @@ class MediaStore:
             self.ensure_seed(user_id)
             return [self.to_webapp_item(i) for i in self.list_items(user_id=user_id)]
 
-    @staticmethod
-    def is_legacy_stamp(item_id: Any) -> bool:
-        return bool(_LEGACY_STAMP_ID_RE.match(str(item_id or "")))
-
     def list_items(self, user_id: int | None = None) -> list[dict[str, Any]]:
         with self._lock:
             items = self._load_items()
             if user_id is not None:
                 uid = self._uid(user_id)
-                items = [i for i in items if self._uid(i.get("user_id")) == uid]
-            items = [i for i in items if not self.is_legacy_stamp(i.get("id"))]
+                items = [i for i in items if self._owner_uid(i) == uid]
             items.sort(
                 key=lambda x: str(x.get("updated_at") or x.get("created_at") or ""),
                 reverse=True,
@@ -323,7 +324,7 @@ class MediaStore:
             for item in self._load_items():
                 if str(item.get("id")) != str(item_id):
                     continue
-                if user_id is not None and self._uid(item.get("user_id")) != self._uid(user_id):
+                if user_id is not None and self._owner_uid(item) != self._uid(user_id):
                     return None
                 return item
             return None

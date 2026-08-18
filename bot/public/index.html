@@ -1065,8 +1065,12 @@
     .wizard-dot {
       flex: 1;
       height: 4px;
+      border: none;
+      padding: 0;
       border-radius: 999px;
       background: var(--line);
+      cursor: pointer;
+      appearance: none;
     }
 
     .wizard-dot.done,
@@ -1089,6 +1093,14 @@
       font-size: 12px;
       font-weight: 600;
       color: var(--ink-soft);
+    }
+
+    .wizard-lead-sub {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--ink-soft);
+      margin: -6px 0 12px;
+      line-height: 1.4;
     }
 
     .loc-pick {
@@ -1154,6 +1166,74 @@
     .wizard-nav .btn-primary {
       width: 100%;
     }
+
+    .wizard-skip-photo {
+      grid-column: 1 / -1;
+      border: 1px dashed var(--line);
+      background: transparent;
+      color: var(--ink-soft);
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .wizard-meta-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 4px;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: rgba(255,255,255,0.9);
+    }
+
+    .wizard-meta-bar.hidden {
+      display: none;
+    }
+
+    .wizard-meta-sum {
+      flex: 1;
+      min-width: 0;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--ink-soft);
+      line-height: 1.35;
+    }
+
+    .wizard-fill-btn {
+      flex-shrink: 0;
+      border: 1px solid var(--ink);
+      background: #fff;
+      color: var(--ink);
+      border-radius: 999px;
+      padding: 7px 12px;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .wizard-fill-btn.open {
+      background: var(--ink);
+      color: #fff;
+    }
+
+    #itemForm.wiz-after-photo {
+      display: flex;
+      flex-direction: column;
+    }
+
+    #itemForm.wiz-after-photo #wizardPanel { order: 1; }
+    #itemForm.wiz-after-photo #wizardStep4Lead { order: 2; }
+    #itemForm.wiz-after-photo .block-wizard-step4 { order: 3; }
+    #itemForm.wiz-after-photo #wizardMetaBar { order: 4; }
+    #itemForm.wiz-after-photo #wizardStep1,
+    #itemForm.wiz-after-photo #wizardStep2,
+    #itemForm.wiz-after-photo #wizardStep3,
+    #itemForm.wiz-after-photo .block-wizard-step3 { order: 5; }
+    #itemForm.wiz-after-photo .form-actions { order: 6; }
 
     .block-edit-only.hidden,
     .block-wizard-only.hidden {
@@ -2294,29 +2374,37 @@
       <form class="form" id="itemForm">
         <div class="wizard-panel hidden" id="wizardPanel">
           <div class="wizard-progress" id="wizardProgress"></div>
+        </div>
 
-          <div class="wizard-step" id="wizardStep1" data-wizard-step="1">
-            <p class="wizard-lead">Шаг 1 · Где клад?</p>
-            <div class="loc-pick" id="wizardLocPick"></div>
-          </div>
+        <div class="wizard-step" id="wizardStep1" data-wizard-step="1">
+          <p class="wizard-lead">Шаг 1 · Где клад?</p>
+          <div class="loc-pick" id="wizardLocPick"></div>
+        </div>
 
-          <div class="wizard-step hidden" id="wizardStep2" data-wizard-step="2">
-            <p class="wizard-lead">Шаг 2 · Способ укрытия <span class="opt">необязательно</span></p>
-            <div class="hide-chips" id="wizardHideChips"></div>
-            <div class="wizard-extra">
-              <input type="text" id="wizardExtraNote" maxlength="200" placeholder="Дополнение (необязательно)" />
-            </div>
-            <button type="button" class="wizard-skip" id="wizardSkipHide">Пропустить способ</button>
+        <div class="wizard-step hidden" id="wizardStep2" data-wizard-step="2">
+          <p class="wizard-lead">Шаг 2 · Способ укрытия <span class="opt">необязательно</span></p>
+          <div class="hide-chips" id="wizardHideChips"></div>
+          <div class="wizard-extra">
+            <input type="text" id="wizardExtraNote" maxlength="200" placeholder="Дополнение (необязательно)" />
           </div>
+          <button type="button" class="wizard-skip" id="wizardSkipHide">Пропустить способ</button>
+        </div>
 
-          <div class="wizard-step hidden" id="wizardStep3" data-wizard-step="3">
-            <p class="wizard-lead">Шаг 3 · Граммовка и изолента</p>
-          </div>
+        <div class="wizard-step hidden" id="wizardStep3" data-wizard-step="3">
+          <p class="wizard-lead">Шаг 3 · Граммовка и изолента</p>
+        </div>
 
-          <div class="wizard-nav block-wizard-only" id="wizardNav">
-            <button type="button" class="btn-outline" id="wizardBack">Назад</button>
-            <button type="button" class="btn-primary" id="wizardNext">Далее</button>
-          </div>
+        <div class="block-wizard-only hidden" id="wizardStep4Lead">
+          <p class="wizard-lead">Шаг 4 · Фото и GPS</p>
+          <p class="wizard-lead-sub" id="wizardStep4Hint">Снимите кадр. Тип, вес и способ можно дозаполнить после.</p>
+        </div>
+
+        <div class="field block-edit-only">
+          <label for="locationSelect">Локация <span class="req">*</span></label>
+          <select id="locationSelect" required>
+            <option value="warehouse_1">Тайник</option>
+            <option value="pickup">Прикоп</option>
+          </select>
         </div>
 
         <div class="field block-wizard-step3 block-edit-only">
@@ -2344,16 +2432,10 @@
           </select>
         </div>
 
-        <div class="block-wizard-only hidden" id="wizardStep4Lead">
-          <p class="wizard-lead">Шаг 4 · Фото и GPS</p>
-        </div>
-
-        <div class="field block-wizard-step4 block-edit-only">
-          <label for="locationSelect">Локация <span class="req">*</span></label>
-          <select id="locationSelect" required>
-            <option value="warehouse_1">Тайник</option>
-            <option value="pickup">Прикоп</option>
-          </select>
+        <div class="wizard-nav block-wizard-only" id="wizardNav">
+          <button type="button" class="btn-outline" id="wizardBack">Назад</button>
+          <button type="button" class="btn-primary" id="wizardNext">Далее</button>
+          <button type="button" class="wizard-skip-photo" id="wizardSkipPhoto">Сразу к фото</button>
         </div>
 
         <div class="field block-wizard-step4">
@@ -2380,6 +2462,11 @@
               </div>
             </div>
           </div>
+        </div>
+
+        <div class="wizard-meta-bar hidden" id="wizardMetaBar">
+          <div class="wizard-meta-sum" id="wizardMetaSum"></div>
+          <button type="button" class="wizard-fill-btn" id="wizardFillToggle">Дозаполнить</button>
         </div>
 
         <div class="field block-edit-only" id="editMetaBlock">
@@ -2700,6 +2787,7 @@
     let hideTplEditLoc = "warehouse_1";
     let wizardMode = false;
     let wizardStep = 1;
+    let wizardFillOpen = false;
     let selectedHideChip = "";
     let activeFilter = "all";
     let suppressDraft = false;
@@ -2863,8 +2951,12 @@
       wizardSkipHide: $("wizardSkipHide"),
       wizardBack: $("wizardBack"),
       wizardNext: $("wizardNext"),
+      wizardSkipPhoto: $("wizardSkipPhoto"),
       wizardNav: $("wizardNav"),
       wizardStep4Lead: $("wizardStep4Lead"),
+      wizardMetaBar: $("wizardMetaBar"),
+      wizardMetaSum: $("wizardMetaSum"),
+      wizardFillToggle: $("wizardFillToggle"),
       hideTplTabs: $("hideTplTabs"),
       hideTplList: $("hideTplList"),
       hideTplInput: $("hideTplInput"),
@@ -3395,14 +3487,10 @@
       };
     }
 
-    function isLegacyStampId(id) {
-      return /^stash_\d+_\d+$/.test(String(id || ""));
-    }
-
     function loadItems() {
       const raw = loadJSON(migrateScopedStorage(STORAGE_ITEMS_BASE), []);
       if (!Array.isArray(raw)) return [];
-      const migrated = raw.map(migrateItem).filter(Boolean).filter((it) => !isLegacyStampId(it.id));
+      const migrated = raw.map(migrateItem).filter(Boolean);
       const slim = slimItemsForStorage(migrated);
       // migrate старых жирных записей; при quota просто оставляем в памяти
       if (!saveJSON(migrateScopedStorage(STORAGE_ITEMS_BASE), slim)) {
@@ -5584,8 +5672,41 @@
       updateHeavyAlert();
       wizardMode = false;
       wizardStep = 1;
+      wizardFillOpen = false;
       selectedHideChip = "";
       if (els.wizardExtraNote) els.wizardExtraNote.value = "";
+    }
+
+    function applyLastDefaults() {
+      const last = loadJSON(migrateScopedStorage(STORAGE_LAST_BASE), null);
+      if (!last || typeof last !== "object") return false;
+      if (last.location && LOCATIONS.some((l) => l.id === last.location)) {
+        els.locationSelect.value = last.location;
+      }
+      if (last.weight != null) els.weightSelect.value = String(last.weight);
+      if (last.tapeColor) els.tapeSelect.value = last.tapeColor;
+      const note = String(last.note || "").trim();
+      if (note && els.noteInput) {
+        els.noteInput.value = note;
+        const list = hideTemplatesForLocation(els.locationSelect.value);
+        const match = list.find((t) => note === t || note.indexOf(t) === 0);
+        if (match) {
+          selectedHideChip = match;
+          const extra = note.slice(match.length).replace(/^,\s*/, "").trim();
+          if (els.wizardExtraNote) els.wizardExtraNote.value = extra;
+        }
+      }
+      updateHeavyAlert();
+      return true;
+    }
+
+    function renderWizardMetaSum() {
+      if (!els.wizardMetaSum) return;
+      const loc = locationLabel(els.locationSelect.value);
+      const weight = els.weightSelect.value || "0.5";
+      const tape = tapeLabel(els.tapeSelect.value);
+      const hide = selectedHideChip || "без способа";
+      els.wizardMetaSum.textContent = loc + " · " + weight + " г · " + tape + " · " + hide;
     }
 
     function setWizardUi() {
@@ -5598,27 +5719,48 @@
 
       const showStep4 = isWizard && wizardStep === 4;
       const showStep3 = isWizard && wizardStep === 3;
+      const showFill = showStep4 && wizardFillOpen;
       document.querySelectorAll(".block-wizard-step3").forEach((el) => {
-        el.classList.toggle("hidden", isWizard && !showStep3);
+        el.classList.toggle("hidden", isWizard && !showStep3 && !showFill);
       });
       document.querySelectorAll(".block-wizard-step4").forEach((el) => {
         el.classList.toggle("hidden", isWizard && !showStep4);
       });
       if (els.wizardStep4Lead) els.wizardStep4Lead.classList.toggle("hidden", !showStep4);
       if (els.wizardNav) els.wizardNav.classList.toggle("hidden", !isWizard || showStep4);
+      if (els.itemForm) els.itemForm.classList.toggle("wiz-after-photo", showFill);
+      if (els.wizardMetaBar) els.wizardMetaBar.classList.toggle("hidden", !showStep4);
+      if (els.wizardFillToggle) {
+        els.wizardFillToggle.textContent = showFill ? "Скрыть" : "Дозаполнить";
+        els.wizardFillToggle.classList.toggle("open", showFill);
+      }
+      if (showStep4) renderWizardMetaSum();
 
       if (isWizard) {
         [1, 2, 3].forEach((n) => {
           const step = $("wizardStep" + n);
-          if (step) step.classList.toggle("hidden", wizardStep !== n);
+          if (!step) return;
+          const show = wizardStep === n || (showFill && n !== 3);
+          step.classList.toggle("hidden", !show);
         });
+        if (showFill) {
+          const step3 = $("wizardStep3");
+          if (step3) step3.classList.remove("hidden");
+        }
         renderWizardProgress();
-        if (wizardStep === 1) renderWizardLocPick();
-        if (wizardStep === 2) renderWizardHideChips();
+        if (wizardStep === 1 || showFill) renderWizardLocPick();
+        if (wizardStep === 2 || showFill) renderWizardHideChips();
         if (els.wizardNext) els.wizardNext.textContent = wizardStep === 3 ? "К фото" : "Далее";
         if (els.wizardBack) els.wizardBack.disabled = wizardStep <= 1;
-        els.formTitle.textContent = "Новая позиция · " + wizardStep + "/4";
+        els.formTitle.textContent = showStep4
+          ? (showFill ? "Дозаполнить" : "Фото")
+          : ("Новая позиция · " + wizardStep + "/4");
       } else {
+        [1, 2, 3].forEach((n) => {
+          const step = $("wizardStep" + n);
+          if (step) step.classList.add("hidden");
+        });
+        if (els.itemForm) els.itemForm.classList.remove("wiz-after-photo");
         els.formTitle.textContent = editingId ? "Редактирование" : "Новая позиция";
       }
     }
@@ -5629,7 +5771,7 @@
         let cls = "wizard-dot";
         if (n < wizardStep) cls += " done";
         else if (n === wizardStep) cls += " active";
-        return '<div class="' + cls + '"></div>';
+        return '<button type="button" class="' + cls + '" data-wizard-goto="' + n + '" aria-label="Шаг ' + n + '"></button>';
       }).join("");
     }
 
@@ -5674,6 +5816,7 @@
       options = options || {};
       wizardMode = true;
       wizardStep = 1;
+      wizardFillOpen = false;
       selectedHideChip = "";
       if (els.wizardExtraNote) els.wizardExtraNote.value = "";
       els.locationSelect.value = "warehouse_1";
@@ -5681,19 +5824,46 @@
       els.tapeSelect.value = "yellow";
       els.noteInput.value = "";
       updateHeavyAlert();
+      applyLastDefaults();
+      acquirePreciseGeo({ keepBest: !!currentGeo, quiet: true });
       if (options.repeatLast) {
-        const last = loadJSON(migrateScopedStorage(STORAGE_LAST_BASE), null);
-        if (last) {
-          if (last.location && LOCATIONS.some((l) => l.id === last.location)) {
-            els.locationSelect.value = last.location;
-          }
-          if (last.weight != null) els.weightSelect.value = String(last.weight);
-          if (last.tapeColor) els.tapeSelect.value = last.tapeColor;
-          updateHeavyAlert();
-        }
         showToast("повтор — фото");
+        wizardSkipToPhoto({ openCamera: true });
+        return;
       }
       setWizardUi();
+    }
+
+    function wizardSkipToPhoto(options) {
+      options = options || {};
+      if (!els.locationSelect.value) els.locationSelect.value = "warehouse_1";
+      syncWizardNoteToField();
+      wizardStep = 4;
+      wizardFillOpen = false;
+      setWizardUi();
+      acquirePreciseGeo({ keepBest: !!currentGeo, quiet: true });
+      haptic("ok");
+      if (options.openCamera) {
+        setTimeout(() => {
+          if (!wizardMode || wizardStep !== 4 || editingId) return;
+          if (geoReadyForPhoto()) openStage();
+        }, 280);
+      }
+    }
+
+    function wizardGoTo(step) {
+      const n = Number(step);
+      if (!isFinite(n) || n < 1 || n > 4) return;
+      if (n === wizardStep && n !== 4) return;
+      if (n === 4) {
+        wizardSkipToPhoto({ openCamera: false });
+        return;
+      }
+      syncWizardNoteToField();
+      wizardStep = n;
+      wizardFillOpen = false;
+      setWizardUi();
+      haptic("light");
     }
 
     function wizardGoNext() {
@@ -5707,9 +5877,8 @@
         syncWizardNoteToField();
         wizardStep = 3;
       } else if (wizardStep === 3) {
-        syncWizardNoteToField();
-        wizardStep = 4;
-        acquirePreciseGeo({ keepBest: !!currentGeo, quiet: true });
+        wizardSkipToPhoto({ openCamera: true });
+        return;
       }
       setWizardUi();
       haptic("light");
@@ -5717,6 +5886,7 @@
 
     function wizardGoBack() {
       if (wizardStep <= 1) return;
+      wizardFillOpen = false;
       if (wizardStep === 4) {
         wizardStep = 3;
       } else {
@@ -5732,6 +5902,7 @@
       resetForm();
       wizardMode = false;
       wizardStep = 1;
+      wizardFillOpen = false;
       selectedHideChip = "";
 
       if (options.editItem) {
@@ -5795,6 +5966,7 @@
       geoBusy = false;
       wizardMode = false;
       wizardStep = 1;
+      wizardFillOpen = false;
       selectedHideChip = "";
       closeOverlay(els.formOverlay);
     }
@@ -7079,8 +7251,12 @@
         const btn = e.target.closest("[data-wizard-loc]");
         if (!btn) return;
         els.locationSelect.value = btn.getAttribute("data-wizard-loc") || "warehouse_1";
+        selectedHideChip = "";
         renderWizardLocPick();
+        renderWizardHideChips();
+        renderWizardMetaSum();
         haptic("light");
+        if (wizardStep === 1 && !wizardFillOpen) wizardGoNext();
       });
     }
 
@@ -7090,8 +7266,11 @@
         if (!chip) return;
         const val = chip.getAttribute("data-hide-chip") || "";
         selectedHideChip = selectedHideChip === val ? "" : val;
+        syncWizardNoteToField();
         renderWizardHideChips();
+        renderWizardMetaSum();
         haptic("light");
+        if (wizardStep === 2 && !wizardFillOpen && selectedHideChip) wizardGoNext();
       });
     }
 
@@ -7109,6 +7288,31 @@
 
     if (els.wizardNext) {
       els.wizardNext.addEventListener("click", () => wizardGoNext());
+    }
+
+    if (els.wizardSkipPhoto) {
+      els.wizardSkipPhoto.addEventListener("click", () => {
+        wizardSkipToPhoto({ openCamera: true });
+      });
+    }
+
+    if (els.wizardProgress) {
+      els.wizardProgress.addEventListener("click", (e) => {
+        const dot = e.target.closest("[data-wizard-goto]");
+        if (!dot) return;
+        wizardGoTo(dot.getAttribute("data-wizard-goto"));
+      });
+    }
+
+    if (els.wizardFillToggle) {
+      els.wizardFillToggle.addEventListener("click", () => {
+        wizardFillOpen = !wizardFillOpen;
+        setWizardUi();
+        haptic("light");
+        if (wizardFillOpen && els.wizardLocPick) {
+          try { els.wizardLocPick.scrollIntoView({ behavior: "smooth", block: "nearest" }); } catch (_) {}
+        }
+      });
     }
 
     if (els.hideTplTabs) {
@@ -7320,17 +7524,20 @@
         haptic("warn");
       }
       saveDraft();
+      renderWizardMetaSum();
       if (stageOpen && stageRaw) redrawStageCanvas();
     });
 
     els.locationSelect.addEventListener("change", () => {
       saveDraft();
       renderNoteChips();
+      renderWizardMetaSum();
       if (stageOpen && stageRaw) redrawStageCanvas();
     });
 
     els.tapeSelect.addEventListener("change", () => {
       saveDraft();
+      renderWizardMetaSum();
       if (stageOpen && stageRaw) redrawStageCanvas();
     });
 
@@ -7746,13 +7953,13 @@
         if (!res.ok || !data.ok || !Array.isArray(data.items)) {
           return false;
         }
-        const serverItems = data.items.map(migrateItem).filter(Boolean).filter((it) => !isLegacyStampId(it.id));
+        const serverItems = data.items.map(migrateItem).filter(Boolean);
         const byId = {};
         serverItems.forEach((sit) => {
           if (sit && sit.id) byId[sit.id] = sit;
         });
         (items || []).forEach((it) => {
-          if (!it || !it.id || isLegacyStampId(it.id)) return;
+          if (!it || !it.id) return;
           const server = byId[it.id];
           if (!server) {
             byId[it.id] = it;

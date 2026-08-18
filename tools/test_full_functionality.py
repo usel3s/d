@@ -156,6 +156,27 @@ def test_media_store(suite: Suite, tmp: Path) -> None:
                 (time.perf_counter() - t0) * 1000)
 
     t0 = time.perf_counter()
+    orphan_id = f"stash_{ADMIN_A}_01"
+    raw = store._load_items()
+    raw.append({
+        "id": orphan_id,
+        "location": "pickup",
+        "weight": 0.5,
+        "tape_color": "yellow",
+        "note": "orphan stamp",
+        "photos": [],
+        "geo": {},
+    })
+    store._save_items(raw)
+    a_ids = {i["id"] for i in store.list_items(ADMIN_A)}
+    b_ids = {i["id"] for i in store.list_items(ADMIN_B)}
+    suite.check("stash id without user_id still listed for owner",
+                orphan_id in a_ids and orphan_id not in b_ids,
+                f"A={sorted(a_ids)} B={sorted(b_ids)}",
+                (time.perf_counter() - t0) * 1000)
+    store.delete_item_ids(ADMIN_A, [orphan_id])
+
+    t0 = time.perf_counter()
     store.merge_items(ADMIN_A, [make_item("a3", note="third")])
     a_ids = {i["id"] for i in store.list_items(ADMIN_A)}
     suite.check("merge does not wipe siblings", a_ids == {"a1", "a2", "a3"},
