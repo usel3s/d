@@ -34,13 +34,77 @@
       --radius-sm: 16px;
       --shadow: 0 10px 30px rgba(20, 24, 33, 0.08), 0 2px 8px rgba(20, 24, 33, 0.04);
       --shadow-soft: 0 6px 18px rgba(20, 24, 33, 0.06);
+      --on-ink: #ffffff;
+      --body-glow: #ffffff;
+      --body-grad-a: #eceef2;
+      --body-grad-b: #e4e6eb;
       --safe-bottom: env(safe-area-inset-bottom, 0px);
       --safe-top: env(safe-area-inset-top, 0px);
       --header-h: 64px;
       --cross: rgba(17, 17, 20, 0.06);
     }
 
+    html[data-theme="dark"] {
+      color-scheme: dark;
+      --bg: #101116;
+      --bg-soft: #181a21;
+      --surface: rgba(28, 30, 38, 0.82);
+      --surface-solid: #1c1e26;
+      --glass: rgba(28, 30, 38, 0.5);
+      --glass-edge: rgba(255, 255, 255, 0.08);
+      --ink: #f3f4f8;
+      --ink-soft: #9aa0ae;
+      --line: rgba(255, 255, 255, 0.08);
+      --line-strong: rgba(255, 255, 255, 0.16);
+      --accent: #f3f4f8;
+      --accent-dim: rgba(255, 255, 255, 0.08);
+      --cross: rgba(255, 255, 255, 0.05);
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.38), 0 2px 8px rgba(0, 0, 0, 0.2);
+      --shadow-soft: 0 6px 18px rgba(0, 0, 0, 0.28);
+      --on-ink: #101116;
+      --body-glow: rgba(80, 90, 120, 0.22);
+      --body-grad-a: #12141b;
+      --body-grad-b: #0e1016;
+    }
+
     * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html[data-theme="dark"] input,
+    html[data-theme="dark"] select,
+    html[data-theme="dark"] textarea,
+    html[data-theme="dark"] .chip,
+    html[data-theme="dark"] .note-chip,
+    html[data-theme="dark"] .hide-chip,
+    html[data-theme="dark"] .loc-card,
+    html[data-theme="dark"] .photos-box,
+    html[data-theme="dark"] .geo-box,
+    html[data-theme="dark"] .card,
+    html[data-theme="dark"] .tpl-tab,
+    html[data-theme="dark"] .tpl-add input,
+    html[data-theme="dark"] .price-row input,
+    html[data-theme="dark"] .wizard-extra input,
+    html[data-theme="dark"] .mini-btn,
+    html[data-theme="dark"] .btn-outline,
+    html[data-theme="dark"] .btn-secondary {
+      background: var(--surface-solid);
+      color: var(--ink);
+      border-color: var(--line);
+    }
+
+    html[data-theme="dark"] .toast.warn {
+      color: #e2c07a;
+    }
+
+    html[data-theme="dark"] .chip.active,
+    html[data-theme="dark"] .note-chip.active,
+    html[data-theme="dark"] .hide-chip.active,
+    html[data-theme="dark"] .loc-card.active,
+    html[data-theme="dark"] .tpl-tab.active,
+    html[data-theme="dark"] .seg button.active {
+      background: var(--ink);
+      color: var(--on-ink);
+      border-color: var(--ink);
+    }
 
     html, body {
       height: 100%;
@@ -52,9 +116,8 @@
 
     body {
       background:
-        radial-gradient(ellipse 90% 55% at 50% -8%, #ffffff 0%, transparent 60%),
-        radial-gradient(ellipse 70% 40% at 100% 20%, rgba(255,255,255,0.7), transparent 50%),
-        linear-gradient(180deg, #eceef2 0%, #e4e6eb 100%);
+        radial-gradient(ellipse 90% 55% at 50% -8%, var(--body-glow) 0%, transparent 60%),
+        linear-gradient(180deg, var(--body-grad-a) 0%, var(--body-grad-b) 100%);
       overflow-x: hidden;
     }
 
@@ -114,7 +177,7 @@
       height: 36px;
       border-radius: 11px;
       background: var(--ink);
-      color: #fff;
+      color: var(--on-ink);
       display: grid;
       place-items: center;
       flex-shrink: 0;
@@ -145,7 +208,7 @@
       height: 42px;
       border: 1px solid var(--line);
       border-radius: 14px;
-      background: rgba(255,255,255,0.7);
+      background: var(--surface-solid);
       color: var(--ink);
       display: grid;
       place-items: center;
@@ -153,7 +216,7 @@
       transition: transform 0.15s, background 0.15s;
     }
 
-    .icon-btn:active { transform: scale(0.96); background: #fff; }
+    .icon-btn:active { transform: scale(0.96); background: var(--surface-solid); }
     .icon-btn svg { width: 18px; height: 18px; }
 
     .stats {
@@ -548,7 +611,7 @@
       letter-spacing: -0.01em;
       cursor: pointer;
       background: var(--ink);
-      color: #fff;
+      color: var(--on-ink);
       box-shadow: 0 12px 24px rgba(17, 17, 20, 0.18);
       transition: transform 0.15s, opacity 0.15s;
     }
@@ -593,7 +656,7 @@
       max-width: 520px;
       max-height: min(92vh, 820px);
       overflow: auto;
-      background: rgba(255,255,255,0.94);
+      background: var(--surface-solid);
       border: 1px solid var(--glass-edge);
       border-bottom: none;
       border-radius: 28px 28px 0 0;
@@ -1701,13 +1764,52 @@
     .menu-item:active { border-color: var(--ink); }
     .menu-item .hint { color: var(--ink-soft); font-size: 12px; font-weight: 700; }
 
+    .menu-group {
+      padding: 12px 4px 4px;
+    }
+
+    .menu-group-label {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--ink-soft);
+      margin: 0 4px 8px;
+    }
+
+    .seg {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      padding: 4px;
+      border-radius: 14px;
+      background: var(--bg-soft);
+      border: 1px solid var(--line);
+    }
+
+    .seg button {
+      border: none;
+      background: transparent;
+      color: var(--ink-soft);
+      border-radius: 11px;
+      padding: 10px 8px;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .seg button.active {
+      background: var(--ink);
+      color: var(--on-ink);
+    }
+
     .toast {
       position: fixed;
       left: 50%;
       bottom: calc(96px + var(--safe-bottom));
       transform: translateX(-50%) translateY(12px);
       z-index: 400;
-      background: rgba(255,255,255,0.92);
+      background: var(--surface);
       border: 1px solid var(--line);
       color: var(--ink);
       padding: 10px 16px;
@@ -1744,15 +1846,15 @@
       justify-content: center;
       padding: 24px;
       background:
-        radial-gradient(ellipse 90% 55% at 50% -8%, #ffffff 0%, transparent 60%),
-        linear-gradient(180deg, #eceef2 0%, #e4e6eb 100%);
+        radial-gradient(ellipse 90% 55% at 50% -8%, var(--body-glow) 0%, transparent 60%),
+        linear-gradient(180deg, var(--body-grad-a) 0%, var(--body-grad-b) 100%);
     }
 
     .access-gate.show { display: flex; }
 
     .access-card {
       width: min(100%, 360px);
-      background: #fff;
+      background: var(--surface-solid);
       border: 1px solid var(--line);
       border-radius: 24px;
       box-shadow: var(--shadow);
@@ -1956,8 +2058,13 @@
       pointer-events: none;
     }
 
+    .stage.mode-draw .stage-viewport {
+      touch-action: none;
+    }
+
     .stage.mode-draw .stage-viewport img.stage-img {
       object-fit: contain;
+      will-change: transform;
     }
 
     .stage-viewport video.hidden,
@@ -2038,7 +2145,7 @@
       display: grid;
       gap: 12px;
       touch-action: manipulation;
-      min-height: 132px;
+      min-height: 108px;
       align-content: end;
     }
 
@@ -2046,28 +2153,32 @@
 
     .draw-row {
       display: none;
-      grid-template-columns: 1fr;
-      gap: 10px;
       align-items: center;
+      justify-content: center;
+      gap: 16px;
       padding: 0 2px;
     }
 
-    .stage.mode-draw .draw-row { display: grid; }
+    .stage.mode-draw .draw-row { display: flex; }
 
     .draw-colors {
       display: flex;
-      gap: 8px;
+      gap: 10px;
       align-items: center;
       justify-content: center;
     }
 
     .draw-color {
-      width: 28px;
-      height: 28px;
+      width: 30px;
+      height: 30px;
       border-radius: 50%;
       border: 2px solid transparent;
       cursor: pointer;
       padding: 0;
+    }
+
+    .draw-color[data-color="#ffffff"] {
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.35);
     }
 
     .draw-color.active {
@@ -2075,21 +2186,8 @@
       box-shadow: 0 0 0 2px #111;
     }
 
-    .draw-size {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      color: rgba(255,255,255,0.55);
-      font-size: 11px;
-      font-weight: 700;
-    }
-
-    .draw-size input[type="range"] {
-      width: 120px;
-      accent-color: #fff;
-      touch-action: manipulation;
-      pointer-events: auto;
+    .draw-color[data-color="#ffffff"].active {
+      box-shadow: 0 0 0 2px #111, inset 0 0 0 1px rgba(0,0,0,0.35);
     }
 
     .draw-tools {
@@ -2496,25 +2594,30 @@
         </button>
       </div>
       <div class="menu-list">
-        <button type="button" class="menu-item" id="btnOpenMap">
-          <span>Карта</span>
-          <span class="hint">GPS</span>
-        </button>
         <button type="button" class="menu-item" id="btnOpenSettings">
           <span>Настройки</span>
-          <span class="hint">цены · шаблоны</span>
+          <span class="hint">цены · способы</span>
         </button>
+
+        <div class="menu-group">
+          <div class="menu-group-label">Тема приложения</div>
+          <div class="seg" id="appThemeSeg">
+            <button type="button" data-app-theme="light">Светлая</button>
+            <button type="button" data-app-theme="dark">Тёмная</button>
+          </div>
+        </div>
+
+        <div class="menu-group">
+          <div class="menu-group-label">Штамп на фото</div>
+          <div class="seg" id="stampThemeSeg">
+            <button type="button" data-stamp-theme="light">Светлый</button>
+            <button type="button" data-stamp-theme="dark">Тёмный</button>
+          </div>
+        </div>
+
         <button type="button" class="menu-item" id="btnSyncServer">
-          <span>Sync</span>
-          <span class="hint">фото</span>
-        </button>
-        <button type="button" class="menu-item" id="btnSendToBot">
-          <span>Отправить</span>
-          <span class="hint">фото+данные</span>
-        </button>
-        <button type="button" class="menu-item" id="btnCloseApp">
-          <span>Close</span>
-          <span class="hint">tg</span>
+          <span>Обновить склад</span>
+          <span class="hint">с сервера</span>
         </button>
       </div>
     </div>
@@ -2624,16 +2727,9 @@
       <div class="stage-hint" id="stageHint"></div>
       <div class="draw-row">
         <div class="draw-colors" id="drawColors">
-          <button type="button" class="draw-color active" data-color="#3dcf7a" style="background:#3dcf7a" aria-label="Зелёный"></button>
-          <button type="button" class="draw-color" data-color="#d4af37" style="background:#d4af37" aria-label="Золотой"></button>
-          <button type="button" class="draw-color" data-color="#ff3b30" style="background:#ff3b30" aria-label="Красный"></button>
+          <button type="button" class="draw-color active" data-color="#ff3b30" style="background:#ff3b30" aria-label="Красный"></button>
           <button type="button" class="draw-color" data-color="#ffffff" style="background:#ffffff" aria-label="Белый"></button>
-          <button type="button" class="draw-color" data-color="#0a84ff" style="background:#0a84ff" aria-label="Синий"></button>
         </div>
-        <label class="draw-size">
-          Толщ. <strong id="drawSizeLabel">4</strong>
-          <input type="range" id="drawSize" min="1" max="24" value="4" step="1" />
-        </label>
         <div class="draw-tools">
           <button type="button" id="btnUndoDraw" disabled>↩</button>
           <button type="button" id="btnClearDraw" disabled>Сброс</button>
@@ -2727,6 +2823,8 @@
     const STORAGE_DRAFT_BASE = "logistics_draft_v2";
     const STORAGE_LAST_BASE = "logistics_last_v2";
     const STORAGE_HIDE_TEMPLATES_BASE = "logistics_hide_tpl_v1";
+    const STORAGE_THEME_BASE = "logistics_theme_v1";
+    const STORAGE_STAMP_THEME_BASE = "logistics_stamp_theme_v1";
     const STORAGE_TG_UID = "logistics_tg_uid";
     const MAX_PHOTOS = 5;
     const DEFAULT_HIDE_TEMPLATES = {
@@ -2785,6 +2883,8 @@
     let prices = { ...DEFAULT_PRICES };
     let hideTemplates = JSON.parse(JSON.stringify(DEFAULT_HIDE_TEMPLATES));
     let hideTplEditLoc = "warehouse_1";
+    let stampTheme = "light";
+    let appTheme = "light";
     let wizardMode = false;
     let wizardStep = 1;
     let wizardFillOpen = false;
@@ -2852,9 +2952,21 @@
     let stageRaw = "";
     let stageStrokes = [];
     let stageCurrent = null;
-    let drawColor = "#3dcf7a";
-    let drawWidthPx = 4;
+    let drawColor = "#ff3b30";
+    const DRAW_WIDTH_PX = 2;
     let isDrawing = false;
+    let drawPointers = {};
+    let drawPinching = false;
+    let drawZoom = 1;
+    let drawPanX = 0;
+    let drawPanY = 0;
+    let drawPinchStart = null;
+    let drawHoldTimer = null;
+    let drawShapeSnapped = false;
+    let drawLastTapAt = 0;
+    let drawLastTapPos = null;
+    let drawStrokeStartAt = 0;
+    let drawHoldOriginVp = null;
     let stageOpen = false;
     let bodyScrollY = 0;
     /** null = burst capture; number = editing formPhotos[idx] */
@@ -2923,12 +3035,11 @@
       btnMenu: $("btnMenu"),
       btnCloseMenu: $("btnCloseMenu"),
       btnOpenSettings: $("btnOpenSettings"),
-      btnOpenMap: $("btnOpenMap"),
+      appThemeSeg: $("appThemeSeg"),
+      stampThemeSeg: $("stampThemeSeg"),
       btnCloseSettings: $("btnCloseSettings"),
       btnSaveSettings: $("btnSaveSettings"),
       btnSyncServer: $("btnSyncServer"),
-      btnSendToBot: $("btnSendToBot"),
-      btnCloseApp: $("btnCloseApp"),
       mapScreen: $("mapScreen"),
       mapCanvas: $("mapCanvas"),
       mapSheet: $("mapSheet"),
@@ -2973,8 +3084,6 @@
       stageCanvas: $("stageCanvas"),
       stageHint: $("stageHint"),
       drawColors: $("drawColors"),
-      drawSize: $("drawSize"),
-      drawSizeLabel: $("drawSizeLabel"),
       btnUndoDraw: $("btnUndoDraw"),
       btnClearDraw: $("btnClearDraw"),
       btnCapture: $("btnCapture"),
@@ -3005,9 +3114,8 @@
       try {
         tg.ready();
         tg.expand();
-        if (tg.setHeaderColor) tg.setHeaderColor("#e9ebef");
-        if (tg.setBackgroundColor) tg.setBackgroundColor("#e9ebef");
         resolveTelegramUserId();
+        applyAppTheme(loadAppTheme(), { persist: false });
       } catch (_) { /* ignore */ }
     }
 
@@ -3073,6 +3181,59 @@
         pickup: (hideTemplates.pickup || []).slice(0, 24)
       };
       return saveJSON(migrateScopedStorage(STORAGE_HIDE_TEMPLATES_BASE), payload);
+    }
+
+    function loadAppTheme() {
+      const saved = loadJSON(migrateScopedStorage(STORAGE_THEME_BASE), null);
+      if (saved === "dark" || saved === "light") return saved;
+      try {
+        if (tg && tg.colorScheme === "dark") return "dark";
+      } catch (_) { /* ignore */ }
+      return "light";
+    }
+
+    function loadStampTheme() {
+      const saved = loadJSON(migrateScopedStorage(STORAGE_STAMP_THEME_BASE), null);
+      return saved === "dark" ? "dark" : "light";
+    }
+
+    function syncThemeToggles() {
+      if (els.appThemeSeg) {
+        els.appThemeSeg.querySelectorAll("[data-app-theme]").forEach((btn) => {
+          btn.classList.toggle("active", btn.getAttribute("data-app-theme") === appTheme);
+        });
+      }
+      if (els.stampThemeSeg) {
+        els.stampThemeSeg.querySelectorAll("[data-stamp-theme]").forEach((btn) => {
+          btn.classList.toggle("active", btn.getAttribute("data-stamp-theme") === stampTheme);
+        });
+      }
+    }
+
+    function applyAppTheme(theme, options) {
+      options = options || {};
+      appTheme = theme === "dark" ? "dark" : "light";
+      document.documentElement.setAttribute("data-theme", appTheme);
+      document.body.setAttribute("data-theme", appTheme);
+      const chrome = appTheme === "dark" ? "#101116" : "#e9ebef";
+      try {
+        if (tg && tg.setHeaderColor) tg.setHeaderColor(chrome);
+        if (tg && tg.setBackgroundColor) tg.setBackgroundColor(chrome);
+      } catch (_) { /* ignore */ }
+      if (options.persist !== false) {
+        saveJSON(migrateScopedStorage(STORAGE_THEME_BASE), appTheme);
+      }
+      syncThemeToggles();
+    }
+
+    function applyStampTheme(theme, options) {
+      options = options || {};
+      stampTheme = theme === "dark" ? "dark" : "light";
+      if (options.persist !== false) {
+        saveJSON(migrateScopedStorage(STORAGE_STAMP_THEME_BASE), stampTheme);
+      }
+      syncThemeToggles();
+      if (stageOpen && stageRaw) redrawStageCanvas();
     }
 
     function hideTemplatesForLocation(locId) {
@@ -3169,8 +3330,9 @@
       if (!photo) return "";
       if (isDataUrl(photo.final)) return photo.final;
       if (isDataUrl(photo.raw)) return photo.raw;
+      if (isDataUrl(photo._dataUrl)) return photo._dataUrl;
       if (photo._blobUrl) return photo._blobUrl;
-      // /api/photo нельзя в <img src>: нужен заголовок initData (hydrateCardPhotos).
+      // /api/photo нельзя в <img src>: нужен заголовок initData.
       return "";
     }
 
@@ -3178,8 +3340,40 @@
       if (!photo) return "";
       if (isDataUrl(photo.raw)) return photo.raw;
       if (isDataUrl(photo.final)) return photo.final;
+      if (isDataUrl(photo._dataUrl)) return photo._dataUrl;
       if (photo._blobUrl) return photo._blobUrl;
       return "";
+    }
+
+    function photoRemotePath(photo, itemId) {
+      if (!photo) return "";
+      if (photoDisplaySrc(photo)) return "";
+      if (photo.url) return photoApiPath(photo.url) || photo.url;
+      if (itemId && photo.id) return photoApiUrl(itemId, photo.id);
+      return "";
+    }
+
+    const photoFetchInflight = {};
+
+    async function ensurePhotoDataUrl(photo, itemId) {
+      if (!photo) return "";
+      const existing = photoDisplaySrc(photo);
+      if (existing) return existing;
+      const path = photoRemotePath(photo, itemId);
+      if (!path) return "";
+      if (!photoFetchInflight[path]) {
+        photoFetchInflight[path] = fetchPhotoAsDataUrl(path).catch((err) => {
+          delete photoFetchInflight[path];
+          throw err;
+        });
+      }
+      try {
+        const dataUrl = await photoFetchInflight[path];
+        if (dataUrl) photo._dataUrl = dataUrl;
+        return dataUrl || "";
+      } catch (_) {
+        return "";
+      }
     }
 
     function slimPhotoForStorage(photo, itemId) {
@@ -3644,8 +3838,22 @@
       }
     }
 
+    function stripStreetType(name) {
+      return String(name || "")
+        .replace(/^ул\.\s*ица\s+/i, "")
+        .replace(/^(улица|ул\.|ул)\s+/i, "")
+        .trim();
+    }
+
+    function fixBrokenStreetPrefix(addr) {
+      return String(addr || "")
+        .replace(/\bул\.\s*ица\b/gi, "ул.")
+        .replace(/\s{2,}/g, " ")
+        .trim();
+    }
+
     function formatStreetAddress(street, house) {
-      const s = String(street || "").replace(/^ул\.?\s*/i, "").trim();
+      const s = stripStreetType(street);
       const h = String(house || "").trim();
       if (s && h) return "ул. " + s + ", дом " + h;
       if (s) return "ул. " + s;
@@ -3655,7 +3863,7 @@
 
     function streetOnlyAddress(addr) {
       if (!addr) return "";
-      const raw = String(addr).trim();
+      const raw = fixBrokenStreetPrefix(String(addr).trim());
       if (!raw || raw === "Определяем адрес…" || raw === "Адрес не найден") return "";
 
       const dropPart =
@@ -4246,19 +4454,11 @@
       if (!item) return;
       const sources = [];
       for (let i = 0; i < (item.photos || []).length; i++) {
-        const p = item.photos[i];
-        let src = photoDisplaySrc(p);
-        if (src && !isDataUrl(src) && String(src).indexOf("blob:") !== 0) {
-          try {
-            src = await fetchPhotoAsDataUrl(p.url || src);
-          } catch (_) {
-            src = "";
-          }
-        }
+        const src = await ensurePhotoDataUrl(item.photos[i], item.id);
         if (src) sources.push(src);
       }
       if (!sources.length) {
-        showToast("нет фото");
+        showToast("нет фото", true);
         return;
       }
       galleryOpen = true;
@@ -4466,14 +4666,35 @@
       const rows = buildStampRows(meta);
       if (!rows.length) return;
 
+      const dark = stampTheme === "dark";
+      const palette = dark
+        ? {
+            shadow: "rgba(0, 0, 0, 0.45)",
+            fill: "rgba(16, 18, 24, 0.9)",
+            stroke: "rgba(255, 255, 255, 0.12)",
+            grid: "rgba(255, 255, 255, 0.05)",
+            tag: "#8b90a0",
+            value: "#f4f5f7",
+            bar: "rgba(244, 245, 247, 0.7)"
+          }
+        : {
+            shadow: "rgba(20, 24, 33, 0.2)",
+            fill: "rgba(255, 255, 255, 0.93)",
+            stroke: "rgba(17, 17, 20, 0.1)",
+            grid: "rgba(17, 17, 20, 0.045)",
+            tag: "#6a6e79",
+            value: "#111114",
+            bar: "rgba(17, 17, 20, 0.55)"
+          };
+
       const margin = Math.max(10, Math.round(width * 0.028));
-      const padX = Math.max(12, Math.round(width * 0.03));
-      const padY = Math.max(10, Math.round(width * 0.022));
-      const fontSize = Math.max(11, Math.round(width * 0.024));
-      const tagSize = Math.max(10, Math.round(fontSize * 0.9));
-      const lineH = Math.round(fontSize * 1.42);
-      const radius = Math.max(14, Math.round(width * 0.032));
-      const maxTextW = width - margin * 2 - padX * 2;
+      const padX = Math.max(14, Math.round(width * 0.032));
+      const padY = Math.max(11, Math.round(width * 0.024));
+      const fontSize = Math.max(12, Math.round(width * 0.025));
+      const tagSize = Math.max(10, Math.round(fontSize * 0.82));
+      const lineH = Math.round(fontSize * 1.38);
+      const radius = Math.max(16, Math.round(width * 0.034));
+      const maxTextW = width - margin * 2 - padX * 2 - 8;
 
       ctx.save();
       ctx.textBaseline = "top";
@@ -4493,72 +4714,55 @@
       });
 
       const boxW = width - margin * 2;
-      const boxH = padY * 2 + wrapped.length * lineH + 4;
+      const boxH = padY * 2 + wrapped.length * lineH + 6;
       const boxX = margin;
       const boxY = height - margin - boxH;
 
-      // soft shadow
-      ctx.fillStyle = "rgba(20, 24, 33, 0.18)";
-      roundRectPath(ctx, boxX + 2, boxY + 3, boxW, boxH, radius);
+      ctx.fillStyle = palette.shadow;
+      roundRectPath(ctx, boxX + 1, boxY + 3, boxW, boxH, radius);
       ctx.fill();
 
-      // glass card
-      ctx.fillStyle = "rgba(255, 255, 255, 0.92)";
+      ctx.fillStyle = palette.fill;
       roundRectPath(ctx, boxX, boxY, boxW, boxH, radius);
       ctx.fill();
 
-      ctx.strokeStyle = "rgba(17, 17, 20, 0.1)";
+      ctx.strokeStyle = palette.stroke;
       ctx.lineWidth = Math.max(1, Math.round(width * 0.002));
       roundRectPath(ctx, boxX, boxY, boxW, boxH, radius);
       ctx.stroke();
 
-      // faint grid
+      const tape = tapeHex(meta && meta.tapeColor) || palette.bar;
+      ctx.fillStyle = tape;
+      ctx.fillRect(boxX, boxY + radius * 0.35, Math.max(4, Math.round(width * 0.01)), boxH - radius * 0.7);
+
       ctx.save();
       roundRectPath(ctx, boxX, boxY, boxW, boxH, radius);
       ctx.clip();
-      ctx.strokeStyle = "rgba(17, 17, 20, 0.05)";
+      ctx.strokeStyle = palette.grid;
       ctx.lineWidth = 1;
-      const grid = Math.max(10, Math.round(fontSize * 0.9));
+      const grid = Math.max(12, Math.round(fontSize * 1.05));
       for (let x = boxX; x < boxX + boxW; x += grid) {
         ctx.beginPath();
         ctx.moveTo(x, boxY);
         ctx.lineTo(x, boxY + boxH);
         ctx.stroke();
       }
-      for (let y = boxY; y < boxY + boxH; y += grid) {
-        ctx.beginPath();
-        ctx.moveTo(boxX, y);
-        ctx.lineTo(boxX + boxW, y);
-        ctx.stroke();
-      }
       ctx.restore();
 
-      // barcode
-      const barW = Math.max(22, Math.round(width * 0.05));
-      const barH = Math.max(10, Math.round(fontSize * 0.85));
-      const bx = boxX + boxW - padX - barW;
-      const by = boxY + padY;
-      ctx.fillStyle = "rgba(17, 17, 20, 0.55)";
-      for (let i = 0; i < 8; i++) {
-        const tw = i % 3 === 0 ? 2.2 : 1.2;
-        ctx.fillRect(bx + i * 3.2, by, tw, barH);
-      }
-
-      // rows
       const textX = boxX + padX;
       wrapped.forEach((row, i) => {
         const y = boxY + padY + i * lineH;
         if (row.tag) {
           ctx.font = "700 " + tagSize + "px Manrope, Segoe UI, sans-serif";
-          ctx.fillStyle = "#5c5f6a";
-          ctx.fillText(row.tag, textX, y);
+          ctx.fillStyle = palette.tag;
+          ctx.fillText(row.tag, textX, y + 1);
           const tagW = ctx.measureText(row.tag + "  ").width;
           ctx.font = "800 " + fontSize + "px Manrope, Segoe UI, sans-serif";
-          ctx.fillStyle = "#111114";
+          ctx.fillStyle = palette.value;
           ctx.fillText(row.value, textX + tagW, y, maxTextW);
         } else {
           ctx.font = "700 " + fontSize + "px Manrope, Segoe UI, sans-serif";
-          ctx.fillStyle = "#111114";
+          ctx.fillStyle = palette.value;
           ctx.fillText(row.value, textX, y, maxTextW);
         }
       });
@@ -4673,20 +4877,7 @@
       ctx.drawImage(img, 0, 0, imgW, imgH);
 
       (strokes || []).forEach((stroke) => {
-        if (!stroke.points || !stroke.points.length) return;
-        const mapped = strokePointsToImage(stroke, imgW, imgH);
-        if (!mapped.length) return;
-        ctx.save();
-        ctx.lineCap = "round";
-        ctx.lineJoin = "round";
-        ctx.strokeStyle = stroke.color || "#3dcf7a";
-        ctx.lineWidth = Math.max(1, strokeLineWidthImg(stroke, imgW, imgH));
-        ctx.beginPath();
-        ctx.moveTo(mapped[0].x, mapped[0].y);
-        for (let i = 1; i < mapped.length; i++) ctx.lineTo(mapped[i].x, mapped[i].y);
-        if (mapped.length === 1) ctx.lineTo(mapped[0].x + 0.5, mapped[0].y);
-        ctx.stroke();
-        ctx.restore();
+        paintStrokeOnImage(ctx, stroke, imgW, imgH);
       });
 
       if (!options.noStamp) {
@@ -4719,13 +4910,79 @@
         return Number(stroke.widthImg);
       }
       if (stroke.space === "img") {
-        // width в CSS px при типичной ширине кадра ~360css → грубый масштаб
-        return Math.max(1, (Number(stroke.width) || drawWidthPx) * (imgW / 360));
+        return Math.max(1, (Number(stroke.width) || DRAW_WIDTH_PX) * (imgW / 360));
       }
       const vw = stroke.viewW || 720;
       const vh = stroke.viewH || 960;
       const contain = getContainRect(imgW, imgH, vw, vh);
-      return Math.max(1, (Number(stroke.width) || drawWidthPx) / Math.max(contain.scale, 0.0001));
+      return Math.max(1, (Number(stroke.width) || DRAW_WIDTH_PX) / Math.max(contain.scale, 0.0001));
+    }
+
+    function paintStrokeOnImage(ctx, stroke, imgW, imgH) {
+      if (!stroke) return;
+      ctx.save();
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.strokeStyle = stroke.color || "#ff3b30";
+      ctx.lineWidth = Math.max(1, strokeLineWidthImg(stroke, imgW, imgH));
+      const kind = stroke.kind || "free";
+      if (kind === "circle" && stroke.cx != null) {
+        ctx.beginPath();
+        ctx.ellipse(
+          stroke.cx * imgW,
+          stroke.cy * imgH,
+          Math.max(1, stroke.rx * imgW),
+          Math.max(1, stroke.ry * imgH),
+          0, 0, Math.PI * 2
+        );
+        ctx.stroke();
+      } else if (kind === "rect" && stroke.w != null) {
+        ctx.lineJoin = "miter";
+        ctx.strokeRect(
+          stroke.x * imgW,
+          stroke.y * imgH,
+          stroke.w * imgW,
+          stroke.h * imgH
+        );
+      } else if ((kind === "line" || kind === "arrow") && stroke.from && stroke.to) {
+        const a = { x: stroke.from.x * imgW, y: stroke.from.y * imgH };
+        const b = { x: stroke.to.x * imgW, y: stroke.to.y * imgH };
+        ctx.beginPath();
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(b.x, b.y);
+        ctx.stroke();
+        if (kind === "arrow") paintArrowHead(ctx, a, b, ctx.lineWidth);
+      } else {
+        const mapped = strokePointsToImage(stroke, imgW, imgH);
+        if (mapped.length) {
+          ctx.beginPath();
+          ctx.moveTo(mapped[0].x, mapped[0].y);
+          for (let i = 1; i < mapped.length; i++) ctx.lineTo(mapped[i].x, mapped[i].y);
+          if (mapped.length === 1) ctx.lineTo(mapped[0].x + 0.5, mapped[0].y);
+          ctx.stroke();
+        }
+      }
+      ctx.restore();
+    }
+
+    function paintArrowHead(ctx, from, to, lineW) {
+      const dx = to.x - from.x;
+      const dy = to.y - from.y;
+      const len = Math.hypot(dx, dy) || 1;
+      const ux = dx / len;
+      const uy = dy / len;
+      const head = Math.max(lineW * 4.2, lineW * 3);
+      const hx = to.x - ux * head;
+      const hy = to.y - uy * head;
+      const px = -uy;
+      const py = ux;
+      const spread = head * 0.42;
+      ctx.beginPath();
+      ctx.moveTo(to.x, to.y);
+      ctx.lineTo(hx + px * spread, hy + py * spread);
+      ctx.moveTo(to.x, to.y);
+      ctx.lineTo(hx - px * spread, hy - py * spread);
+      ctx.stroke();
     }
 
     async function rebakeAllPhotos(photos, options) {
@@ -4778,30 +5035,47 @@
         path +
         (path.indexOf("?") >= 0 ? "&" : "?") +
         "userId=" + encodeURIComponent(String(userId));
-      const res = await fetch(url, {
-        headers: { "X-Telegram-Init-Data": initData }
-      });
-      if (!res.ok) throw new Error("photo fetch failed");
-      const blob = await res.blob();
-      return await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(String(reader.result || ""));
-        reader.onerror = () => reject(new Error("read failed"));
-        reader.readAsDataURL(blob);
-      });
+      let lastErr = null;
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          const res = await fetch(url, {
+            headers: { "X-Telegram-Init-Data": initData || getTelegramInitData() || "" }
+          });
+          if (!res.ok) throw new Error("photo fetch failed " + res.status);
+          const blob = await res.blob();
+          if (!blob || !blob.size) throw new Error("empty photo");
+          return await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(String(reader.result || ""));
+            reader.onerror = () => reject(new Error("read failed"));
+            reader.readAsDataURL(blob);
+          });
+        } catch (err) {
+          lastErr = err;
+          await new Promise((r) => setTimeout(r, 180));
+        }
+      }
+      throw lastErr || new Error("photo fetch failed");
     }
 
     async function hydrateCardPhotos() {
       const imgs = els.itemsList.querySelectorAll("img.card-photo[data-fetch]");
       for (let i = 0; i < imgs.length; i++) {
         const img = imgs[i];
-        const path = img.getAttribute("data-fetch") || "";
-        if (!path) continue;
+        const card = img.closest("[data-id]");
+        const itemId = card ? card.getAttribute("data-id") : "";
+        const item = itemId ? items.find((it) => it.id === itemId) : null;
+        const photo = item && item.photos && item.photos[0];
         try {
-          const dataUrl = await fetchPhotoAsDataUrl(path);
+          let dataUrl = await ensurePhotoDataUrl(photo, itemId);
+          if (!dataUrl) {
+            const path = img.getAttribute("data-fetch") || "";
+            if (path) dataUrl = await fetchPhotoAsDataUrl(path);
+          }
           if (dataUrl) {
             img.src = dataUrl;
             img.removeAttribute("data-fetch");
+            if (photo) photo._dataUrl = dataUrl;
           }
         } catch (_) {
           img.replaceWith(
@@ -5062,11 +5336,121 @@
 
     function updateDrawButtons() {
       const has = stageStrokes.length > 0;
-      els.btnUndoDraw.disabled = !has;
-      els.btnClearDraw.disabled = !has;
-      if (els.drawSizeLabel) {
-        els.drawSizeLabel.textContent = String(drawWidthPx);
+      if (els.btnUndoDraw) els.btnUndoDraw.disabled = !has;
+      if (els.btnClearDraw) els.btnClearDraw.disabled = !has;
+    }
+
+    function resetDrawView() {
+      drawZoom = 1;
+      drawPanX = 0;
+      drawPanY = 0;
+      drawPinching = false;
+      drawPinchStart = null;
+      drawPointers = {};
+      clearDrawHold();
+      applyDrawView();
+    }
+
+    function applyDrawView() {
+      const t = "translate(" + drawPanX + "px," + drawPanY + "px) scale(" + drawZoom + ")";
+      if (els.stageImage) {
+        els.stageImage.style.transform = t;
+        els.stageImage.style.transformOrigin = "center center";
       }
+      if (els.stageCanvas) {
+        els.stageCanvas.style.transform = "";
+        els.stageCanvas.style.transformOrigin = "center center";
+      }
+    }
+
+    function clampDrawPan() {
+      const layout = getStageContainLayout();
+      const extra = Math.max(0, drawZoom - 1);
+      const maxX = extra * layout.viewW * 0.5;
+      const maxY = extra * layout.viewH * 0.5;
+      drawPanX = Math.max(-maxX, Math.min(maxX, drawPanX));
+      drawPanY = Math.max(-maxY, Math.min(maxY, drawPanY));
+    }
+
+    function setDrawZoomAt(nextZoom, vx, vy) {
+      const layout = getStageContainLayout();
+      const z0 = drawZoom;
+      const z1 = Math.max(1, Math.min(4.5, nextZoom));
+      const cx = layout.viewW / 2;
+      const cy = layout.viewH / 2;
+      const px = vx - cx;
+      const py = vy - cy;
+      drawPanX = vx - cx - ((px - drawPanX) * z1 / z0);
+      drawPanY = vy - cy - ((py - drawPanY) * z1 / z0);
+      drawZoom = z1;
+      if (drawZoom <= 1.02) {
+        drawZoom = 1;
+        drawPanX = 0;
+        drawPanY = 0;
+      }
+      clampDrawPan();
+      applyDrawView();
+    }
+
+    function clearDrawHold() {
+      if (drawHoldTimer) {
+        clearTimeout(drawHoldTimer);
+        drawHoldTimer = null;
+      }
+    }
+
+    function pointerCount() {
+      return Object.keys(drawPointers).length;
+    }
+
+    function pinchStateFromPointers() {
+      const pts = Object.keys(drawPointers).map((id) => drawPointers[id]);
+      if (pts.length < 2) return null;
+      const dx = pts[0].x - pts[1].x;
+      const dy = pts[0].y - pts[1].y;
+      return {
+        dist: Math.hypot(dx, dy) || 1,
+        midX: (pts[0].x + pts[1].x) / 2,
+        midY: (pts[0].y + pts[1].y) / 2
+      };
+    }
+
+    function startDrawPinch() {
+      if (!els.stageViewport) return;
+      const vp = els.stageViewport.getBoundingClientRect();
+      const state = pinchStateFromPointers();
+      if (!state) return;
+      drawPinching = true;
+      drawPinchStart = {
+        dist: state.dist,
+        zoom: drawZoom,
+        panX: drawPanX,
+        panY: drawPanY,
+        midX: state.midX - vp.left,
+        midY: state.midY - vp.top
+      };
+    }
+
+    function updateDrawPinch() {
+      if (!drawPinchStart || !els.stageViewport) return;
+      const vp = els.stageViewport.getBoundingClientRect();
+      const state = pinchStateFromPointers();
+      if (!state) return;
+      const mx = state.midX - vp.left;
+      const my = state.midY - vp.top;
+      drawZoom = drawPinchStart.zoom;
+      drawPanX = drawPinchStart.panX;
+      drawPanY = drawPinchStart.panY;
+      setDrawZoomAt(
+        drawPinchStart.zoom * (state.dist / Math.max(1, drawPinchStart.dist)),
+        drawPinchStart.midX,
+        drawPinchStart.midY
+      );
+      drawPanX += mx - drawPinchStart.midX;
+      drawPanY += my - drawPinchStart.midY;
+      clampDrawPan();
+      applyDrawView();
+      redrawStageCanvas();
     }
 
     function getStageContainLayout() {
@@ -5089,68 +5473,102 @@
       };
     }
 
-    function paintStrokeOnCtx(ctx, stroke, canvas) {
-      if (!stroke || !stroke.points || !stroke.points.length) return;
+    function applyDrawViewToCtx(ctx, canvas) {
       const layout = getStageContainLayout();
       const dpr = canvas.width / layout.viewW;
-      const ox = layout.offsetX * dpr;
-      const oy = layout.offsetY * dpr;
-      const dw = layout.drawnW * dpr;
-      const dh = layout.drawnH * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.translate(layout.viewW / 2 + drawPanX, layout.viewH / 2 + drawPanY);
+      ctx.scale(drawZoom, drawZoom);
+      ctx.translate(-layout.viewW / 2, -layout.viewH / 2);
+    }
+
+    function imgPointToStage(p, layout, stroke) {
+      if (stroke && stroke.space !== "img") {
+        return { x: p.x * layout.viewW, y: p.y * layout.viewH };
+      }
+      return {
+        x: layout.offsetX + p.x * layout.drawnW,
+        y: layout.offsetY + p.y * layout.drawnH
+      };
+    }
+
+    function paintStrokeOnCtx(ctx, stroke, canvas) {
+      if (!stroke) return;
+      const kind = stroke.kind || "free";
+      const hasGeom = kind === "circle" || kind === "rect" || kind === "line" || kind === "arrow";
+      if (!hasGeom && (!stroke.points || !stroke.points.length)) return;
+      const layout = getStageContainLayout();
 
       ctx.save();
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
-      ctx.strokeStyle = stroke.color || "#3dcf7a";
+      ctx.strokeStyle = stroke.color || "#ff3b30";
 
-      let pts;
       if (stroke.space === "img") {
-        pts = stroke.points.map((p) => ({
-          x: ox + p.x * dw,
-          y: oy + p.y * dh
-        }));
         const widthImg = stroke.widthImg != null
           ? Number(stroke.widthImg)
-          : (Number(stroke.width) || drawWidthPx) / Math.max(layout.scale, 0.0001);
-        ctx.lineWidth = Math.max(1, widthImg * layout.scale * dpr);
+          : (Number(stroke.width) || DRAW_WIDTH_PX) / Math.max(layout.scale, 0.0001);
+        ctx.lineWidth = Math.max(1, widthImg * layout.scale);
       } else {
-        // legacy viewport-normalized
-        pts = stroke.points.map((p) => ({
-          x: p.x * canvas.width,
-          y: p.y * canvas.height
-        }));
-        ctx.lineWidth = Math.max(1, (Number(stroke.width) || drawWidthPx) * dpr);
+        ctx.lineWidth = Math.max(1, Number(stroke.width) || DRAW_WIDTH_PX);
       }
 
-      ctx.beginPath();
-      ctx.moveTo(pts[0].x, pts[0].y);
-      for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
-      if (pts.length === 1) ctx.lineTo(pts[0].x + 0.01, pts[0].y);
-      ctx.stroke();
+      if (kind === "circle" && stroke.cx != null) {
+        const c = imgPointToStage({ x: stroke.cx, y: stroke.cy }, layout, stroke);
+        ctx.beginPath();
+        ctx.ellipse(
+          c.x,
+          c.y,
+          Math.max(1, stroke.rx * layout.drawnW),
+          Math.max(1, stroke.ry * layout.drawnH),
+          0, 0, Math.PI * 2
+        );
+        ctx.stroke();
+      } else if (kind === "rect" && stroke.w != null) {
+        const a = imgPointToStage({ x: stroke.x, y: stroke.y }, layout, stroke);
+        ctx.lineJoin = "miter";
+        ctx.strokeRect(a.x, a.y, stroke.w * layout.drawnW, stroke.h * layout.drawnH);
+      } else if ((kind === "line" || kind === "arrow") && stroke.from && stroke.to) {
+        const a = imgPointToStage(stroke.from, layout, stroke);
+        const b = imgPointToStage(stroke.to, layout, stroke);
+        ctx.beginPath();
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(b.x, b.y);
+        ctx.stroke();
+        if (kind === "arrow") paintArrowHead(ctx, a, b, ctx.lineWidth);
+      } else {
+        const pts = (stroke.points || []).map((p) => imgPointToStage(p, layout, stroke));
+        if (pts.length) {
+          ctx.beginPath();
+          ctx.moveTo(pts[0].x, pts[0].y);
+          for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+          if (pts.length === 1) ctx.lineTo(pts[0].x + 0.5, pts[0].y);
+          ctx.stroke();
+        }
+      }
       ctx.restore();
     }
 
     function paintStampOnStage(ctx, canvas, meta) {
       const layout = getStageContainLayout();
-      const dpr = canvas.width / layout.viewW;
-      const ox = layout.offsetX * dpr;
-      const oy = layout.offsetY * dpr;
-      const dw = layout.drawnW * dpr;
-      const dh = layout.drawnH * dpr;
       ctx.save();
       ctx.beginPath();
-      ctx.rect(ox, oy, dw, dh);
+      ctx.rect(layout.offsetX, layout.offsetY, layout.drawnW, layout.drawnH);
       ctx.clip();
-      ctx.translate(ox, oy);
-      paintStamp(ctx, dw, dh, meta);
+      ctx.translate(layout.offsetX, layout.offsetY);
+      paintStamp(ctx, layout.drawnW, layout.drawnH, meta);
       ctx.restore();
     }
 
     function redrawStageCanvas() {
       const canvas = els.stageCanvas;
+      if (!canvas) return;
       const ctx = canvas.getContext("2d");
       if (!ctx) return;
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.save();
+      applyDrawViewToCtx(ctx, canvas);
       stageStrokes.forEach((s) => paintStrokeOnCtx(ctx, s, canvas));
       if (stageCurrent) paintStrokeOnCtx(ctx, stageCurrent, canvas);
       const showStamp = editingPhotoIdx == null
@@ -5161,12 +5579,13 @@
         const originalItem = editingId ? items.find((i) => i.id === editingId) : null;
         paintStampOnStage(ctx, canvas, stampMetaForPhoto(stampPhoto, {}, originalItem));
       }
+      ctx.restore();
     }
 
     function resizeStageCanvas() {
       const canvas = els.stageCanvas;
       const viewport = els.stageViewport;
-      if (!viewport) return;
+      if (!viewport || !canvas) return;
       const rect = viewport.getBoundingClientRect();
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       const w = Math.max(1, Math.round(rect.width * dpr));
@@ -5182,46 +5601,375 @@
       redrawStageCanvas();
     }
 
-    function pointerToImageNorm(e) {
-      const rect = els.stageCanvas.getBoundingClientRect();
-      const clientX = e.clientX != null ? e.clientX : (e.touches && e.touches[0] && e.touches[0].clientX);
-      const clientY = e.clientY != null ? e.clientY : (e.touches && e.touches[0] && e.touches[0].clientY);
-      if (clientX == null || clientY == null || !rect.width || !rect.height) return null;
+    function eventClientXY(e) {
+      if (e.clientX != null && e.clientY != null) return { x: e.clientX, y: e.clientY };
+      const t = e.touches && e.touches[0];
+      if (t) return { x: t.clientX, y: t.clientY };
+      return null;
+    }
+
+    function viewportPointFromEvent(e) {
+      if (!els.stageViewport) return null;
+      const vp = els.stageViewport.getBoundingClientRect();
+      const c = eventClientXY(e);
+      if (!c) return null;
+      return { x: c.x - vp.left, y: c.y - vp.top };
+    }
+
+    function viewportToLayout(vx, vy) {
       const layout = getStageContainLayout();
-      if (layout.drawnW < 1 || layout.drawnH < 1) return null;
-      const vx = clientX - rect.left;
-      const vy = clientY - rect.top;
+      const z = Math.max(drawZoom, 0.0001);
+      const cx = layout.viewW / 2;
+      const cy = layout.viewH / 2;
       return {
-        x: Math.min(1, Math.max(0, (vx - layout.offsetX) / layout.drawnW)),
-        y: Math.min(1, Math.max(0, (vy - layout.offsetY) / layout.drawnH))
+        x: cx + (vx - cx - drawPanX) / z,
+        y: cy + (vy - cy - drawPanY) / z
       };
     }
 
+    function pointerToImageNorm(e) {
+      const vpPt = viewportPointFromEvent(e);
+      if (!vpPt) return null;
+      const layout = getStageContainLayout();
+      if (layout.drawnW < 1 || layout.drawnH < 1) return null;
+      const p = viewportToLayout(vpPt.x, vpPt.y);
+      return {
+        x: Math.min(1, Math.max(0, (p.x - layout.offsetX) / layout.drawnW)),
+        y: Math.min(1, Math.max(0, (p.y - layout.offsetY) / layout.drawnH))
+      };
+    }
+
+    function pathLength(points) {
+      let len = 0;
+      for (let i = 1; i < points.length; i++) {
+        len += Math.hypot(points[i].x - points[i - 1].x, points[i].y - points[i - 1].y);
+      }
+      return len;
+    }
+
+    function maxLineDeviation(points, a, b) {
+      let max = 0;
+      const dx = b.x - a.x;
+      const dy = b.y - a.y;
+      const lab2 = dx * dx + dy * dy || 0.0001;
+      for (let i = 0; i < points.length; i++) {
+        const p = points[i];
+        const t = ((p.x - a.x) * dx + (p.y - a.y) * dy) / lab2;
+        const px = a.x + t * dx;
+        const py = a.y + t * dy;
+        max = Math.max(max, Math.hypot(p.x - px, p.y - py));
+      }
+      return max;
+    }
+
+    function countStrokeCorners(points) {
+      if (points.length < 8) return 0;
+      const step = Math.max(1, Math.floor(points.length / 24));
+      let corners = 0;
+      for (let i = step; i < points.length - step; i += step) {
+        const a = points[i - step];
+        const b = points[i];
+        const c = points[i + step];
+        const a1 = Math.atan2(b.y - a.y, b.x - a.x);
+        const a2 = Math.atan2(c.y - b.y, c.x - b.x);
+        let d = a2 - a1;
+        while (d > Math.PI) d -= Math.PI * 2;
+        while (d < -Math.PI) d += Math.PI * 2;
+        if (Math.abs(d) > 0.7) corners += 1;
+      }
+      return corners;
+    }
+
+    function snapLineAngle(from, to) {
+      const dx = to.x - from.x;
+      const dy = to.y - from.y;
+      const len = Math.hypot(dx, dy) || 0.0001;
+      const ang = Math.atan2(dy, dx);
+      const step = Math.PI / 8;
+      const snapped = Math.round(ang / step) * step;
+      let diff = Math.abs(ang - snapped);
+      if (diff > Math.PI) diff = Math.PI * 2 - diff;
+      const use = diff < (12 * Math.PI / 180);
+      const a = use ? snapped : ang;
+      return {
+        x: from.x + Math.cos(a) * len,
+        y: from.y + Math.sin(a) * len
+      };
+    }
+
+    function looksLikeArrow(points, diag) {
+      const n = points.length;
+      if (n < 12) return false;
+      const cut = Math.max(6, Math.floor(n * 0.72));
+      const shaft = points.slice(0, cut);
+      const tip = shaft[shaft.length - 1];
+      const shaftDev = maxLineDeviation(shaft, shaft[0], tip) / Math.max(diag, 1);
+      if (shaftDev > 0.14) return false;
+      const tail = points.slice(cut);
+      if (tail.length < 3) return false;
+      let maxFlare = 0;
+      for (let i = 0; i < tail.length; i++) {
+        maxFlare = Math.max(maxFlare, Math.hypot(tail[i].x - tip.x, tail[i].y - tip.y));
+      }
+      if (maxFlare < diag * 0.08) return false;
+      const shaftChord = Math.hypot(tip.x - shaft[0].x, tip.y - shaft[0].y);
+      const total = pathLength(points);
+      if (total > shaftChord * 1.18 && shaftDev < 0.12) return true;
+      const last = points[n - 1];
+      return Math.hypot(last.x - tip.x, last.y - tip.y) > diag * 0.06;
+    }
+
+    function recognizeDrawShape(points) {
+      if (!points || points.length < 10) return null;
+      const layout = getStageContainLayout();
+      const pts = points.map((p) => ({
+        x: p.x * layout.drawnW,
+        y: p.y * layout.drawnH
+      }));
+      let minX = pts[0].x, minY = pts[0].y, maxX = pts[0].x, maxY = pts[0].y;
+      for (let i = 1; i < pts.length; i++) {
+        minX = Math.min(minX, pts[i].x);
+        minY = Math.min(minY, pts[i].y);
+        maxX = Math.max(maxX, pts[i].x);
+        maxY = Math.max(maxY, pts[i].y);
+      }
+      const w = maxX - minX;
+      const h = maxY - minY;
+      const diag = Math.hypot(w, h) || 1;
+      if (diag < 28) return null;
+      const start = pts[0];
+      const end = pts[pts.length - 1];
+      const chord = Math.hypot(end.x - start.x, end.y - start.y);
+      const closed = chord < diag * 0.28;
+      const cx = (minX + maxX) / 2;
+      const cy = (minY + maxY) / 2;
+      let rSum = 0;
+      let rSq = 0;
+      for (let i = 0; i < pts.length; i++) {
+        const r = Math.hypot(pts[i].x - cx, pts[i].y - cy);
+        rSum += r;
+        rSq += r * r;
+      }
+      const meanR = rSum / pts.length;
+      const circStd = Math.sqrt(Math.max(0, rSq / pts.length - meanR * meanR));
+      const circErr = circStd / Math.max(meanR, 1);
+      const aspect = Math.max(w, h) / Math.max(Math.min(w, h), 1);
+      const lineDev = maxLineDeviation(pts, start, end) / diag;
+      const corners = countStrokeCorners(pts);
+      const toImg = (px, py) => ({
+        x: px / layout.drawnW,
+        y: py / layout.drawnH
+      });
+
+      if (closed && circErr < 0.22 && aspect < 1.65 && corners <= 6) {
+        const perfect = aspect < 1.28 && circErr < 0.18;
+        const rxCss = Math.max(w / 2, 4);
+        const ryCss = Math.max(h / 2, 4);
+        const rCss = Math.max(rxCss, ryCss);
+        const c = toImg(cx, cy);
+        return {
+          kind: "circle",
+          cx: c.x,
+          cy: c.y,
+          rx: (perfect ? rCss : rxCss) / layout.drawnW,
+          ry: (perfect ? rCss : ryCss) / layout.drawnH,
+          snapCircle: perfect
+        };
+      }
+      if (closed && corners >= 3 && corners <= 6 && circErr > 0.16 && aspect < 4) {
+        const a = toImg(minX, minY);
+        const b = toImg(maxX, maxY);
+        return {
+          kind: "rect",
+          x: a.x,
+          y: a.y,
+          w: Math.max(0.004, b.x - a.x),
+          h: Math.max(0.004, b.y - a.y)
+        };
+      }
+      if (looksLikeArrow(pts, diag)) {
+        const cut = Math.max(6, Math.floor(pts.length * 0.72));
+        const tip = pts[cut - 1];
+        const from = toImg(start.x, start.y);
+        const toPx = snapLineAngle(start, tip);
+        return { kind: "arrow", from: from, to: toImg(toPx.x, toPx.y) };
+      }
+      if (!closed && lineDev < 0.13 && pathLength(pts) < chord * 1.35) {
+        const from = toImg(start.x, start.y);
+        const toPx = snapLineAngle(start, end);
+        return { kind: "line", from: from, to: toImg(toPx.x, toPx.y) };
+      }
+      return null;
+    }
+
+    function applySnappedGeometry(stroke, p) {
+      const a = stroke.anchor || (stroke.points && stroke.points[0]);
+      if (!a || !p) return;
+      const kind = stroke.kind;
+      if (kind === "circle") {
+        const layout = getStageContainLayout();
+        const cx = (a.x + p.x) / 2;
+        const cy = (a.y + p.y) / 2;
+        const rx = Math.abs(p.x - a.x) / 2;
+        const ry = Math.abs(p.y - a.y) / 2;
+        if (stroke.snapCircle) {
+          const rCss = Math.max(rx * layout.drawnW, ry * layout.drawnH);
+          stroke.cx = cx;
+          stroke.cy = cy;
+          stroke.rx = Math.max(0.004, rCss / layout.drawnW);
+          stroke.ry = Math.max(0.004, rCss / layout.drawnH);
+        } else {
+          stroke.cx = cx;
+          stroke.cy = cy;
+          stroke.rx = Math.max(0.004, rx);
+          stroke.ry = Math.max(0.004, ry);
+        }
+      } else if (kind === "rect") {
+        stroke.x = Math.min(a.x, p.x);
+        stroke.y = Math.min(a.y, p.y);
+        stroke.w = Math.max(0.004, Math.abs(p.x - a.x));
+        stroke.h = Math.max(0.004, Math.abs(p.y - a.y));
+      } else if (kind === "line" || kind === "arrow") {
+        stroke.from = { x: a.x, y: a.y };
+        stroke.to = snapLineAngle(a, p);
+      }
+    }
+
+    function scheduleDrawHold() {
+      clearDrawHold();
+      drawHoldTimer = setTimeout(() => {
+        drawHoldTimer = null;
+        if (!isDrawing || !stageCurrent || drawPinching || drawShapeSnapped) return;
+        if (pointerCount() !== 1) return;
+        const shape = recognizeDrawShape(stageCurrent.points);
+        if (!shape) return;
+        drawShapeSnapped = true;
+        stageCurrent.kind = shape.kind;
+        Object.assign(stageCurrent, shape);
+        const last = stageCurrent.points[stageCurrent.points.length - 1];
+        if (shape.kind === "circle") {
+          stageCurrent.anchor = { x: 2 * shape.cx - last.x, y: 2 * shape.cy - last.y };
+        } else if (shape.kind === "rect") {
+          stageCurrent.anchor = {
+            x: shape.x + shape.w - last.x,
+            y: shape.y + shape.h - last.y
+          };
+        } else if (shape.from) {
+          stageCurrent.anchor = { x: shape.from.x, y: shape.from.y };
+        }
+        haptic("ok");
+        redrawStageCanvas();
+      }, 480);
+    }
+
+    function cancelCurrentStroke() {
+      clearDrawHold();
+      isDrawing = false;
+      stageCurrent = null;
+      drawShapeSnapped = false;
+      redrawStageCanvas();
+    }
+
+    function isDrawTap(stroke, duration) {
+      if (!stroke || (stroke.kind && stroke.kind !== "free")) return false;
+      if (duration > 280) return false;
+      const pts = stroke.points || [];
+      if (!pts.length || pts.length > 10) return false;
+      const a = pts[0];
+      const b = pts[pts.length - 1];
+      return Math.hypot(b.x - a.x, b.y - a.y) < 0.014;
+    }
+
+    function handleDrawTap() {
+      const now = Date.now();
+      const tapPos = drawHoldOriginVp;
+      if (drawLastTapAt && now - drawLastTapAt < 320 && tapPos && drawLastTapPos) {
+        const d = Math.hypot(tapPos.x - drawLastTapPos.x, tapPos.y - drawLastTapPos.y);
+        if (d < 36) {
+          if (drawZoom > 1.15) {
+            drawZoom = 1;
+            drawPanX = 0;
+            drawPanY = 0;
+            applyDrawView();
+          } else {
+            setDrawZoomAt(2.4, tapPos.x, tapPos.y);
+          }
+          redrawStageCanvas();
+          haptic("light");
+          drawLastTapAt = 0;
+          drawLastTapPos = null;
+          return;
+        }
+      }
+      drawLastTapAt = now;
+      drawLastTapPos = tapPos;
+    }
+
     function onDrawStart(e) {
-      if (!stageRaw || !stageOpen) return;
+      if (!stageRaw || !stageOpen || !els.stage.classList.contains("mode-draw")) return;
       e.preventDefault();
       e.stopPropagation();
+      drawPointers[e.pointerId] = { x: e.clientX, y: e.clientY };
+      if (e.pointerType === "mouse" || e.pointerType === "pen") {
+        try { els.stageCanvas.setPointerCapture(e.pointerId); } catch (_) { /* ignore */ }
+      }
+      if (pointerCount() >= 2) {
+        cancelCurrentStroke();
+        startDrawPinch();
+        return;
+      }
       const p = pointerToImageNorm(e);
       if (!p) return;
       const layout = getStageContainLayout();
       isDrawing = true;
+      drawShapeSnapped = false;
+      drawStrokeStartAt = Date.now();
+      drawHoldOriginVp = viewportPointFromEvent(e);
       stageCurrent = {
         color: drawColor,
-        width: drawWidthPx,
-        widthImg: Math.max(1, drawWidthPx / Math.max(layout.scale, 0.0001)),
+        width: DRAW_WIDTH_PX,
+        widthImg: Math.max(1, DRAW_WIDTH_PX / Math.max(layout.scale, 0.0001)),
         space: "img",
+        kind: "free",
         points: [p]
       };
-      try { els.stageCanvas.setPointerCapture(e.pointerId); } catch (_) { /* ignore */ }
+      scheduleDrawHold();
       redrawStageCanvas();
     }
 
     function onDrawMove(e) {
-      if (!isDrawing || !stageCurrent) return;
+      if (!stageOpen) return;
+      if (drawPointers[e.pointerId]) {
+        drawPointers[e.pointerId] = { x: e.clientX, y: e.clientY };
+      } else if (!isDrawing && !drawPinching) {
+        return;
+      }
       e.preventDefault();
       e.stopPropagation();
+      if (drawPinching || pointerCount() >= 2) {
+        if (!drawPinching && pointerCount() >= 2) {
+          cancelCurrentStroke();
+          startDrawPinch();
+        }
+        if (drawPinching) updateDrawPinch();
+        return;
+      }
+      if (!isDrawing || !stageCurrent) return;
+      const vp = viewportPointFromEvent(e);
+      if (vp && drawHoldOriginVp && !drawShapeSnapped) {
+        const moved = Math.hypot(vp.x - drawHoldOriginVp.x, vp.y - drawHoldOriginVp.y);
+        if (moved > 10) {
+          drawHoldOriginVp = vp;
+          scheduleDrawHold();
+        }
+      }
       const p = pointerToImageNorm(e);
       if (!p) return;
+      if (drawShapeSnapped) {
+        applySnappedGeometry(stageCurrent, p);
+        redrawStageCanvas();
+        return;
+      }
       const last = stageCurrent.points[stageCurrent.points.length - 1];
       const dx = p.x - last.x;
       const dy = p.y - last.y;
@@ -5231,20 +5979,49 @@
     }
 
     function onDrawEnd(e) {
-      if (!isDrawing) return;
+      if (!stageOpen) return;
       e.preventDefault();
       e.stopPropagation();
+      const wasPinch = drawPinching;
+      delete drawPointers[e.pointerId];
+      if (wasPinch) {
+        if (pointerCount() < 2) {
+          drawPinching = false;
+          drawPinchStart = null;
+        }
+        return;
+      }
+      if (!isDrawing) return;
+      clearDrawHold();
       isDrawing = false;
-      if (stageCurrent && stageCurrent.points.length) stageStrokes.push(stageCurrent);
+      const stroke = stageCurrent;
       stageCurrent = null;
+      const snapped = drawShapeSnapped;
+      drawShapeSnapped = false;
+      const duration = Date.now() - drawStrokeStartAt;
+      if (stroke && isDrawTap(stroke, duration) && !snapped) {
+        handleDrawTap();
+      } else if (stroke && ((stroke.points && stroke.points.length) || stroke.kind)) {
+        stageStrokes.push(stroke);
+        haptic("light");
+      }
       redrawStageCanvas();
       updateDrawButtons();
-      haptic("light");
+    }
+
+    function onDrawWheel(e) {
+      if (!stageOpen || !stageRaw || !els.stage.classList.contains("mode-draw")) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const vp = viewportPointFromEvent(e);
+      if (!vp) return;
+      const factor = e.deltaY > 0 ? 0.9 : 1.11;
+      setDrawZoomAt(drawZoom * factor, vp.x, vp.y);
+      redrawStageCanvas();
     }
 
     function preventStageScroll(e) {
       if (!stageOpen) return;
-      // не блокируем ползунок толщины и кнопки
       if (e.target && e.target.closest && e.target.closest(".stage-bar")) return;
       e.preventDefault();
     }
@@ -5276,15 +6053,11 @@
 
       if (editingPhotoIdx != null && formPhotos[editingPhotoIdx]) {
         const photo = formPhotos[editingPhotoIdx];
-        let src = photoEditSrc(photo);
-        if (src && !isDataUrl(src)) {
-          try {
-            src = await fetchPhotoAsDataUrl(src);
-            if (src) {
-              photo.raw = photo.raw || src;
-              if (!isDataUrl(photo.final)) photo.final = src;
-            }
-          } catch (_) { /* keep url */ }
+        const src = await ensurePhotoDataUrl(photo, editingId);
+        if (!src) {
+          showToast("нет фото", true);
+          closeStage();
+          return;
         }
         enterDrawMode(src, photo.strokes || []);
         return;
@@ -5306,6 +6079,7 @@
       stageStrokes = [];
       stageCurrent = null;
       isDrawing = false;
+      resetDrawView();
       editingPhotoIdx = null;
       els.stage.classList.remove("open", "streaming");
       els.stage.setAttribute("aria-hidden", "true");
@@ -5386,7 +6160,7 @@
         };
       }
       setStageMode("draw");
-      if (els.drawSize) els.drawSize.value = String(drawWidthPx);
+      resetDrawView();
       updateDrawButtons();
       updateDrawNavUi();
       updateStampToggleUi();
@@ -5441,15 +6215,10 @@
       commitCurrentDrawPhoto();
       editingPhotoIdx = nextIdx;
       const photo = formPhotos[editingPhotoIdx];
-      let src = photoEditSrc(photo);
-      if (src && !isDataUrl(src) && photo.url) {
-        try {
-          src = await fetchPhotoAsDataUrl(src);
-          if (src) {
-            photo.raw = src;
-            if (!photo.final) photo.final = src;
-          }
-        } catch (_) { /* keep url */ }
+      const src = await ensurePhotoDataUrl(photo, editingId);
+      if (!src) {
+        showToast("нет фото", true);
+        return;
       }
       enterDrawMode(src, photo.strokes || []);
       saveDraft();
@@ -5574,11 +6343,14 @@
     function renderPhotosGrid() {
       els.photosGrid.innerHTML = formPhotos.map((p, idx) => {
         const src = photoDisplaySrc(p);
+        const fetchPath = photoRemotePath(p, editingId);
         return (
           '<div class="photo-thumb" data-idx="' + idx + '">' +
             (src
               ? '<img src="' + escapeAttr(src) + '" alt="Фото ' + (idx + 1) + '" />'
-              : '<div class="card-photo placeholder" style="position:absolute;inset:0;display:grid;place-items:center;font-size:11px;color:#888;">—</div>') +
+              : fetchPath
+                ? '<img class="form-photo" src="" data-fetch="' + escapeAttr(fetchPath) + '" alt="Фото ' + (idx + 1) + '" />'
+                : '<div class="card-photo placeholder" style="position:absolute;inset:0;display:grid;place-items:center;font-size:11px;color:#888;">—</div>') +
             '<button type="button" class="btn-remove-photo" data-remove="' + idx + '" aria-label="Удалить">×</button>' +
             (p.noStamp ? '<span class="photo-badge">без штампа</span>' : "") +
           "</div>"
@@ -5586,6 +6358,21 @@
       }).join("");
       updatePhotoGate();
       els.photosHint.textContent = formPhotos.length + " / " + MAX_PHOTOS;
+      hydrateFormPhotos();
+    }
+
+    async function hydrateFormPhotos() {
+      if (!formPhotos.length) return;
+      const itemId = editingId;
+      for (let i = 0; i < formPhotos.length; i++) {
+        const src = await ensurePhotoDataUrl(formPhotos[i], itemId);
+        if (!src) continue;
+        const img = els.photosGrid.querySelector('.photo-thumb[data-idx="' + i + '"] img');
+        if (img && img.getAttribute("src") !== src) {
+          img.src = src;
+          img.removeAttribute("data-fetch");
+        }
+      }
     }
 
     function updateHeavyAlert() {
@@ -7145,9 +7932,6 @@
     els.btnMenu.addEventListener("click", () => openOverlay(els.menuOverlay));
     els.btnCloseMenu.addEventListener("click", () => closeOverlay(els.menuOverlay));
     els.btnOpenSettings.addEventListener("click", openSettings);
-    if (els.btnOpenMap) {
-      els.btnOpenMap.addEventListener("click", () => openMapScreen());
-    }
     els.btnCloseSettings.addEventListener("click", () => closeOverlay(els.settingsOverlay));
     if (els.btnCloseMap) els.btnCloseMap.addEventListener("click", () => closeMapScreen());
 
@@ -7390,18 +8174,29 @@
 
     els.btnSyncServer.addEventListener("click", () => {
       closeOverlay(els.menuOverlay);
-      syncToServer({ notifyBot: false });
+      pullInventoryFromServer({ silent: false }).then((ok) => {
+        renderAll();
+        showToast(ok ? "склад обновлён" : "не удалось обновить", !ok);
+      });
     });
 
-    els.btnSendToBot.addEventListener("click", () => {
-      closeOverlay(els.menuOverlay);
-      sendDataToBot();
-    });
+    if (els.appThemeSeg) {
+      els.appThemeSeg.addEventListener("click", (e) => {
+        const btn = e.target.closest("[data-app-theme]");
+        if (!btn) return;
+        applyAppTheme(btn.getAttribute("data-app-theme"));
+        haptic("light");
+      });
+    }
 
-    els.btnCloseApp.addEventListener("click", () => {
-      if (tg && typeof tg.close === "function") tg.close();
-      else showToast("tg only");
-    });
+    if (els.stampThemeSeg) {
+      els.stampThemeSeg.addEventListener("click", (e) => {
+        const btn = e.target.closest("[data-stamp-theme]");
+        if (!btn) return;
+        applyStampTheme(btn.getAttribute("data-stamp-theme"));
+        haptic("light");
+      });
+    }
 
     els.filterChips.addEventListener("click", (e) => {
       const btn = e.target.closest("[data-filter]");
@@ -7633,25 +8428,17 @@
     els.stageCanvas.addEventListener("pointermove", onDrawMove, { passive: false });
     els.stageCanvas.addEventListener("pointerup", onDrawEnd, { passive: false });
     els.stageCanvas.addEventListener("pointercancel", onDrawEnd, { passive: false });
+    els.stageCanvas.addEventListener("wheel", onDrawWheel, { passive: false });
     els.stage.addEventListener("touchmove", preventStageScroll, { passive: false });
     els.stage.addEventListener("wheel", preventStageScroll, { passive: false });
 
     els.drawColors.addEventListener("click", (e) => {
       const btn = e.target.closest("[data-color]");
       if (!btn) return;
-      drawColor = btn.getAttribute("data-color") || "#3dcf7a";
+      drawColor = btn.getAttribute("data-color") || "#ff3b30";
       els.drawColors.querySelectorAll(".draw-color").forEach((el) => {
         el.classList.toggle("active", el === btn);
       });
-    });
-
-    els.drawSize.addEventListener("input", () => {
-      drawWidthPx = Math.max(1, Number(els.drawSize.value) || 4);
-      if (els.drawSizeLabel) els.drawSizeLabel.textContent = String(drawWidthPx);
-    });
-    els.drawSize.addEventListener("change", () => {
-      drawWidthPx = Math.max(1, Number(els.drawSize.value) || 4);
-      if (els.drawSizeLabel) els.drawSizeLabel.textContent = String(drawWidthPx);
     });
 
     els.btnUndoDraw.addEventListener("click", () => {
@@ -7662,9 +8449,7 @@
 
     els.btnClearDraw.addEventListener("click", () => {
       stageStrokes = [];
-      stageCurrent = null;
-      isDrawing = false;
-      redrawStageCanvas();
+      cancelCurrentStroke();
       updateDrawButtons();
     });
 
@@ -8002,6 +8787,8 @@
       if (!allowed) return;
 
       updateAdminBadge();
+      applyAppTheme(loadAppTheme(), { persist: false });
+      applyStampTheme(loadStampTheme(), { persist: false });
       loadHideTemplates();
       items = loadItems();
       const storedPrices = loadJSON(migrateScopedStorage(STORAGE_PRICES_BASE), {});
