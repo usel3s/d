@@ -17,6 +17,7 @@
       --bg-soft: #f4f5f7;
       --surface: rgba(255, 255, 255, 0.78);
       --surface-solid: #ffffff;
+      --surface-card: rgba(255, 255, 255, 0.78);
       --glass: rgba(255, 255, 255, 0.45);
       --glass-edge: rgba(255, 255, 255, 0.85);
       --ink: #111114;
@@ -38,6 +39,14 @@
       --body-glow: #ffffff;
       --body-grad-a: #eceef2;
       --body-grad-b: #e4e6eb;
+      --field: #f3f4f7;
+      --field-focus: #ffffff;
+      --chip-bg: rgba(255, 255, 255, 0.72);
+      --empty-bg: rgba(255, 255, 255, 0.55);
+      --overlay-scrim: rgba(20, 24, 33, 0.34);
+      --sheet-handle: rgba(17, 17, 20, 0.16);
+      --map-chrome: rgba(255, 255, 255, 0.9);
+      --fab-fade: rgba(233, 235, 239, 0.94);
       --safe-bottom: env(safe-area-inset-bottom, 0px);
       --safe-top: env(safe-area-inset-top, 0px);
       --header-h: 64px;
@@ -46,25 +55,34 @@
 
     html[data-theme="dark"] {
       color-scheme: dark;
-      --bg: #101116;
-      --bg-soft: #181a21;
-      --surface: rgba(28, 30, 38, 0.82);
-      --surface-solid: #1c1e26;
-      --glass: rgba(28, 30, 38, 0.5);
-      --glass-edge: rgba(255, 255, 255, 0.08);
-      --ink: #f3f4f8;
-      --ink-soft: #9aa0ae;
-      --line: rgba(255, 255, 255, 0.08);
+      --bg: #0c0d12;
+      --bg-soft: #14161d;
+      --surface: rgba(22, 24, 32, 0.88);
+      --surface-solid: #171920;
+      --surface-card: #1c1e27;
+      --glass: rgba(22, 24, 32, 0.58);
+      --glass-edge: rgba(255, 255, 255, 0.1);
+      --ink: #f4f5f8;
+      --ink-soft: #b4b8c4;
+      --line: rgba(255, 255, 255, 0.09);
       --line-strong: rgba(255, 255, 255, 0.16);
-      --accent: #f3f4f8;
-      --accent-dim: rgba(255, 255, 255, 0.08);
-      --cross: rgba(255, 255, 255, 0.05);
-      --shadow: 0 10px 30px rgba(0, 0, 0, 0.38), 0 2px 8px rgba(0, 0, 0, 0.2);
-      --shadow-soft: 0 6px 18px rgba(0, 0, 0, 0.28);
-      --on-ink: #101116;
-      --body-glow: rgba(80, 90, 120, 0.22);
-      --body-grad-a: #12141b;
-      --body-grad-b: #0e1016;
+      --accent: #f4f5f8;
+      --accent-dim: rgba(255, 255, 255, 0.07);
+      --cross: rgba(255, 255, 255, 0.045);
+      --shadow: 0 12px 32px rgba(0, 0, 0, 0.45), 0 2px 8px rgba(0, 0, 0, 0.28);
+      --shadow-soft: 0 8px 20px rgba(0, 0, 0, 0.32);
+      --on-ink: #0c0d12;
+      --body-glow: rgba(92, 104, 148, 0.16);
+      --body-grad-a: #101218;
+      --body-grad-b: #0b0c10;
+      --field: #12141b;
+      --field-focus: #1a1c25;
+      --chip-bg: rgba(255, 255, 255, 0.06);
+      --empty-bg: rgba(255, 255, 255, 0.035);
+      --overlay-scrim: rgba(0, 0, 0, 0.62);
+      --sheet-handle: rgba(255, 255, 255, 0.22);
+      --map-chrome: rgba(12, 13, 18, 0.94);
+      --fab-fade: rgba(12, 13, 18, 0.96);
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -78,17 +96,83 @@
     html[data-theme="dark"] .loc-card,
     html[data-theme="dark"] .photos-box,
     html[data-theme="dark"] .geo-box,
+    html[data-theme="dark"] .settings-block,
+    html[data-theme="dark"] .menu-item,
     html[data-theme="dark"] .card,
     html[data-theme="dark"] .tpl-tab,
     html[data-theme="dark"] .tpl-add input,
     html[data-theme="dark"] .price-row input,
     html[data-theme="dark"] .wizard-extra input,
+    html[data-theme="dark"] .wizard-fill-btn,
+    html[data-theme="dark"] .wizard-meta-bar,
     html[data-theme="dark"] .mini-btn,
     html[data-theme="dark"] .btn-outline,
-    html[data-theme="dark"] .btn-secondary {
-      background: var(--surface-solid);
+    html[data-theme="dark"] .btn-secondary,
+    html[data-theme="dark"] .card-pill,
+    html[data-theme="dark"] .photos-hint {
+      background: var(--surface-card);
       color: var(--ink);
       border-color: var(--line);
+    }
+
+    html[data-theme="dark"] input,
+    html[data-theme="dark"] select,
+    html[data-theme="dark"] textarea,
+    html[data-theme="dark"] .tpl-add input,
+    html[data-theme="dark"] .price-row input,
+    html[data-theme="dark"] .wizard-extra input,
+    html[data-theme="dark"] .loc-card,
+    html[data-theme="dark"] .tpl-tab {
+      background: var(--field);
+    }
+
+    html[data-theme="dark"] .chip,
+    html[data-theme="dark"] .note-chip,
+    html[data-theme="dark"] .hide-chip,
+    html[data-theme="dark"] .btn-secondary {
+      background: var(--chip-bg);
+    }
+
+    html[data-theme="dark"] .empty {
+      background: var(--empty-bg);
+      color: var(--ink-soft);
+    }
+
+    html[data-theme="dark"] .overlay {
+      background: var(--overlay-scrim);
+    }
+
+    html[data-theme="dark"] .fab-bar {
+      background: linear-gradient(180deg, transparent, var(--fab-fade) 35%);
+    }
+
+    html[data-theme="dark"] .map-top,
+    html[data-theme="dark"] .map-layers,
+    html[data-theme="dark"] .map-legend,
+    html[data-theme="dark"] .map-sheet {
+      background: var(--map-chrome);
+      color: var(--ink);
+    }
+
+    html[data-theme="dark"] .map-stash-card:active,
+    html[data-theme="dark"] .map-stash-card.active {
+      background: var(--surface-solid);
+    }
+
+    html[data-theme="dark"] .sheet-handle,
+    html[data-theme="dark"] .map-sheet-grip {
+      background: var(--sheet-handle);
+    }
+
+    html[data-theme="dark"] .photos-grid:empty::after,
+    html[data-theme="dark"] .card-photo.placeholder {
+      background: var(--field);
+    }
+
+    html[data-theme="dark"] .leaflet-popup-content-wrapper,
+    html[data-theme="dark"] .leaflet-popup-tip {
+      background: var(--surface-solid);
+      color: var(--ink);
     }
 
     html[data-theme="dark"] .toast.warn {
@@ -348,7 +432,7 @@
 
     .chip {
       border: 1px solid var(--line);
-      background: rgba(255,255,255,0.7);
+      background: var(--chip-bg);
       color: var(--ink-soft);
       border-radius: 14px;
       padding: 8px 12px;
@@ -362,8 +446,7 @@
     .chip.active {
       background: var(--ink);
       border-color: var(--ink);
-      color: #fff;
-      box-shadow: 0 8px 16px rgba(0,0,0,0.12);
+      color: var(--on-ink);
     }
 
     .list {
@@ -380,7 +463,7 @@
       color: var(--ink-soft);
       border: 1px dashed var(--line-strong);
       border-radius: var(--radius);
-      background: rgba(255,255,255,0.55);
+      background: var(--empty-bg);
       font-weight: 700;
     }
 
@@ -502,7 +585,7 @@
       color: var(--ink-soft);
       font-size: 11px;
       font-weight: 700;
-      background: rgba(243,244,247,0.8);
+      background: var(--field);
     }
 
     .card-foot {
@@ -523,7 +606,7 @@
       font-size: 10px;
       font-weight: 800;
       color: var(--ink);
-      background: rgba(255,255,255,0.85);
+      background: var(--surface-solid);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -588,7 +671,7 @@
       bottom: 0;
       z-index: 25;
       padding: 12px 14px calc(12px + var(--safe-bottom));
-      background: linear-gradient(180deg, transparent, rgba(233, 235, 239, 0.92) 35%);
+      background: linear-gradient(180deg, transparent, var(--fab-fade) 35%);
       pointer-events: none;
     }
 
@@ -623,9 +706,7 @@
       border: 1px solid var(--line-strong);
       border-radius: 18px;
       padding: 15px 14px;
-      background: rgba(255,255,255,0.85);
-      color: var(--ink);
-      font-size: 13px;
+      background: var(--chip-bg);
       font-weight: 800;
       cursor: pointer;
       white-space: nowrap;
@@ -642,7 +723,7 @@
       position: fixed;
       inset: 0;
       z-index: 40;
-      background: rgba(20, 24, 33, 0.28);
+      background: var(--overlay-scrim);
       backdrop-filter: blur(6px);
       display: none;
       align-items: flex-end;
@@ -675,7 +756,7 @@
       width: 40px;
       height: 4px;
       border-radius: 999px;
-      background: rgba(17,17,20,0.15);
+      background: var(--sheet-handle);
       margin: 4px auto 14px;
     }
 
@@ -710,7 +791,7 @@
     .field textarea,
     .field input[type="number"] {
       width: 100%;
-      background: #f3f4f7;
+      background: var(--field);
       border: 1px solid var(--line);
       border-radius: 14px;
       padding: 12px 14px;
@@ -723,7 +804,7 @@
     .field textarea:focus,
     .field input:focus {
       border-color: var(--ink);
-      background: #fff;
+      background: var(--field-focus);
     }
 
     .field textarea {
@@ -778,7 +859,7 @@
       font-size: 10px;
       font-weight: 800;
       color: var(--ink);
-      background: rgba(255,255,255,0.9);
+      background: var(--surface-solid);
     }
 
     .photos-grid {
@@ -800,7 +881,7 @@
       font-weight: 800;
       font-size: 12px;
       border-radius: 14px;
-      background: rgba(243,244,247,0.7);
+      background: var(--field);
       border: 1px solid var(--line);
     }
 
@@ -837,9 +918,7 @@
       height: 22px;
       border: 1px solid var(--line);
       border-radius: 8px;
-      background: rgba(255,255,255,0.92);
-      color: var(--ink);
-      font-size: 14px;
+      background: var(--surface-solid);
       line-height: 1;
       font-weight: 800;
       cursor: pointer;
@@ -890,7 +969,7 @@
     .menu-item {
       border: 1px solid var(--line);
       border-radius: 18px;
-      background: rgba(255,255,255,0.72);
+      background: var(--surface-card);
       box-shadow: var(--shadow-soft);
     }
 
@@ -942,10 +1021,7 @@
 
     .geo-actions button {
       border: 1px solid var(--line);
-      background: #fff;
-      color: var(--ink);
-      border-radius: 12px;
-      padding: 10px;
+      background: var(--surface-solid);
       font-size: 12px;
       font-weight: 800;
       cursor: pointer;
@@ -1009,6 +1085,15 @@
 
     .price-row:last-child { margin-bottom: 0; }
     .price-row span { font-size: 13px; color: var(--ink-soft); font-weight: 700; }
+    .price-row input {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px 12px;
+      background: var(--field);
+      color: var(--ink);
+      font-weight: 700;
+    }
 
     .tpl-list {
       display: flex;
@@ -1059,10 +1144,7 @@
       font: inherit;
       font-size: 13px;
       font-weight: 600;
-      background: #fff;
-    }
-
-    .tpl-add button {
+      background: var(--field);
       border: none;
       background: var(--ink);
       color: #fff;
@@ -1082,7 +1164,7 @@
 
     .note-chip {
       border: 1px solid var(--line);
-      background: rgba(255,255,255,0.85);
+      background: var(--chip-bg);
       color: var(--ink-soft);
       border-radius: 999px;
       padding: 7px 11px;
@@ -1093,20 +1175,20 @@
 
     .note-chip:active {
       background: var(--ink);
-      color: #fff;
+      color: var(--on-ink);
       border-color: var(--ink);
     }
 
     .note-chip.active,
     .hide-chip.active {
       background: var(--ink);
-      color: #fff;
+      color: var(--on-ink);
       border-color: var(--ink);
     }
 
     .hide-chip {
       border: 1px solid var(--line);
-      background: rgba(255,255,255,0.85);
+      background: var(--chip-bg);
       color: var(--ink-soft);
       border-radius: 999px;
       padding: 8px 12px;
@@ -1175,8 +1257,7 @@
     .loc-card {
       border: 2px solid var(--line);
       border-radius: 16px;
-      background: #fff;
-      padding: 18px 14px;
+      background: var(--surface-solid);
       text-align: center;
       font-size: 15px;
       font-weight: 800;
@@ -1186,7 +1267,7 @@
 
     .loc-card.active {
       border-color: var(--ink);
-      background: rgba(17, 17, 20, 0.04);
+      background: var(--accent-dim);
     }
 
     .hide-chips {
@@ -1204,7 +1285,8 @@
       font: inherit;
       font-size: 13px;
       font-weight: 600;
-      background: #fff;
+      background: var(--field);
+      color: var(--ink);
     }
 
     .wizard-skip {
@@ -1250,10 +1332,7 @@
       padding: 10px 12px;
       border: 1px solid var(--line);
       border-radius: 14px;
-      background: rgba(255,255,255,0.9);
-    }
-
-    .wizard-meta-bar.hidden {
+      background: var(--surface-card);
       display: none;
     }
 
@@ -1269,10 +1348,7 @@
     .wizard-fill-btn {
       flex-shrink: 0;
       border: 1px solid var(--ink);
-      background: #fff;
-      color: var(--ink);
-      border-radius: 999px;
-      padding: 7px 12px;
+      background: var(--surface-solid);
       font-size: 12px;
       font-weight: 800;
       cursor: pointer;
@@ -1280,10 +1356,7 @@
 
     .wizard-fill-btn.open {
       background: var(--ink);
-      color: #fff;
-    }
-
-    #itemForm.wiz-after-photo {
+      color: var(--on-ink);
       display: flex;
       flex-direction: column;
     }
@@ -1312,9 +1385,7 @@
     .tpl-tab {
       flex: 1;
       border: 1px solid var(--line);
-      background: #fff;
-      border-radius: 12px;
-      padding: 8px 10px;
+      background: var(--surface-solid);
       font-size: 12px;
       font-weight: 800;
       cursor: pointer;
@@ -1322,11 +1393,7 @@
 
     .tpl-tab.active {
       background: var(--ink);
-      color: #fff;
-      border-color: var(--ink);
-    }
-
-    .admin-badge {
+      color: var(--on-ink);
       font-size: 10px;
       font-weight: 700;
       color: var(--ink-soft);
@@ -1354,12 +1421,7 @@
       gap: 10px;
       padding: 12px 14px 8px;
       padding-top: calc(12px + env(safe-area-inset-top, 0px));
-      background: rgba(255, 255, 255, 0.88);
-      backdrop-filter: blur(18px) saturate(1.15);
-      -webkit-backdrop-filter: blur(18px) saturate(1.15);
-      border-bottom: 1px solid var(--line);
-      color: var(--ink);
-    }
+      background: var(--map-chrome);
 
     .map-top h2 {
       margin: 0;
@@ -1397,11 +1459,7 @@
       gap: 6px;
       align-items: center;
       padding: 8px 14px 10px;
-      background: rgba(255, 255, 255, 0.88);
-      backdrop-filter: blur(18px) saturate(1.15);
-      -webkit-backdrop-filter: blur(18px) saturate(1.15);
-      border-bottom: 1px solid var(--line);
-    }
+      background: var(--map-chrome);
 
     .map-layer-btn {
       border: 1px solid var(--line-strong);
@@ -1439,7 +1497,7 @@
       left: 10px;
       top: 10px;
       z-index: 800;
-      background: rgba(255, 255, 255, 0.92);
+      background: var(--map-chrome);
       backdrop-filter: blur(14px);
       -webkit-backdrop-filter: blur(14px);
       border: 1px solid var(--glass-edge);
@@ -1508,10 +1566,7 @@
 
     .map-basemap button.active {
       background: var(--ink);
-      color: #fff;
-    }
-
-    .map-sheet {
+      color: var(--on-ink);
       position: absolute;
       left: 0;
       right: 0;
@@ -1521,7 +1576,7 @@
       flex-direction: column;
       height: min(72vh, 560px);
       max-height: min(72vh, 560px);
-      background: rgba(255, 255, 255, 0.96);
+      background: var(--map-chrome);
       backdrop-filter: blur(18px) saturate(1.1);
       -webkit-backdrop-filter: blur(18px) saturate(1.1);
       border-radius: 22px 22px 0 0;
@@ -1555,7 +1610,7 @@
       width: 40px;
       height: 4px;
       border-radius: 99px;
-      background: rgba(17, 17, 20, 0.16);
+      background: var(--sheet-handle);
       margin: 0 auto 10px;
     }
 
@@ -1626,12 +1681,12 @@
 
     .map-stash-card:active {
       transform: scale(0.985);
-      background: #fff;
+      background: var(--surface-solid);
     }
 
     .map-stash-card.active {
       border-color: var(--ink);
-      background: #fff;
+      background: var(--surface-solid);
     }
 
     .map-stash-card.warn-crit {
@@ -1669,7 +1724,7 @@
       font-weight: 800;
       padding: 3px 7px;
       border-radius: 7px;
-      background: rgba(17, 17, 20, 0.06);
+      background: var(--accent-dim);
       color: var(--ink-soft);
     }
 
@@ -1801,6 +1856,74 @@
     .seg button.active {
       background: var(--ink);
       color: var(--on-ink);
+    }
+
+    .stamp-preview {
+      margin-top: 10px;
+      position: relative;
+      overflow: hidden;
+      border-radius: 16px;
+      padding: 12px 14px 12px 18px;
+      background: #f7f8fb;
+      border: 1px solid rgba(17, 17, 20, 0.1);
+      color: #111318;
+      box-shadow: 0 10px 22px rgba(16, 18, 24, 0.08);
+    }
+
+    .stamp-preview::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(rgba(17, 17, 20, 0.04) 1px, transparent 1px) 0 0 / 14px 14px,
+        linear-gradient(90deg, rgba(17, 17, 20, 0.04) 1px, transparent 1px) 0 0 / 14px 14px;
+      pointer-events: none;
+    }
+
+    .stamp-preview[data-variant="dark"] {
+      background: #12141b;
+      border-color: rgba(255, 255, 255, 0.14);
+      color: #f6f7fb;
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+    }
+
+    .stamp-preview[data-variant="dark"]::before {
+      background:
+        linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px) 0 0 / 14px 14px,
+        linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px) 0 0 / 14px 14px;
+    }
+
+    .stamp-preview-tape {
+      position: absolute;
+      left: 0;
+      top: 10px;
+      bottom: 10px;
+      width: 4px;
+      border-radius: 999px;
+      background: #d64545;
+    }
+
+    .stamp-preview-lines {
+      position: relative;
+      display: grid;
+      gap: 4px;
+    }
+
+    .stamp-preview-lines div {
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+    }
+
+    .stamp-preview-lines em {
+      font-style: normal;
+      font-weight: 700;
+      color: #5c6170;
+      margin-right: 8px;
+    }
+
+    .stamp-preview[data-variant="dark"] .stamp-preview-lines em {
+      color: #a8b0c0;
     }
 
     .toast {
@@ -2613,6 +2736,14 @@
             <button type="button" data-stamp-theme="light">Светлый</button>
             <button type="button" data-stamp-theme="dark">Тёмный</button>
           </div>
+          <div class="stamp-preview" id="stampPreview" data-variant="light">
+            <span class="stamp-preview-tape" aria-hidden="true"></span>
+            <div class="stamp-preview-lines">
+              <div><em>#tape</em>Красная</div>
+              <div><em>#gps</em>55.7512, 37.6184</div>
+              <div><em>#addr</em>Тверская ул.</div>
+            </div>
+          </div>
         </div>
 
         <button type="button" class="menu-item" id="btnSyncServer">
@@ -3037,6 +3168,7 @@
       btnOpenSettings: $("btnOpenSettings"),
       appThemeSeg: $("appThemeSeg"),
       stampThemeSeg: $("stampThemeSeg"),
+      stampPreview: $("stampPreview"),
       btnCloseSettings: $("btnCloseSettings"),
       btnSaveSettings: $("btnSaveSettings"),
       btnSyncServer: $("btnSyncServer"),
@@ -3215,7 +3347,7 @@
       appTheme = theme === "dark" ? "dark" : "light";
       document.documentElement.setAttribute("data-theme", appTheme);
       document.body.setAttribute("data-theme", appTheme);
-      const chrome = appTheme === "dark" ? "#101116" : "#e9ebef";
+      const chrome = appTheme === "dark" ? "#0c0d12" : "#e9ebef";
       try {
         if (tg && tg.setHeaderColor) tg.setHeaderColor(chrome);
         if (tg && tg.setBackgroundColor) tg.setBackgroundColor(chrome);
@@ -3229,6 +3361,9 @@
     function applyStampTheme(theme, options) {
       options = options || {};
       stampTheme = theme === "dark" ? "dark" : "light";
+      if (els.stampPreview) {
+        els.stampPreview.setAttribute("data-variant", stampTheme);
+      }
       if (options.persist !== false) {
         saveJSON(migrateScopedStorage(STORAGE_STAMP_THEME_BASE), stampTheme);
       }
@@ -4669,30 +4804,36 @@
       const dark = stampTheme === "dark";
       const palette = dark
         ? {
-            shadow: "rgba(0, 0, 0, 0.45)",
-            fill: "rgba(16, 18, 24, 0.9)",
-            stroke: "rgba(255, 255, 255, 0.12)",
-            grid: "rgba(255, 255, 255, 0.05)",
-            tag: "#8b90a0",
-            value: "#f4f5f7",
-            bar: "rgba(244, 245, 247, 0.7)"
+            shadow: "rgba(0, 0, 0, 0.58)",
+            fillTop: "rgba(22, 24, 32, 0.94)",
+            fillBottom: "rgba(10, 12, 16, 0.9)",
+            stroke: "rgba(255, 255, 255, 0.16)",
+            shine: "rgba(255, 255, 255, 0.16)",
+            grid: "rgba(255, 255, 255, 0.045)",
+            split: "rgba(255, 255, 255, 0.08)",
+            tag: "#a8b0c0",
+            value: "#f6f7fb",
+            bar: "rgba(246, 247, 251, 0.78)"
           }
         : {
-            shadow: "rgba(20, 24, 33, 0.2)",
-            fill: "rgba(255, 255, 255, 0.93)",
-            stroke: "rgba(17, 17, 20, 0.1)",
-            grid: "rgba(17, 17, 20, 0.045)",
-            tag: "#6a6e79",
-            value: "#111114",
+            shadow: "rgba(16, 18, 24, 0.28)",
+            fillTop: "rgba(255, 255, 255, 0.97)",
+            fillBottom: "rgba(244, 246, 250, 0.94)",
+            stroke: "rgba(17, 17, 20, 0.12)",
+            shine: "rgba(255, 255, 255, 0.95)",
+            grid: "rgba(17, 17, 20, 0.04)",
+            split: "rgba(17, 17, 20, 0.08)",
+            tag: "#5c6170",
+            value: "#111318",
             bar: "rgba(17, 17, 20, 0.55)"
           };
 
       const margin = Math.max(10, Math.round(width * 0.028));
-      const padX = Math.max(14, Math.round(width * 0.032));
-      const padY = Math.max(11, Math.round(width * 0.024));
-      const fontSize = Math.max(12, Math.round(width * 0.025));
-      const tagSize = Math.max(10, Math.round(fontSize * 0.82));
-      const lineH = Math.round(fontSize * 1.38);
+      const padX = Math.max(16, Math.round(width * 0.034));
+      const padY = Math.max(12, Math.round(width * 0.026));
+      const fontSize = Math.max(13, Math.round(width * 0.026));
+      const tagSize = Math.max(11, Math.round(fontSize * 0.82));
+      const lineH = Math.round(fontSize * 1.42);
       const radius = Math.max(16, Math.round(width * 0.034));
       const maxTextW = width - margin * 2 - padX * 2 - 8;
 
@@ -4714,15 +4855,18 @@
       });
 
       const boxW = width - margin * 2;
-      const boxH = padY * 2 + wrapped.length * lineH + 6;
+      const boxH = padY * 2 + wrapped.length * lineH + 8;
       const boxX = margin;
       const boxY = height - margin - boxH;
 
       ctx.fillStyle = palette.shadow;
-      roundRectPath(ctx, boxX + 1, boxY + 3, boxW, boxH, radius);
+      roundRectPath(ctx, boxX + 1, boxY + 4, boxW, boxH, radius);
       ctx.fill();
 
-      ctx.fillStyle = palette.fill;
+      const fill = ctx.createLinearGradient(boxX, boxY, boxX, boxY + boxH);
+      fill.addColorStop(0, palette.fillTop);
+      fill.addColorStop(1, palette.fillBottom);
+      ctx.fillStyle = fill;
       roundRectPath(ctx, boxX, boxY, boxW, boxH, radius);
       ctx.fill();
 
@@ -4731,13 +4875,20 @@
       roundRectPath(ctx, boxX, boxY, boxW, boxH, radius);
       ctx.stroke();
 
-      const tape = tapeHex(meta && meta.tapeColor) || palette.bar;
-      ctx.fillStyle = tape;
-      ctx.fillRect(boxX, boxY + radius * 0.35, Math.max(4, Math.round(width * 0.01)), boxH - radius * 0.7);
-
       ctx.save();
       roundRectPath(ctx, boxX, boxY, boxW, boxH, radius);
       ctx.clip();
+      ctx.strokeStyle = palette.shine;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(boxX + radius, boxY + 1);
+      ctx.lineTo(boxX + boxW - radius, boxY + 1);
+      ctx.stroke();
+
+      const tape = tapeHex(meta && meta.tapeColor) || palette.bar;
+      ctx.fillStyle = tape;
+      ctx.fillRect(boxX, boxY, Math.max(4, Math.round(width * 0.011)), boxH);
+
       ctx.strokeStyle = palette.grid;
       ctx.lineWidth = 1;
       const grid = Math.max(12, Math.round(fontSize * 1.05));
@@ -4752,6 +4903,14 @@
       const textX = boxX + padX;
       wrapped.forEach((row, i) => {
         const y = boxY + padY + i * lineH;
+        if (i && row.tag) {
+          ctx.strokeStyle = palette.split;
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(textX, y - 3);
+          ctx.lineTo(boxX + boxW - padX, y - 3);
+          ctx.stroke();
+        }
         if (row.tag) {
           ctx.font = "700 " + tagSize + "px Manrope, Segoe UI, sans-serif";
           ctx.fillStyle = palette.tag;
@@ -4759,7 +4918,13 @@
           const tagW = ctx.measureText(row.tag + "  ").width;
           ctx.font = "800 " + fontSize + "px Manrope, Segoe UI, sans-serif";
           ctx.fillStyle = palette.value;
+          if (dark) {
+            ctx.shadowColor = "rgba(0, 0, 0, 0.45)";
+            ctx.shadowBlur = 3;
+          }
           ctx.fillText(row.value, textX + tagW, y, maxTextW);
+          ctx.shadowColor = "transparent";
+          ctx.shadowBlur = 0;
         } else {
           ctx.font = "700 " + fontSize + "px Manrope, Segoe UI, sans-serif";
           ctx.fillStyle = palette.value;
