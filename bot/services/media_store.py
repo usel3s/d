@@ -116,6 +116,13 @@ class MediaStore:
                 meta["no_stamp"] = True
             photos_meta.append(meta)
 
+        # Если клиент прислал неполный список фото без блобов — сохраняем остальные файлы
+        if prev_photos:
+            for pid, kept in prev_photos.items():
+                if pid in seen_ids or not kept.get("path"):
+                    continue
+                photos_meta.append(kept)
+
         # Если клиент прислал позицию без фото-блобов — не теряем уже лежащие файлы
         if not photos_meta and prev_photos:
             photos_meta = [prev_photos[k] for k in prev_photos if prev_photos[k].get("path")]

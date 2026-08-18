@@ -1034,6 +1034,155 @@
       border-color: var(--ink);
     }
 
+    .note-chip.active,
+    .hide-chip.active {
+      background: var(--ink);
+      color: #fff;
+      border-color: var(--ink);
+    }
+
+    .hide-chip {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.85);
+      color: var(--ink-soft);
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .wizard-panel.hidden {
+      display: none;
+    }
+
+    .wizard-progress {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 16px;
+    }
+
+    .wizard-dot {
+      flex: 1;
+      height: 4px;
+      border-radius: 999px;
+      background: var(--line);
+    }
+
+    .wizard-dot.done,
+    .wizard-dot.active {
+      background: var(--ink);
+    }
+
+    .wizard-step.hidden {
+      display: none;
+    }
+
+    .wizard-lead {
+      font-size: 15px;
+      font-weight: 800;
+      margin: 0 0 12px;
+      color: var(--ink);
+    }
+
+    .wizard-lead .opt {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--ink-soft);
+    }
+
+    .loc-pick {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .loc-card {
+      border: 2px solid var(--line);
+      border-radius: 16px;
+      background: #fff;
+      padding: 18px 14px;
+      text-align: center;
+      font-size: 15px;
+      font-weight: 800;
+      cursor: pointer;
+      color: var(--ink);
+    }
+
+    .loc-card.active {
+      border-color: var(--ink);
+      background: rgba(17, 17, 20, 0.04);
+    }
+
+    .hide-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .wizard-extra input {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px 12px;
+      font: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      background: #fff;
+    }
+
+    .wizard-skip {
+      margin-top: 10px;
+      border: none;
+      background: transparent;
+      color: var(--ink-soft);
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      padding: 4px 0;
+    }
+
+    .wizard-nav {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .wizard-nav .btn-outline,
+    .wizard-nav .btn-primary {
+      width: 100%;
+    }
+
+    .block-edit-only.hidden,
+    .block-wizard-only.hidden {
+      display: none !important;
+    }
+
+    .tpl-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .tpl-tab {
+      flex: 1;
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 12px;
+      padding: 8px 10px;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .tpl-tab.active {
+      background: var(--ink);
+      color: #fff;
+      border-color: var(--ink);
+    }
+
     .admin-badge {
       font-size: 10px;
       font-weight: 700;
@@ -2143,7 +2292,71 @@
       </div>
 
       <form class="form" id="itemForm">
-        <div class="field">
+        <div class="wizard-panel hidden" id="wizardPanel">
+          <div class="wizard-progress" id="wizardProgress"></div>
+
+          <div class="wizard-step" id="wizardStep1" data-wizard-step="1">
+            <p class="wizard-lead">Шаг 1 · Где клад?</p>
+            <div class="loc-pick" id="wizardLocPick"></div>
+          </div>
+
+          <div class="wizard-step hidden" id="wizardStep2" data-wizard-step="2">
+            <p class="wizard-lead">Шаг 2 · Способ укрытия <span class="opt">необязательно</span></p>
+            <div class="hide-chips" id="wizardHideChips"></div>
+            <div class="wizard-extra">
+              <input type="text" id="wizardExtraNote" maxlength="200" placeholder="Дополнение (необязательно)" />
+            </div>
+            <button type="button" class="wizard-skip" id="wizardSkipHide">Пропустить способ</button>
+          </div>
+
+          <div class="wizard-step hidden" id="wizardStep3" data-wizard-step="3">
+            <p class="wizard-lead">Шаг 3 · Граммовка и изолента</p>
+          </div>
+
+          <div class="wizard-nav block-wizard-only" id="wizardNav">
+            <button type="button" class="btn-outline" id="wizardBack">Назад</button>
+            <button type="button" class="btn-primary" id="wizardNext">Далее</button>
+          </div>
+        </div>
+
+        <div class="block-wizard-only hidden" id="wizardStep4Lead">
+          <p class="wizard-lead">Шаг 4 · Фото и GPS</p>
+        </div>
+
+        <div class="field block-edit-only">
+          <label for="locationSelect">Локация <span class="req">*</span></label>
+          <select id="locationSelect" required>
+            <option value="warehouse_1">Тайник</option>
+            <option value="pickup">Прикоп</option>
+          </select>
+        </div>
+
+        <div class="field block-wizard-step3 block-edit-only">
+          <label for="weightSelect">Граммовка <span class="req">*</span></label>
+          <select id="weightSelect" required>
+            <option value="0.5">0.5 г</option>
+            <option value="1">1 г</option>
+            <option value="2">2 г</option>
+            <option value="3">3 г</option>
+            <option value="4">4 г</option>
+            <option value="5">5 г</option>
+          </select>
+        </div>
+        <div class="alert block-wizard-step3 block-edit-only" id="heavyAlert">
+          <div><strong>&gt; 3 г</strong></div>
+        </div>
+        <div class="field block-wizard-step3 block-edit-only">
+          <label for="tapeSelect">Изолента <span class="req">*</span></label>
+          <select id="tapeSelect" required>
+            <option value="red">Красная</option>
+            <option value="blue">Синяя</option>
+            <option value="yellow">Жёлтая</option>
+            <option value="white">Белая</option>
+            <option value="black">Чёрная</option>
+          </select>
+        </div>
+
+        <div class="field block-wizard-step4">
           <div class="photos-box">
             <div class="photos-head">
               <span class="photos-tag">#photo</span>
@@ -2154,7 +2367,7 @@
           </div>
         </div>
 
-        <div class="field">
+        <div class="field block-wizard-step4">
           <div class="geo-box" id="geoBox">
             <div class="photos-head">
               <span class="photos-tag">#gps</span>
@@ -2169,49 +2382,13 @@
           </div>
         </div>
 
-        <div class="field">
-          <label for="locationSelect">#location <span class="req">*</span></label>
-          <select id="locationSelect" required>
-            <option value="warehouse_1">Тайник</option>
-            <option value="warehouse_2">Подьезд</option>
-            <option value="pickup">Прикоп</option>
-          </select>
-        </div>
-
-        <div class="field">
-          <label for="weightSelect">#weight <span class="req">*</span></label>
-          <select id="weightSelect" required>
-            <option value="0.5">0.5 г</option>
-            <option value="1">1 г</option>
-            <option value="2">2 г</option>
-            <option value="3">3 г</option>
-            <option value="4">4 г</option>
-            <option value="5">5 г</option>
-          </select>
-        </div>
-
-        <div class="alert" id="heavyAlert">
-          <div><strong>&gt; 3 г</strong></div>
-        </div>
-
-        <div class="field">
-          <label for="tapeSelect">#tape <span class="req">*</span></label>
-          <select id="tapeSelect" required>
-            <option value="red">Красная</option>
-            <option value="blue">Синяя</option>
-            <option value="yellow">Жёлтая</option>
-            <option value="white">Белая</option>
-            <option value="black">Чёрная</option>
-          </select>
-        </div>
-
-        <div class="field">
-          <label for="noteInput">#note</label>
-          <textarea id="noteInput" maxlength="500" placeholder="note"></textarea>
+        <div class="field block-edit-only" id="editMetaBlock">
+          <label for="noteInput">Описание</label>
+          <textarea id="noteInput" maxlength="500" placeholder="описание"></textarea>
           <div class="note-chips" id="noteChips"></div>
         </div>
 
-        <div class="form-actions">
+        <div class="form-actions block-wizard-step4">
           <button type="button" class="btn-outline" id="btnCancelForm">Отмена</button>
           <button type="submit" class="btn-primary" id="btnSaveItem">Сохранить</button>
         </div>
@@ -2275,11 +2452,16 @@
       </div>
 
       <div class="settings-block">
-        <h3>Шаблоны описания</h3>
-        <div class="tpl-list" id="tplList"></div>
+        <h3>Способы укрытия</h3>
+        <p class="admin-badge" style="margin:0 0 10px">Отдельные наборы для тайника и прикопа · один чип при добавлении</p>
+        <div class="tpl-tabs" id="hideTplTabs">
+          <button type="button" class="tpl-tab active" data-hide-loc="warehouse_1">Тайник</button>
+          <button type="button" class="tpl-tab" data-hide-loc="pickup">Прикоп</button>
+        </div>
+        <div class="tpl-list" id="hideTplList"></div>
         <div class="tpl-add">
-          <input type="text" id="tplInput" maxlength="80" placeholder="например: под камнем" />
-          <button type="button" id="btnAddTpl">+</button>
+          <input type="text" id="hideTplInput" maxlength="80" placeholder="например: в пачке сигарет" />
+          <button type="button" id="btnAddHideTpl">+</button>
         </div>
       </div>
 
@@ -2457,14 +2639,34 @@
     const STORAGE_PRICES_BASE = "logistics_prices_v3";
     const STORAGE_DRAFT_BASE = "logistics_draft_v2";
     const STORAGE_LAST_BASE = "logistics_last_v2";
-    const STORAGE_NOTES_BASE = "logistics_note_templates_v1";
+    const STORAGE_HIDE_TEMPLATES_BASE = "logistics_hide_tpl_v1";
     const STORAGE_TG_UID = "logistics_tg_uid";
     const MAX_PHOTOS = 5;
-    const DEFAULT_NOTE_TEMPLATES = ["под камнем", "1–2 см", "под колесом"];
+    const DEFAULT_HIDE_TEMPLATES = {
+      warehouse_1: [
+        "в пачке сигарет",
+        "в бутылке",
+        "под ковриком",
+        "в щели",
+        "за трубой",
+        "в ящике",
+        "точно по метке"
+      ],
+      pickup: [
+        "под камнем",
+        "под доской",
+        "под веткой",
+        "в листве 1–2 см",
+        "присыпан землёй 1–2 см",
+        "точно по метке"
+      ]
+    };
+    const LOCATION_LABELS_LEGACY = {
+      warehouse_2: "Подъезд"
+    };
 
     const LOCATIONS = [
       { id: "warehouse_1", label: "Тайник" },
-      { id: "warehouse_2", label: "Подьезд" },
       { id: "pickup", label: "Прикоп" }
     ];
 
@@ -2494,7 +2696,11 @@
     let items = [];
     let isLocalDevSession = false;
     let prices = { ...DEFAULT_PRICES };
-    let noteTemplates = DEFAULT_NOTE_TEMPLATES.slice();
+    let hideTemplates = JSON.parse(JSON.stringify(DEFAULT_HIDE_TEMPLATES));
+    let hideTplEditLoc = "warehouse_1";
+    let wizardMode = false;
+    let wizardStep = 1;
+    let selectedHideChip = "";
     let activeFilter = "all";
     let suppressDraft = false;
     let editingId = null;
@@ -2649,9 +2855,20 @@
       mapLegend: $("mapLegend"),
       btnCloseMap: $("btnCloseMap"),
       noteChips: $("noteChips"),
-      tplList: $("tplList"),
-      tplInput: $("tplInput"),
-      btnAddTpl: $("btnAddTpl"),
+      wizardPanel: $("wizardPanel"),
+      wizardProgress: $("wizardProgress"),
+      wizardLocPick: $("wizardLocPick"),
+      wizardHideChips: $("wizardHideChips"),
+      wizardExtraNote: $("wizardExtraNote"),
+      wizardSkipHide: $("wizardSkipHide"),
+      wizardBack: $("wizardBack"),
+      wizardNext: $("wizardNext"),
+      wizardNav: $("wizardNav"),
+      wizardStep4Lead: $("wizardStep4Lead"),
+      hideTplTabs: $("hideTplTabs"),
+      hideTplList: $("hideTplList"),
+      hideTplInput: $("hideTplInput"),
+      btnAddHideTpl: $("btnAddHideTpl"),
       adminBadge: $("adminBadge"),
       settingsWarehouseHint: $("settingsWarehouseHint"),
       toast: $("toast"),
@@ -2741,21 +2958,35 @@
       return storageKey(base);
     }
 
-    function loadNoteTemplates() {
-      const raw = loadJSON(migrateScopedStorage(STORAGE_NOTES_BASE), null);
-      if (Array.isArray(raw) && raw.length) {
-        noteTemplates = raw
-          .map((t) => String(t || "").trim())
-          .filter(Boolean)
-          .slice(0, 24);
-      } else {
-        noteTemplates = DEFAULT_NOTE_TEMPLATES.slice();
+    function loadHideTemplates() {
+      const raw = loadJSON(migrateScopedStorage(STORAGE_HIDE_TEMPLATES_BASE), null);
+      hideTemplates = JSON.parse(JSON.stringify(DEFAULT_HIDE_TEMPLATES));
+      if (raw && typeof raw === "object" && !Array.isArray(raw)) {
+        ["warehouse_1", "pickup"].forEach((loc) => {
+          const list = raw[loc];
+          if (Array.isArray(list) && list.length) {
+            hideTemplates[loc] = list
+              .map((t) => String(t || "").trim())
+              .filter(Boolean)
+              .slice(0, 24);
+          }
+        });
       }
-      return noteTemplates;
+      return hideTemplates;
     }
 
-    function saveNoteTemplates() {
-      return saveJSON(migrateScopedStorage(STORAGE_NOTES_BASE), noteTemplates.slice(0, 24));
+    function saveHideTemplates() {
+      const payload = {
+        warehouse_1: (hideTemplates.warehouse_1 || []).slice(0, 24),
+        pickup: (hideTemplates.pickup || []).slice(0, 24)
+      };
+      return saveJSON(migrateScopedStorage(STORAGE_HIDE_TEMPLATES_BASE), payload);
+    }
+
+    function hideTemplatesForLocation(locId) {
+      loadHideTemplates();
+      const list = hideTemplates[locId] || hideTemplates.warehouse_1 || [];
+      return list.slice();
     }
 
     function updateAdminBadge() {
@@ -2988,7 +3219,9 @@
 
     function locationLabel(id) {
       const found = LOCATIONS.find((l) => l.id === id);
-      return found ? found.label : id;
+      if (found) return found.label;
+      if (LOCATION_LABELS_LEGACY[id]) return LOCATION_LABELS_LEGACY[id];
+      return id;
     }
 
     function tapeLabel(id) {
@@ -4257,6 +4490,88 @@
       return Object.assign(base, overrides || {});
     }
 
+    function photoHasGeo(photo) {
+      return !!(
+        photo &&
+        photo.geo &&
+        isFinite(Number(photo.geo.latitude)) &&
+        isFinite(Number(photo.geo.longitude))
+      );
+    }
+
+    function stampMetaForPhoto(photo, overrides, originalItem) {
+      let geo = null;
+      if (photoHasGeo(photo)) {
+        geo = photo.geo;
+      } else if (
+        originalItem &&
+        originalItem.geo &&
+        isFinite(Number(originalItem.geo.latitude)) &&
+        isFinite(Number(originalItem.geo.longitude))
+      ) {
+        geo = originalItem.geo;
+      } else {
+        geo = currentGeo;
+      }
+      let address = "";
+      if (geo && geo.address) {
+        address = streetOnlyAddress(geo.address);
+      } else if (photo && photo.geo && photo.geo.address) {
+        address = streetOnlyAddress(photo.geo.address);
+      } else {
+        address = streetOnlyAddress(currentAddress);
+      }
+      return currentStampMeta(Object.assign({ geo: geo, address: address }, overrides || {}));
+    }
+
+    function buildItemGeo(photos, originalItem) {
+      const list = photos || [];
+      for (let i = 0; i < list.length; i++) {
+        const g = list[i] && list[i].geo;
+        if (g && isFinite(Number(g.latitude)) && isFinite(Number(g.longitude))) {
+          return {
+            latitude: g.latitude,
+            longitude: g.longitude,
+            accuracy: g.accuracy,
+            altitude: g.altitude,
+            source: g.source,
+            timestamp: g.timestamp,
+            address: g.address || (originalItem && originalItem.geo && originalItem.geo.address) || ""
+          };
+        }
+      }
+      if (
+        originalItem &&
+        originalItem.geo &&
+        isFinite(Number(originalItem.geo.latitude)) &&
+        isFinite(Number(originalItem.geo.longitude))
+      ) {
+        return Object.assign({}, originalItem.geo);
+      }
+      if (!currentGeo) return null;
+      return {
+        latitude: currentGeo.latitude,
+        longitude: currentGeo.longitude,
+        accuracy: currentGeo.accuracy,
+        altitude: currentGeo.altitude,
+        source: currentGeo.source,
+        timestamp: currentGeo.timestamp,
+        address: currentAddress || currentGeo.address || ""
+      };
+    }
+
+    function savedGeoAvailable(photos, originalItem) {
+      if ((photos || []).some(photoHasGeo)) return true;
+      if (
+        originalItem &&
+        originalItem.geo &&
+        isFinite(Number(originalItem.geo.latitude))
+      ) {
+        return true;
+      }
+      return geoReadyForPhoto();
+    }
+
     async function bakePhoto(raw, strokes, meta, options) {
       options = options || {};
       if (!raw) return "";
@@ -4325,7 +4640,10 @@
       return Math.max(1, (Number(stroke.width) || drawWidthPx) / Math.max(contain.scale, 0.0001));
     }
 
-    async function rebakeAllPhotos(photos, meta) {
+    async function rebakeAllPhotos(photos, options) {
+      options = options || {};
+      const originalItem = options.originalItem || null;
+      const time = options.time || new Date().toISOString();
       const out = [];
       for (let i = 0; i < photos.length; i++) {
         const p = photos[i];
@@ -4344,7 +4662,9 @@
         try {
           raw = await compressImage(raw, 960, 0.68);
         } catch (_) { /* keep */ }
+        const meta = stampMetaForPhoto(p, { time: time }, originalItem);
         const final = await bakePhoto(raw, p.strokes || [], meta, { noStamp: !!p.noStamp });
+        const keptGeo = p.geo || (originalItem && originalItem.geo) || null;
         out.push({
           id: p.id || uid("p"),
           url: p.url || "",
@@ -4352,7 +4672,8 @@
           strokes: Array.isArray(p.strokes) ? p.strokes : [],
           final: final,
           noStamp: !!p.noStamp,
-          stampBaked: !p.noStamp
+          stampBaked: !p.noStamp,
+          geo: keptGeo
         });
       }
       return out;
@@ -4747,7 +5068,11 @@
       const showStamp = editingPhotoIdx == null
         ? true
         : !(formPhotos[editingPhotoIdx] && formPhotos[editingPhotoIdx].noStamp);
-      if (stageRaw && showStamp) paintStampOnStage(ctx, canvas, currentStampMeta());
+      if (stageRaw && showStamp) {
+        const stampPhoto = editingPhotoIdx != null ? formPhotos[editingPhotoIdx] : null;
+        const originalItem = editingId ? items.find((i) => i.id === editingId) : null;
+        paintStampOnStage(ctx, canvas, stampMetaForPhoto(stampPhoto, {}, originalItem));
+      }
     }
 
     function resizeStageCanvas() {
@@ -5257,24 +5582,170 @@
         if (defaults.note != null) els.noteInput.value = defaults.note;
       }
       updateHeavyAlert();
+      wizardMode = false;
+      wizardStep = 1;
+      selectedHideChip = "";
+      if (els.wizardExtraNote) els.wizardExtraNote.value = "";
+    }
+
+    function setWizardUi() {
+      const isWizard = wizardMode && !editingId;
+      if (els.wizardPanel) els.wizardPanel.classList.toggle("hidden", !isWizard);
+
+      document.querySelectorAll(".block-edit-only").forEach((el) => {
+        el.classList.toggle("hidden", isWizard);
+      });
+
+      const showStep4 = isWizard && wizardStep === 4;
+      const showStep3 = isWizard && wizardStep === 3;
+      document.querySelectorAll(".block-wizard-step3").forEach((el) => {
+        el.classList.toggle("hidden", isWizard && !showStep3);
+      });
+      document.querySelectorAll(".block-wizard-step4").forEach((el) => {
+        el.classList.toggle("hidden", isWizard && !showStep4);
+      });
+      if (els.wizardStep4Lead) els.wizardStep4Lead.classList.toggle("hidden", !showStep4);
+      if (els.wizardNav) els.wizardNav.classList.toggle("hidden", !isWizard || showStep4);
+
+      if (isWizard) {
+        [1, 2, 3].forEach((n) => {
+          const step = $("wizardStep" + n);
+          if (step) step.classList.toggle("hidden", wizardStep !== n);
+        });
+        renderWizardProgress();
+        if (wizardStep === 1) renderWizardLocPick();
+        if (wizardStep === 2) renderWizardHideChips();
+        if (els.wizardNext) els.wizardNext.textContent = wizardStep === 3 ? "К фото" : "Далее";
+        if (els.wizardBack) els.wizardBack.disabled = wizardStep <= 1;
+        els.formTitle.textContent = "Новая позиция · " + wizardStep + "/4";
+      } else {
+        els.formTitle.textContent = editingId ? "Редактирование" : "Новая позиция";
+      }
+    }
+
+    function renderWizardProgress() {
+      if (!els.wizardProgress) return;
+      els.wizardProgress.innerHTML = [1, 2, 3, 4].map((n) => {
+        let cls = "wizard-dot";
+        if (n < wizardStep) cls += " done";
+        else if (n === wizardStep) cls += " active";
+        return '<div class="' + cls + '"></div>';
+      }).join("");
+    }
+
+    function renderWizardLocPick() {
+      if (!els.wizardLocPick) return;
+      const cur = els.locationSelect.value || "warehouse_1";
+      els.wizardLocPick.innerHTML = LOCATIONS.map((loc) => {
+        const active = loc.id === cur ? " active" : "";
+        return (
+          '<button type="button" class="loc-card' + active + '" data-wizard-loc="' +
+          escapeAttr(loc.id) + '">' + escapeHtml(loc.label) + "</button>"
+        );
+      }).join("");
+    }
+
+    function renderWizardHideChips() {
+      if (!els.wizardHideChips) return;
+      const loc = els.locationSelect.value || "warehouse_1";
+      const list = hideTemplatesForLocation(loc);
+      els.wizardHideChips.innerHTML = list.map((t) => {
+        const active = selectedHideChip === t ? " active" : "";
+        return (
+          '<button type="button" class="hide-chip note-chip' + active + '" data-hide-chip="' +
+          escapeAttr(t) + '">' + escapeHtml(t) + "</button>"
+        );
+      }).join("");
+    }
+
+    function buildWizardNote() {
+      const parts = [];
+      if (selectedHideChip) parts.push(selectedHideChip);
+      const extra = String((els.wizardExtraNote && els.wizardExtraNote.value) || "").trim();
+      if (extra) parts.push(extra);
+      return parts.join(", ");
+    }
+
+    function syncWizardNoteToField() {
+      if (els.noteInput) els.noteInput.value = buildWizardNote();
+    }
+
+    function startWizard(options) {
+      options = options || {};
+      wizardMode = true;
+      wizardStep = 1;
+      selectedHideChip = "";
+      if (els.wizardExtraNote) els.wizardExtraNote.value = "";
+      els.locationSelect.value = "warehouse_1";
+      els.weightSelect.value = "0.5";
+      els.tapeSelect.value = "yellow";
+      els.noteInput.value = "";
+      updateHeavyAlert();
+      if (options.repeatLast) {
+        const last = loadJSON(migrateScopedStorage(STORAGE_LAST_BASE), null);
+        if (last) {
+          if (last.location && LOCATIONS.some((l) => l.id === last.location)) {
+            els.locationSelect.value = last.location;
+          }
+          if (last.weight != null) els.weightSelect.value = String(last.weight);
+          if (last.tapeColor) els.tapeSelect.value = last.tapeColor;
+          updateHeavyAlert();
+        }
+        showToast("повтор — фото");
+      }
+      setWizardUi();
+    }
+
+    function wizardGoNext() {
+      if (wizardStep === 1) {
+        if (!els.locationSelect.value) {
+          showToast("выберите тип", true);
+          return;
+        }
+        wizardStep = 2;
+      } else if (wizardStep === 2) {
+        syncWizardNoteToField();
+        wizardStep = 3;
+      } else if (wizardStep === 3) {
+        syncWizardNoteToField();
+        wizardStep = 4;
+        acquirePreciseGeo({ keepBest: !!currentGeo, quiet: true });
+      }
+      setWizardUi();
+      haptic("light");
+    }
+
+    function wizardGoBack() {
+      if (wizardStep <= 1) return;
+      if (wizardStep === 4) {
+        wizardStep = 3;
+      } else {
+        wizardStep -= 1;
+      }
+      setWizardUi();
+      haptic("light");
     }
 
     function openForm(options) {
       options = options || {};
       suppressDraft = true;
       resetForm();
+      wizardMode = false;
+      wizardStep = 1;
+      selectedHideChip = "";
 
       if (options.editItem) {
         const item = options.editItem;
-        // если есть черновик именно этой позиции — восстановить поля (без фото)
         const restoredEdit = loadDraftIntoForm({
           allowEdit: true,
           requireEditingId: item.id
         });
         if (!restoredEdit) {
           editingId = item.id;
-          els.formTitle.textContent = "Редактирование";
-          els.locationSelect.value = item.location || "warehouse_1";
+          els.locationSelect.value =
+            item.location && LOCATIONS.some((l) => l.id === item.location)
+              ? item.location
+              : "warehouse_1";
           els.weightSelect.value = String(item.weight != null ? item.weight : "0.5");
           els.tapeSelect.value = item.tapeColor || "yellow";
           els.noteInput.value = item.note || "";
@@ -5290,34 +5761,30 @@
           }
           updateHeavyAlert();
           renderGeoUi();
-        } else {
-          // draft restored fields; still load photos from item
         }
         formPhotos = (item.photos || []).map(migratePhoto).filter(Boolean);
-        renderPhotosGrid();
-      } else if (options.repeatLast) {
-        const last = loadJSON(migrateScopedStorage(STORAGE_LAST_BASE), null);
-        if (last) {
-          resetForm({
-            location: last.location,
-            weight: last.weight,
-            tapeColor: last.tapeColor,
-            note: last.note
+        if (item.geo) {
+          formPhotos.forEach((p) => {
+            if (p && !photoHasGeo(p)) {
+              p.geo = Object.assign({}, item.geo, { source: item.geo.source || "saved" });
+            }
           });
-          showToast("повтор — фото");
         }
+        renderPhotosGrid();
+        renderNoteChips();
       } else {
-        // «Добавить» — всегда чистая форма
         clearDraft();
         editingId = null;
-        els.formTitle.textContent = "Новая позиция";
+        startWizard({ repeatLast: !!options.repeatLast });
       }
 
       suppressDraft = false;
-      renderNoteChips();
+      setWizardUi();
       openOverlay(els.formOverlay);
       haptic("light");
-      acquirePreciseGeo({ keepBest: !!currentGeo, quiet: true });
+      if (!wizardMode || wizardStep === 4) {
+        acquirePreciseGeo({ keepBest: !!currentGeo, quiet: true });
+      }
     }
 
     function closeForm(saveDraftFlag) {
@@ -5326,12 +5793,15 @@
       if (stageOpen) closeStage();
       stopGeoWatch();
       geoBusy = false;
+      wizardMode = false;
+      wizardStep = 1;
+      selectedHideChip = "";
       closeOverlay(els.formOverlay);
     }
 
     function openSettings() {
       renderPriceSettings();
-      renderTemplateSettings();
+      renderHideTemplateSettings();
       updateAdminBadge();
       closeOverlay(els.menuOverlay);
       openOverlay(els.settingsOverlay);
@@ -5353,23 +5823,31 @@
       }).join("");
     }
 
-    function renderTemplateSettings() {
-      if (!els.tplList) return;
-      loadNoteTemplates();
-      els.tplList.innerHTML = noteTemplates.map((t, idx) => {
+    function renderHideTemplateSettings() {
+      if (!els.hideTplList) return;
+      loadHideTemplates();
+      const list = hideTemplates[hideTplEditLoc] || [];
+      els.hideTplList.innerHTML = list.map((t, idx) => {
         return (
           '<div class="tpl-row" data-idx="' + idx + '">' +
             "<span>" + escapeHtml(t) + "</span>" +
-            '<button type="button" data-del-tpl="' + idx + '">✕</button>' +
+            '<button type="button" data-del-hide-tpl="' + idx + '">✕</button>' +
           "</div>"
         );
-      }).join("") || '<div class="admin-badge" style="margin:0">пока пусто — добавьте шаблон</div>';
+      }).join("") || '<div class="admin-badge" style="margin:0">пока пусто — добавьте способ</div>';
+
+      if (els.hideTplTabs) {
+        els.hideTplTabs.querySelectorAll("[data-hide-loc]").forEach((btn) => {
+          btn.classList.toggle("active", btn.getAttribute("data-hide-loc") === hideTplEditLoc);
+        });
+      }
     }
 
     function renderNoteChips() {
       if (!els.noteChips) return;
-      loadNoteTemplates();
-      els.noteChips.innerHTML = noteTemplates.map((t) => {
+      const loc = els.locationSelect.value || "warehouse_1";
+      const list = hideTemplatesForLocation(loc);
+      els.noteChips.innerHTML = list.map((t) => {
         return (
           '<button type="button" class="note-chip" data-note-tpl="' +
           escapeAttr(t) + '">' + escapeHtml(t) + "</button>"
@@ -5380,8 +5858,7 @@
     function applyNoteTemplate(text) {
       const t = String(text || "").trim();
       if (!t || !els.noteInput) return;
-      const cur = String(els.noteInput.value || "").trim();
-      els.noteInput.value = cur ? (cur + (cur.endsWith(".") ? " " : ", ") + t) : t;
+      els.noteInput.value = t;
       saveDraft();
       haptic("light");
     }
@@ -6597,46 +7074,97 @@
       });
     }
 
+    if (els.wizardLocPick) {
+      els.wizardLocPick.addEventListener("click", (e) => {
+        const btn = e.target.closest("[data-wizard-loc]");
+        if (!btn) return;
+        els.locationSelect.value = btn.getAttribute("data-wizard-loc") || "warehouse_1";
+        renderWizardLocPick();
+        haptic("light");
+      });
+    }
+
+    if (els.wizardHideChips) {
+      els.wizardHideChips.addEventListener("click", (e) => {
+        const chip = e.target.closest("[data-hide-chip]");
+        if (!chip) return;
+        const val = chip.getAttribute("data-hide-chip") || "";
+        selectedHideChip = selectedHideChip === val ? "" : val;
+        renderWizardHideChips();
+        haptic("light");
+      });
+    }
+
+    if (els.wizardSkipHide) {
+      els.wizardSkipHide.addEventListener("click", () => {
+        selectedHideChip = "";
+        if (els.wizardExtraNote) els.wizardExtraNote.value = "";
+        wizardGoNext();
+      });
+    }
+
+    if (els.wizardBack) {
+      els.wizardBack.addEventListener("click", () => wizardGoBack());
+    }
+
+    if (els.wizardNext) {
+      els.wizardNext.addEventListener("click", () => wizardGoNext());
+    }
+
+    if (els.hideTplTabs) {
+      els.hideTplTabs.addEventListener("click", (e) => {
+        const btn = e.target.closest("[data-hide-loc]");
+        if (!btn) return;
+        hideTplEditLoc = btn.getAttribute("data-hide-loc") || "warehouse_1";
+        renderHideTemplateSettings();
+        haptic("light");
+      });
+    }
+
+    if (els.hideTplList) {
+      els.hideTplList.addEventListener("click", (e) => {
+        const btn = e.target.closest("[data-del-hide-tpl]");
+        if (!btn) return;
+        const idx = Number(btn.getAttribute("data-del-hide-tpl"));
+        if (!isFinite(idx)) return;
+        loadHideTemplates();
+        const list = hideTemplates[hideTplEditLoc] || [];
+        list.splice(idx, 1);
+        hideTemplates[hideTplEditLoc] = list;
+        saveHideTemplates();
+        renderHideTemplateSettings();
+        haptic("light");
+      });
+    }
+
+    if (els.btnAddHideTpl) {
+      els.btnAddHideTpl.addEventListener("click", () => {
+        const raw = String((els.hideTplInput && els.hideTplInput.value) || "").trim();
+        if (!raw) {
+          showToast("пустой способ", true);
+          return;
+        }
+        loadHideTemplates();
+        const list = hideTemplates[hideTplEditLoc] || [];
+        if (list.some((t) => t.toLowerCase() === raw.toLowerCase())) {
+          showToast("уже есть", true);
+          return;
+        }
+        list.push(raw.slice(0, 80));
+        hideTemplates[hideTplEditLoc] = list;
+        saveHideTemplates();
+        if (els.hideTplInput) els.hideTplInput.value = "";
+        renderHideTemplateSettings();
+        showToast("способ +");
+        haptic("ok");
+      });
+    }
+
     if (els.noteChips) {
       els.noteChips.addEventListener("click", (e) => {
         const chip = e.target.closest("[data-note-tpl]");
         if (!chip) return;
         applyNoteTemplate(chip.getAttribute("data-note-tpl") || "");
-      });
-    }
-
-    if (els.tplList) {
-      els.tplList.addEventListener("click", (e) => {
-        const btn = e.target.closest("[data-del-tpl]");
-        if (!btn) return;
-        const idx = Number(btn.getAttribute("data-del-tpl"));
-        if (!isFinite(idx)) return;
-        noteTemplates.splice(idx, 1);
-        saveNoteTemplates();
-        renderTemplateSettings();
-        renderNoteChips();
-        haptic("light");
-      });
-    }
-
-    if (els.btnAddTpl) {
-      els.btnAddTpl.addEventListener("click", () => {
-        const raw = String((els.tplInput && els.tplInput.value) || "").trim();
-        if (!raw) {
-          showToast("пустой шаблон", true);
-          return;
-        }
-        if (noteTemplates.some((t) => t.toLowerCase() === raw.toLowerCase())) {
-          showToast("уже есть", true);
-          return;
-        }
-        noteTemplates.push(raw.slice(0, 80));
-        saveNoteTemplates();
-        if (els.tplInput) els.tplInput.value = "";
-        renderTemplateSettings();
-        renderNoteChips();
-        showToast("шаблон +");
-        haptic("ok");
       });
     }
 
@@ -6649,9 +7177,8 @@
       });
       prices = next;
       saveJSON(migrateScopedStorage(STORAGE_PRICES_BASE), prices);
-      saveNoteTemplates();
+      saveHideTemplates();
       closeOverlay(els.settingsOverlay);
-      renderNoteChips();
       renderAll();
       showToast("ok");
       haptic("ok");
@@ -6798,6 +7325,7 @@
 
     els.locationSelect.addEventListener("change", () => {
       saveDraft();
+      renderNoteChips();
       if (stageOpen && stageRaw) redrawStageCanvas();
     });
 
@@ -6979,12 +7507,14 @@
     els.itemForm.addEventListener("submit", async (e) => {
       e.preventDefault();
 
+      if (wizardMode && !editingId) syncWizardNoteToField();
+
       if (!formPhotos.length) {
         showToast("нужно фото");
         haptic("warn");
         return;
       }
-      if (!geoReadyForPhoto()) {
+      if (!savedGeoAvailable(formPhotos, editingId ? items.find((i) => i.id === editingId) : null)) {
         showToast(!currentGeo ? "нет GPS — фото нельзя" : "GPS слабо — фото нельзя", true);
         haptic("warn");
         ensureAutoGeo();
@@ -6994,41 +7524,23 @@
       els.btnSaveItem.disabled = true;
       const weight = Number(els.weightSelect.value);
       const now = new Date().toISOString();
-      const meta = currentStampMeta({ time: now });
+      const originalItem = editingId ? items.find((i) => i.id === editingId) : null;
 
       let bakedPhotos;
       try {
-        bakedPhotos = await rebakeAllPhotos(formPhotos, meta);
+        bakedPhotos = await rebakeAllPhotos(formPhotos, { time: now, originalItem: originalItem });
       } catch (_) {
         bakedPhotos = formPhotos;
       }
 
-      const geoSource = (function () {
-        for (let i = 0; i < formPhotos.length; i++) {
-          const g = formPhotos[i] && formPhotos[i].geo;
-          if (g && isFinite(Number(g.latitude)) && isFinite(Number(g.longitude))) {
-            return g;
-          }
-        }
-        return currentGeo;
-      })();
-      if (!geoSource) {
+      const geoPayload = buildItemGeo(formPhotos, originalItem);
+      if (!geoPayload) {
         showToast("нет GPS — фото нельзя", true);
         haptic("warn");
         ensureAutoGeo();
         els.btnSaveItem.disabled = false;
         return;
       }
-
-      const geoPayload = {
-        latitude: geoSource.latitude,
-        longitude: geoSource.longitude,
-        accuracy: geoSource.accuracy,
-        altitude: geoSource.altitude,
-        source: geoSource.source,
-        timestamp: geoSource.timestamp,
-        address: currentAddress || geoSource.address || ""
-      };
 
       const prevItems = items.slice();
       let savedId = editingId;
@@ -7240,24 +7752,22 @@
           if (sit && sit.id) byId[sit.id] = sit;
         });
         (items || []).forEach((it) => {
-          if (!it || !it.id) return;
+          if (!it || !it.id || isLegacyStampId(it.id)) return;
           const server = byId[it.id];
-          if (server) {
-            const localNewer =
-              itemHasPhotoBlob(it) &&
-              String(it.updatedAt || "") > String(server.updatedAt || "");
-            if (localNewer) {
-              byId[it.id] = it;
-              return;
-            }
-            byId[it.id] = Object.assign({}, server, {
-              photos: (server.photos && server.photos.length) ? server.photos : it.photos
-            });
+          if (!server) {
+            byId[it.id] = it;
             return;
           }
-          if (itemHasPhotoBlob(it)) {
+          const localNewer =
+            itemHasPhotoBlob(it) &&
+            String(it.updatedAt || "") > String(server.updatedAt || "");
+          if (localNewer) {
             byId[it.id] = it;
+            return;
           }
+          byId[it.id] = Object.assign({}, server, {
+            photos: (server.photos && server.photos.length) ? server.photos : it.photos
+          });
         });
         const next = Object.keys(byId).map((k) => byId[k]);
         saveItemsPersistent(next);
@@ -7285,8 +7795,7 @@
       if (!allowed) return;
 
       updateAdminBadge();
-      loadNoteTemplates();
-      renderNoteChips();
+      loadHideTemplates();
       items = loadItems();
       const storedPrices = loadJSON(migrateScopedStorage(STORAGE_PRICES_BASE), {});
       prices = {};
