@@ -185,9 +185,9 @@
     html[data-theme="dark"] .loc-card.active,
     html[data-theme="dark"] .tpl-tab.active,
     html[data-theme="dark"] .seg button.active {
-      background: var(--ink);
-      color: var(--on-ink);
-      border-color: var(--ink);
+      background: #2c3040;
+      color: #f6f7fb;
+      border-color: rgba(255, 255, 255, 0.22);
     }
 
     html, body {
@@ -1145,9 +1145,13 @@
       font-size: 13px;
       font-weight: 600;
       background: var(--field);
+      color: var(--ink);
+    }
+
+    .tpl-add button {
       border: none;
       background: var(--ink);
-      color: #fff;
+      color: var(--on-ink);
       border-radius: 12px;
       padding: 10px 14px;
       font-size: 12px;
@@ -2526,6 +2530,180 @@
       .list { grid-template-columns: 1fr; }
       .card { aspect-ratio: 1.05; }
     }
+
+    html[data-theme="dark"] .overlay,
+    html[data-theme="dark"] .sheet,
+    body[data-theme="dark"] .overlay,
+    body[data-theme="dark"] .sheet {
+      --surface-card: #1b1d26;
+      --surface-solid: #12141a;
+      --surface: #1b1d26;
+      --bg-soft: #14161d;
+      --field: #0f1117;
+      --ink: #eef0f5;
+      --ink-soft: #c5cad6;
+      --on-ink: #12141a;
+      --chip-bg: #232632;
+      --line: rgba(255, 255, 255, 0.1);
+      --line-strong: rgba(255, 255, 255, 0.16);
+      color: #eef0f5;
+    }
+
+    html[data-theme="dark"] .sheet,
+    body[data-theme="dark"] .sheet {
+      background: #12141a !important;
+      color: #eef0f5 !important;
+      border-color: rgba(255, 255, 255, 0.08) !important;
+    }
+
+    html[data-theme="dark"] .settings-block,
+    html[data-theme="dark"] .menu-item,
+    html[data-theme="dark"] .geo-box,
+    html[data-theme="dark"] .photos-box,
+    html[data-theme="dark"] .header,
+    html[data-theme="dark"] .stats-total,
+    html[data-theme="dark"] .loc-stat,
+    html[data-theme="dark"] .card {
+      background: #1b1d26 !important;
+      color: #eef0f5 !important;
+      border-color: rgba(255, 255, 255, 0.1) !important;
+      box-shadow: none !important;
+    }
+
+    html[data-theme="dark"] .empty {
+      background: #16181f !important;
+      color: #c5cad6 !important;
+      border-color: rgba(255, 255, 255, 0.12) !important;
+    }
+
+    html[data-theme="dark"] .settings-block h3,
+    html[data-theme="dark"] .sheet-head h2,
+    html[data-theme="dark"] .menu-item,
+    html[data-theme="dark"] .header h1 {
+      color: #eef0f5 !important;
+    }
+
+    html[data-theme="dark"] .price-row span,
+    html[data-theme="dark"] .admin-badge,
+    html[data-theme="dark"] .menu-item .hint,
+    html[data-theme="dark"] .menu-group-label,
+    html[data-theme="dark"] .empty strong {
+      color: #c5cad6 !important;
+    }
+
+    html[data-theme="dark"] .seg,
+    html[data-theme="dark"] .tpl-tabs {
+      background: #0f1117 !important;
+      border-color: rgba(255, 255, 255, 0.1) !important;
+    }
+
+    html[data-theme="dark"] .seg button,
+    html[data-theme="dark"] .tpl-tab {
+      background: transparent !important;
+      color: #c5cad6 !important;
+      border-color: rgba(255, 255, 255, 0.1) !important;
+    }
+
+    html[data-theme="dark"] .tpl-tab {
+      background: #0f1117 !important;
+    }
+
+    html[data-theme="dark"] .chip.active,
+    html[data-theme="dark"] .note-chip.active,
+    html[data-theme="dark"] .hide-chip.active,
+    html[data-theme="dark"] .loc-card.active,
+    html[data-theme="dark"] .tpl-tab.active,
+    html[data-theme="dark"] .seg button.active {
+      background: #2c3040 !important;
+      color: #ffffff !important;
+      border-color: rgba(255, 255, 255, 0.22) !important;
+    }
+
+    html[data-theme="dark"] .chip,
+    html[data-theme="dark"] .note-chip,
+    html[data-theme="dark"] .hide-chip,
+    html[data-theme="dark"] .btn-secondary,
+    html[data-theme="dark"] .btn-outline,
+    html[data-theme="dark"] .icon-btn,
+    html[data-theme="dark"] .card-pill,
+    html[data-theme="dark"] .photos-hint,
+    html[data-theme="dark"] .loc-card,
+    html[data-theme="dark"] .wizard-fill-btn,
+    html[data-theme="dark"] .wizard-meta-bar {
+      background: #232632 !important;
+      color: #eef0f5 !important;
+      border-color: rgba(255, 255, 255, 0.1) !important;
+    }
+
+    html[data-theme="dark"] .tpl-row span,
+    html[data-theme="dark"] .price-row input,
+    html[data-theme="dark"] .tpl-add input,
+    html[data-theme="dark"] .field select,
+    html[data-theme="dark"] .field textarea,
+    html[data-theme="dark"] .field input,
+    html[data-theme="dark"] .wizard-extra input {
+      background: #0f1117 !important;
+      color: #eef0f5 !important;
+      border-color: rgba(255, 255, 255, 0.12) !important;
+    }
+
+    html[data-theme="dark"] .tpl-row button {
+      background: #3a1c1c !important;
+      color: #ff8d8d !important;
+    }
+
+    html[data-theme="dark"] .btn-primary,
+    html[data-theme="dark"] .tpl-add button,
+    html[data-theme="dark"] .btn-add-photo {
+      background: #d8dbe6 !important;
+      color: #111318 !important;
+    }
+
+    .sheet[data-theme="dark"],
+    .overlay[data-theme="dark"] .sheet {
+      background: #12141a !important;
+      color: #eef0f5 !important;
+    }
+
+    .overlay[data-theme="dark"] .settings-block,
+    .sheet[data-theme="dark"] .settings-block,
+    .overlay[data-theme="dark"] .menu-item,
+    .sheet[data-theme="dark"] .menu-item {
+      background: #1b1d26 !important;
+      color: #eef0f5 !important;
+      border-color: rgba(255, 255, 255, 0.1) !important;
+    }
+
+    .overlay[data-theme="dark"] .price-row span,
+    .overlay[data-theme="dark"] .admin-badge,
+    .sheet[data-theme="dark"] .price-row span,
+    .sheet[data-theme="dark"] .admin-badge {
+      color: #c5cad6 !important;
+    }
+
+    .overlay[data-theme="dark"] .tpl-tab.active,
+    .overlay[data-theme="dark"] .seg button.active,
+    .sheet[data-theme="dark"] .tpl-tab.active,
+    .sheet[data-theme="dark"] .seg button.active {
+      background: #2c3040 !important;
+      color: #ffffff !important;
+    }
+
+    .overlay[data-theme="dark"] .tpl-row span,
+    .overlay[data-theme="dark"] .price-row input,
+    .overlay[data-theme="dark"] .tpl-add input,
+    .sheet[data-theme="dark"] .tpl-row span,
+    .sheet[data-theme="dark"] .price-row input,
+    .sheet[data-theme="dark"] .tpl-add input {
+      background: #0f1117 !important;
+      color: #eef0f5 !important;
+    }
+
+    .overlay[data-theme="dark"] .tpl-row button,
+    .sheet[data-theme="dark"] .tpl-row button {
+      background: #3a1c1c !important;
+      color: #ff8d8d !important;
+    }
   </style>
 </head>
 <body>
@@ -3347,6 +3525,9 @@
       appTheme = theme === "dark" ? "dark" : "light";
       document.documentElement.setAttribute("data-theme", appTheme);
       document.body.setAttribute("data-theme", appTheme);
+      document.querySelectorAll(".overlay, .sheet, .app").forEach((el) => {
+        el.setAttribute("data-theme", appTheme);
+      });
       const chrome = appTheme === "dark" ? "#0c0d12" : "#e9ebef";
       try {
         if (tg && tg.setHeaderColor) tg.setHeaderColor(chrome);
