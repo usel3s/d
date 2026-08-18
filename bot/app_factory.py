@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-from pathlib import Path
 
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
@@ -12,20 +11,20 @@ from config import Settings
 from database import Database
 from handlers import setup_routers
 from middlewares import ServicesMiddleware
-from services import LogisticsService, MediaStore
+from services import LogisticsService
+from services.media_store_factory import MediaStoreBackend, create_media_store
 
 logger = logging.getLogger(__name__)
 
 
 async def build_app(
     settings: Settings,
-) -> tuple[Bot, Dispatcher, Database, LogisticsService, MediaStore]:
+) -> tuple[Bot, Dispatcher, Database, LogisticsService, MediaStoreBackend]:
     db = Database(settings.database_path)
     await db.connect()
     logistics = LogisticsService(db)
 
-    media_root = Path(settings.database_path).resolve().parent / "media"
-    media_store = MediaStore(media_root)
+    media_store = create_media_store(settings)
 
     bot = Bot(
         token=settings.bot_token,

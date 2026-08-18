@@ -235,8 +235,8 @@ async def admin_photo_item(
         await callback.answer("Позиция не найдена", show_alert=True)
         return
 
-    paths = media_store.photo_paths(item)
-    if not paths:
+    blobs = media_store.photo_bytes(item)
+    if not blobs:
         await callback.answer("Фото нет на сервере", show_alert=True)
         return
 
@@ -244,22 +244,21 @@ async def admin_photo_item(
     await callback.answer()
     chat_id = callback.message.chat.id if callback.message else callback.from_user.id
 
-    if len(paths) == 1:
-        data = paths[0].read_bytes()
+    if len(blobs) == 1:
+        name, data = blobs[0]
         await callback.bot.send_photo(
             chat_id,
-            BufferedInputFile(data, filename=paths[0].name),
+            BufferedInputFile(data, filename=name),
             caption=caption,
             parse_mode="HTML",
         )
         return
 
     media: list[InputMediaPhoto] = []
-    for i, path in enumerate(paths[:5]):
-        data = path.read_bytes()
+    for i, (name, data) in enumerate(blobs[:5]):
         media.append(
             InputMediaPhoto(
-                media=BufferedInputFile(data, filename=path.name),
+                media=BufferedInputFile(data, filename=name),
                 caption=caption if i == 0 else None,
                 parse_mode="HTML" if i == 0 else None,
             )

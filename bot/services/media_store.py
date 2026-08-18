@@ -302,6 +302,31 @@ class MediaStore:
                 return None
             return None
 
+    def resolve_photo_bytes(
+        self, user_id: int, item_id: str, photo_id: str
+    ) -> bytes | None:
+        with self._lock:
+            item = self.get_item(item_id, user_id=user_id)
+            if not item:
+                return None
+            for photo in item.get("photos") or []:
+                if str(photo.get("id") or "") != str(photo_id):
+                    continue
+                path = Path(photo.get("path") or "")
+                if path.is_file():
+                    return path.read_bytes()
+                return None
+            return None
+
+    def photo_bytes(self, item: dict[str, Any]) -> list[tuple[str, bytes]]:
+        out: list[tuple[str, bytes]] = []
+        for path in self.photo_paths(item):
+            try:
+                out.append((path.name, path.read_bytes()))
+            except OSError:
+                continue
+        return out
+
     def list_webapp_items(self, user_id: int) -> list[dict[str, Any]]:
         with self._lock:
             self.ensure_seed(user_id)

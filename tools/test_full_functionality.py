@@ -120,6 +120,8 @@ def fake_settings(local_dev: bool = True) -> Settings:
         port=3000,
         local_dev=local_dev,
         local_dev_user=ADMIN_A,
+        mongodb_uri="",
+        mongodb_db="",
     )
 
 

@@ -37,6 +37,8 @@ class Settings:
     port: int
     local_dev: bool
     local_dev_user: int
+    mongodb_uri: str
+    mongodb_db: str
 
 
 def load_settings() -> Settings:
@@ -75,6 +77,9 @@ def load_settings() -> Settings:
     if local_dev and not local_dev_user and admin_ids:
         local_dev_user = sorted(admin_ids)[0]
 
+    mongodb_uri = (os.getenv("MONGODB_URI") or os.getenv("MONGO_URI") or "").strip()
+    mongodb_db = (os.getenv("MONGODB_DB") or os.getenv("MONGO_DB") or "").strip()
+
     return Settings(
         bot_token=token,
         webapp_url=webapp_url,
@@ -84,4 +89,6 @@ def load_settings() -> Settings:
         port=port,
         local_dev=local_dev,
         local_dev_user=local_dev_user,
+        mongodb_uri=mongodb_uri,
+        mongodb_db=mongodb_db,
     )

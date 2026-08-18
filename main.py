@@ -38,8 +38,12 @@ async def handle_index(_: web.Request) -> web.Response:
     return web.FileResponse(resolve_index())
 
 
-async def handle_health(_: web.Request) -> web.Response:
-    return web.json_response({"ok": True, "service": "logistics-bot"})
+async def handle_health(request: web.Request) -> web.Response:
+    payload: dict = {"ok": True, "service": "logistics-bot"}
+    media_store = request.app.get("media_store")
+    if media_store and hasattr(media_store, "ping"):
+        payload["mongo"] = media_store.ping()
+    return web.json_response(payload)
 
 
 def _is_loopback(request: web.Request) -> bool:
@@ -285,16 +289,14 @@ async def handle_photo(request: web.Request) -> web.Response:
     if not _is_admin_user(request, user_id):
         return web.json_response({"ok": False, "error": "forbidden"}, status=403)
 
-    path = media_store.resolve_photo_file(user_id, item_id, photo_id)
-    if not path:
+    blob = media_store.resolve_photo_bytes(user_id, item_id, photo_id)
+    if not blob:
         return web.json_response({"ok": False, "error": "not_found"}, status=404)
 
-    return web.FileResponse(
-        path,
-        headers={
-            "Cache-Control": "private, max-age=86400",
-            "Content-Type": "image/jpeg",
-        },
+    return web.Response(
+        body=blob,
+        content_type="image/jpeg",
+        headers={"Cache-Control": "private, max-age=86400"},
     )
 
 
@@ -362,6 +364,9 @@ async def run() -> None:
         pass
     await runner.cleanup()
     await db.close()
+    media_store = app.get("media_store")
+    if media_store and hasattr(media_store, "close"):
+        media_store.close()
     await bot.session.close()
 
 
