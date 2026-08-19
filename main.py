@@ -26,6 +26,8 @@ INDEX_CANDIDATES = [
     BOT_DIR / "public" / "index.html",
 ]
 
+DZEN_ICON = BOT_DIR / "public" / "dzen-icon.png"
+
 
 def resolve_index() -> Path:
     for path in INDEX_CANDIDATES:
@@ -36,6 +38,12 @@ def resolve_index() -> Path:
 
 async def handle_index(_: web.Request) -> web.Response:
     return web.FileResponse(resolve_index())
+
+
+async def handle_dzen_icon(_: web.Request) -> web.Response:
+    if not DZEN_ICON.is_file():
+        raise web.HTTPNotFound()
+    return web.FileResponse(DZEN_ICON)
 
 
 async def handle_health(request: web.Request) -> web.Response:
@@ -318,6 +326,7 @@ async def run() -> None:
 
     app.router.add_get("/", handle_index)
     app.router.add_get("/index.html", handle_index)
+    app.router.add_get("/dzen-icon.png", handle_dzen_icon)
     app.router.add_get("/health", handle_health)
     app.router.add_post("/api/auth", handle_auth)
     app.router.add_post("/api/sync-items", handle_sync_items)

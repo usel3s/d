@@ -1036,60 +1036,126 @@
     }
 
     .geo-box {
-      padding: 12px;
+      position: relative;
+      overflow: hidden;
+      padding: 14px;
       display: grid;
       gap: 10px;
     }
 
-    .geo-status {
+    .geo-box::before {
+      content: "";
+      position: absolute;
+      inset: 12px;
+      background:
+        linear-gradient(var(--cross) 1px, transparent 1px) 0 50% / 100% 16px,
+        linear-gradient(90deg, var(--cross) 1px, transparent 1px) 50% 0 / 16px 100%;
+      opacity: 0.55;
+      pointer-events: none;
+      border-radius: 12px;
+    }
+
+    .geo-top {
+      position: relative;
+      z-index: 1;
       display: flex;
-      align-items: flex-start;
-      gap: 10px;
-    }
-
-    .geo-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      margin-top: 4px;
-      flex-shrink: 0;
-      background: var(--ink-soft);
-    }
-
-    .geo-dot.pending {
-      background: var(--warning);
-      animation: pulse 1.2s infinite;
-    }
-
-    .geo-dot.ok { background: var(--ok); }
-    .geo-dot.bad { background: var(--danger); }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.45; }
-    }
-
-    .geo-title { font-size: 13px; font-weight: 800; }
-    .geo-meta { font-size: 12px; color: var(--ink-soft); margin-top: 3px; line-height: 1.45; font-weight: 600; }
-    .geo-meta .ok { color: var(--ok); }
-    .geo-meta .warn { color: var(--warning); }
-    .geo-meta .gold { color: var(--gold); }
-
-    .geo-actions {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
+      align-items: center;
+      justify-content: space-between;
       gap: 8px;
     }
 
-    .geo-actions button {
-      border: 1px solid var(--line);
-      background: var(--surface-solid);
-      font-size: 12px;
+    .geo-pill {
+      font-size: 10px;
       font-weight: 800;
-      cursor: pointer;
+      letter-spacing: 0.02em;
+      text-transform: lowercase;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: var(--chip-bg);
+      color: var(--ink-soft);
+      white-space: nowrap;
     }
 
-    .geo-actions button:active { border-color: var(--ink); }
+    .geo-pill.pending {
+      color: var(--warning);
+      border-color: rgba(196, 138, 18, 0.35);
+      background: rgba(196, 138, 18, 0.1);
+    }
+
+    .geo-pill.ok {
+      color: var(--ok);
+      border-color: rgba(31, 157, 90, 0.35);
+      background: rgba(31, 157, 90, 0.1);
+    }
+
+    .geo-pill.warn {
+      color: var(--warning);
+      border-color: rgba(196, 138, 18, 0.35);
+      background: rgba(196, 138, 18, 0.1);
+    }
+
+    .geo-pill.bad {
+      color: var(--danger);
+      border-color: rgba(214, 69, 69, 0.35);
+      background: var(--danger-dim);
+    }
+
+    .geo-coords {
+      position: relative;
+      z-index: 1;
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1.25;
+      word-break: break-word;
+    }
+
+    .geo-details {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      gap: 8px;
+    }
+
+    .geo-chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .geo-chip {
+      font-size: 11px;
+      font-weight: 800;
+      padding: 5px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: var(--chip-bg);
+      color: var(--ink-soft);
+      white-space: nowrap;
+    }
+
+    .geo-chip.ok {
+      color: var(--ok);
+      border-color: rgba(31, 157, 90, 0.3);
+    }
+
+    .geo-chip.warn {
+      color: var(--warning);
+      border-color: rgba(196, 138, 18, 0.3);
+    }
+
+    .geo-chip.bad {
+      color: var(--danger);
+      border-color: rgba(214, 69, 69, 0.3);
+    }
+
+    .geo-addr {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--gold);
+      line-height: 1.45;
+    }
 
     .form-actions {
       display: grid;
@@ -1962,111 +2028,118 @@
       margin-top: 10px;
       position: relative;
       overflow: hidden;
-      border-radius: 16px;
-      padding: 12px 14px 12px 18px;
-      background: #f7f8fb;
-      border: 1px solid rgba(17, 17, 20, 0.1);
+      border-radius: 18px;
+      padding: 10px 12px 10px 16px;
+      background: rgba(255, 255, 255, 0.96);
+      border: 1px solid rgba(15, 18, 22, 0.15);
       color: #111318;
-      box-shadow: 0 10px 22px rgba(16, 18, 24, 0.08);
-    }
-
-    .stamp-preview::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background:
-        linear-gradient(rgba(17, 17, 20, 0.04) 1px, transparent 1px) 0 0 / 14px 14px,
-        linear-gradient(90deg, rgba(17, 17, 20, 0.04) 1px, transparent 1px) 0 0 / 14px 14px;
-      pointer-events: none;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
 
     .stamp-preview[data-variant="dark"] {
-      background: #12141b;
-      border-color: rgba(255, 255, 255, 0.14);
-      color: #f6f7fb;
-      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
-    }
-
-    .stamp-preview[data-variant="dark"]::before {
-      background:
-        linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px) 0 0 / 14px 14px,
-        linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px) 0 0 / 14px 14px;
+      background: #0d0f12;
+      border-color: rgba(255, 255, 255, 0.15);
+      color: #f5f7fa;
+      box-shadow: none;
     }
 
     .stamp-preview-tape {
       position: absolute;
-      left: 0;
-      top: 10px;
-      bottom: 10px;
+      left: 8px;
+      top: 14px;
+      bottom: 14px;
       width: 4px;
       border-radius: 999px;
       background: #d64545;
     }
 
-    .stamp-preview-lines {
-      position: relative;
-      display: grid;
-      gap: 4px;
-    }
-
-    .stamp-preview-lines div {
-      font-size: 12px;
-      font-weight: 800;
-      letter-spacing: -0.01em;
-    }
-
-    .stamp-preview-lines em {
-      font-style: normal;
-      font-weight: 700;
-      color: #5c6170;
-      margin-right: 6px;
-    }
-
     .stamp-preview-brand {
       position: relative;
-      margin-top: 10px;
-      padding-top: 10px;
-      border-top: 1px solid rgba(17, 17, 20, 0.08);
-      display: flex;
+      z-index: 1;
+      display: inline-flex;
       align-items: center;
-      gap: 8px;
-      font-size: 13px;
-      font-weight: 800;
-      letter-spacing: -0.02em;
+      gap: 6px;
+      margin-left: auto;
+      margin-bottom: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      line-height: 1;
+      color: #111318;
     }
 
     .stamp-preview[data-variant="dark"] .stamp-preview-brand {
-      border-top-color: rgba(255, 255, 255, 0.1);
+      color: #f5f7fa;
+    }
+
+    .stamp-preview-head {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .stamp-preview-lines {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      gap: 0;
+    }
+
+    .stamp-preview-row {
+      display: grid;
+      grid-template-columns: 4.2em 1fr;
+      gap: 8px;
+      align-items: baseline;
+      padding: 5px 0;
+      border-top: 1px solid rgba(15, 18, 22, 0.14);
+      font-size: 12px;
+      line-height: 1.25;
+    }
+
+    .stamp-preview-row:first-child {
+      border-top: none;
+    }
+
+    .stamp-preview[data-variant="dark"] .stamp-preview-row {
+      border-top-color: rgba(255, 255, 255, 0.12);
+    }
+
+    .stamp-preview-row .stamp-tag {
+      font-weight: 500;
+      color: rgba(15, 18, 22, 0.48);
+      white-space: nowrap;
+    }
+
+    .stamp-preview[data-variant="dark"] .stamp-preview-row .stamp-tag {
+      color: rgba(255, 255, 255, 0.48);
+    }
+
+    .stamp-preview-row .stamp-val {
+      font-weight: 600;
+      color: #111318;
+      word-break: break-word;
+    }
+
+    .stamp-preview[data-variant="dark"] .stamp-preview-row .stamp-val {
+      color: #f5f7fa;
     }
 
     .stamp-preview-mark {
       width: 18px;
       height: 18px;
       border-radius: 5px;
-      background: #111114;
-      display: grid;
-      place-items: center;
+      overflow: hidden;
       flex-shrink: 0;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+      display: block;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.16);
     }
 
-    .stamp-preview-mark svg {
-      width: 11px;
-      height: 11px;
-      color: #fff;
-    }
-
-    .stamp-preview[data-variant="dark"] .stamp-preview-mark {
-      background: #f6f7fb;
-      box-shadow: none;
-    }
-
-    .stamp-preview[data-variant="dark"] .stamp-preview-mark svg {
-      color: #111114;
-    }
-
-    .stamp-preview[data-variant="dark"] .stamp-preview-lines em {
-      color: #a8b0c0;
+    .stamp-preview-mark img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: cover;
     }
 
     .toast {
@@ -2429,9 +2502,9 @@
     .draw-row {
       display: none;
       align-items: center;
-      justify-content: center;
-      gap: 16px;
-      padding: 0 2px;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 0 4px;
     }
 
     .stage.mode-draw .draw-row { display: flex; }
@@ -2466,27 +2539,58 @@
     }
 
     .draw-tools {
-      display: flex;
-      gap: 8px;
-      justify-content: center;
-      flex-wrap: wrap;
-    }
-
-    .draw-tools button {
-      border: 1px solid rgba(255,255,255,0.14);
-      background: rgba(255,255,255,0.08);
-      color: #fff;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px;
       border-radius: 999px;
-      padding: 8px 14px;
-      font-size: 12px;
-      font-weight: 800;
-      cursor: pointer;
-      white-space: nowrap;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
     }
 
-    .draw-tools button:disabled {
-      opacity: 0.35;
+    .draw-tool-btn {
+      display: grid;
+      place-items: center;
+      height: 36px;
+      min-width: 36px;
+      padding: 0 12px;
+      border: none;
+      border-radius: 999px;
+      background: transparent;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      cursor: pointer;
+      transition: background 0.15s ease, opacity 0.15s ease, transform 0.12s ease;
+    }
+
+    .draw-tool-btn.icon {
+      width: 36px;
+      padding: 0;
+    }
+
+    .draw-tool-btn svg {
+      width: 18px;
+      height: 18px;
+      display: block;
+    }
+
+    .draw-tool-btn:not(:disabled):active {
+      background: rgba(255, 255, 255, 0.16);
+      transform: scale(0.96);
+    }
+
+    .draw-tool-btn:disabled {
+      opacity: 0.32;
       cursor: not-allowed;
+      transform: none;
+    }
+
+    .draw-tool-btn.draw-tool-clear:not(:disabled) {
+      color: #ffb4a8;
     }
 
     .stage-cam-dock {
@@ -2824,16 +2928,12 @@
 
         <div class="field block-wizard-step4">
           <div class="geo-box" id="geoBox">
-            <div class="photos-head">
+            <div class="geo-top">
               <span class="photos-tag">#gps</span>
+              <span class="geo-pill pending" id="geoPill">поиск</span>
             </div>
-            <div class="geo-status">
-              <span class="geo-dot pending" id="geoDot"></span>
-              <div>
-                <div class="geo-title" id="geoTitle">GPS…</div>
-                <div class="geo-meta" id="geoMeta">—</div>
-              </div>
-            </div>
+            <div class="geo-coords" id="geoTitle">GPS…</div>
+            <div class="geo-details" id="geoMeta">—</div>
           </div>
         </div>
 
@@ -2890,16 +2990,20 @@
           </div>
           <div class="stamp-preview" id="stampPreview" data-variant="light">
             <span class="stamp-preview-tape" aria-hidden="true"></span>
-            <div class="stamp-preview-lines">
-              <div><em>#tape</em> Красная</div>
-              <div><em>#gps</em> 55.7512, 37.6184</div>
-              <div><em>#addr</em> Тверская ул.</div>
+            <div class="stamp-preview-head">
+              <div class="stamp-preview-brand">
+                <span class="stamp-preview-mark" aria-hidden="true">
+                  <img src="dzen-icon.png" alt="" width="18" height="18" />
+                </span>
+                <span>Дзен</span>
+              </div>
             </div>
-            <div class="stamp-preview-brand">
-              <span class="stamp-preview-mark" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.8c1.1 2.5 2.9 4.3 5.4 5.4-2.5 1.1-4.3 2.9-5.4 5.4-1.1-2.5-2.9-4.3-5.4-5.4 2.5-1.1 4.3-2.9 5.4-5.4z"/></svg>
-              </span>
-              <span>Дзен</span>
+            <div class="stamp-preview-lines">
+              <div class="stamp-preview-row"><span class="stamp-tag">#tape</span><span class="stamp-val">Красная</span></div>
+              <div class="stamp-preview-row"><span class="stamp-tag">#location</span><span class="stamp-val">Тайник</span></div>
+              <div class="stamp-preview-row"><span class="stamp-tag">#note</span><span class="stamp-val">—</span></div>
+              <div class="stamp-preview-row"><span class="stamp-tag">#gps</span><span class="stamp-val">55.7512, 37.6184</span></div>
+              <div class="stamp-preview-row"><span class="stamp-tag">#addr</span><span class="stamp-val">Тверская ул.</span></div>
             </div>
           </div>
         </div>
@@ -3020,8 +3124,13 @@
           <button type="button" class="draw-color" data-color="#ffffff" style="background:#ffffff" aria-label="Белый"></button>
         </div>
         <div class="draw-tools">
-          <button type="button" id="btnUndoDraw" disabled>↩</button>
-          <button type="button" id="btnClearDraw" disabled>Сброс</button>
+          <button type="button" class="draw-tool-btn icon" id="btnUndoDraw" disabled aria-label="Отменить шаг" title="Отменить">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M9 14 4 9l5-5"/>
+              <path d="M20 20v-7a4 4 0 0 0-4-4H4"/>
+            </svg>
+          </button>
+          <button type="button" class="draw-tool-btn draw-tool-clear" id="btnClearDraw" disabled title="Сброс">Сброс</button>
         </div>
       </div>
 
@@ -3307,7 +3416,7 @@
       photosHint: $("photosHint"),
       btnAddPhoto: $("btnAddPhoto"),
       photoInput: $("photoInput"),
-      geoDot: $("geoDot"),
+      geoPill: $("geoPill"),
       geoTitle: $("geoTitle"),
       geoMeta: $("geoMeta"),
       locationSelect: $("locationSelect"),
@@ -3638,6 +3747,10 @@
       return "";
     }
 
+    function photoHasCleanRaw(photo) {
+      return !!(photo && isDataUrl(photo.raw));
+    }
+
     function photoRemotePath(photo, itemId) {
       if (!photo) return "";
       if (photoDisplaySrc(photo)) return "";
@@ -3647,6 +3760,16 @@
     }
 
     const photoFetchInflight = {};
+
+    async function ensurePhotoEditDataUrl(photo, itemId) {
+      if (!photo) return "";
+      if (isDataUrl(photo.raw)) return photo.raw;
+      if (!photo.stampBaked) {
+        const local = photoEditSrc(photo);
+        if (local) return local;
+      }
+      return ensurePhotoDataUrl(photo, itemId);
+    }
 
     async function ensurePhotoDataUrl(photo, itemId) {
       if (!photo) return "";
@@ -4293,40 +4416,51 @@
     }
 
     function renderGeoUi() {
-      const dot = els.geoDot;
-      dot.classList.remove("pending", "ok", "bad");
+      const pill = els.geoPill;
+      if (!pill) return;
+      pill.classList.remove("pending", "ok", "warn", "bad");
 
       if (geoBusy && !currentGeo) {
-        dot.classList.add("pending");
-        els.geoTitle.textContent = "GPS…";
-        els.geoMeta.textContent = "ждём координаты — без GPS фото нельзя";
+        pill.classList.add("pending");
+        pill.textContent = "поиск";
+        els.geoTitle.textContent = "Определяем координаты…";
+        els.geoMeta.innerHTML = '<div class="geo-chip-row"><span class="geo-chip muted">нужен GPS для съёмки</span></div>';
         updatePhotoGate();
         return;
       }
 
       if (!currentGeo) {
-        dot.classList.add("bad");
-        els.geoTitle.textContent = "нет GPS";
-        els.geoMeta.innerHTML = '<span class="warn">фото недоступно без геолокации</span>';
+        pill.classList.add("bad");
+        pill.textContent = "нет gps";
+        els.geoTitle.textContent = "Геолокация недоступна";
+        els.geoMeta.innerHTML = '<div class="geo-chip-row"><span class="geo-chip bad">фото без GPS нельзя</span></div>';
         updatePhotoGate();
         return;
       }
 
       const good = currentGeo.accuracy <= GEO_TARGET_ACCURACY_M;
       const ok = currentGeo.accuracy <= GEO_ACCEPTABLE_M;
-      dot.classList.add(ok ? "ok" : "pending");
+      const accClass = good ? "ok" : ok ? "warn" : "bad";
+
+      pill.classList.add(accClass);
+      pill.textContent = good ? "точно" : ok ? "норм" : "слабо";
       els.geoTitle.textContent = formatCoords(currentGeo.latitude, currentGeo.longitude);
-      els.geoMeta.innerHTML =
-        '<span class="' + (good ? "ok" : ok ? "gold" : "warn") + '">±' +
-        escapeHtml(formatAccuracy(currentGeo.accuracy)) +
-        "</span> · авто при съёмке" +
-        (geoBusy ? " · уточняем…" : good ? " · ок" : ok ? "" : " · слишком слабо для фото") +
-        (currentGeo.altitude != null
-          ? "<br/>высота ~" + escapeHtml(String(Math.round(currentGeo.altitude))) + " м"
-          : "") +
-        (currentAddress
-          ? "<br/><span class=\"gold\">" + escapeHtml(currentAddress) + "</span>"
-          : "");
+
+      const chips = [
+        '<span class="geo-chip ' + accClass + '">±' + escapeHtml(formatAccuracy(currentGeo.accuracy)) + "</span>"
+      ];
+      if (currentGeo.altitude != null) {
+        chips.push('<span class="geo-chip muted">~' + escapeHtml(String(Math.round(currentGeo.altitude))) + " м</span>");
+      }
+      if (geoBusy) {
+        chips.push('<span class="geo-chip muted">уточняем</span>');
+      }
+
+      let detailsHtml = '<div class="geo-chip-row">' + chips.join("") + "</div>";
+      if (currentAddress) {
+        detailsHtml += '<div class="geo-addr">' + escapeHtml(currentAddress) + "</div>";
+      }
+      els.geoMeta.innerHTML = detailsHtml;
       updatePhotoGate();
     }
 
@@ -4853,6 +4987,26 @@
       });
     }
 
+    const DZEN_ICON_SRC = "dzen-icon.png";
+    let dzenIconImage = null;
+    let dzenIconLoadPromise = null;
+
+    function ensureDzenIcon() {
+      if (dzenIconImage && dzenIconImage.naturalWidth) {
+        return Promise.resolve(dzenIconImage);
+      }
+      if (!dzenIconLoadPromise) {
+        dzenIconLoadPromise = loadImageElement(DZEN_ICON_SRC).then((img) => {
+          dzenIconImage = img;
+          return img;
+        }).catch(() => {
+          dzenIconLoadPromise = null;
+          return null;
+        });
+      }
+      return dzenIconLoadPromise;
+    }
+
     function compressImage(dataUrl, maxSide, quality) {
       return new Promise((resolve) => {
         const img = new Image();
@@ -4973,18 +5127,21 @@
       ctx.closePath();
     }
 
-    function drawDzenMark(ctx, x, y, size, dark) {
-      const radius = Math.max(4, size * 0.26);
-      const squareFill = dark ? "#f6f7fb" : "#111114";
-      const starFill = dark ? "#111114" : "#ffffff";
+    function drawDzenMark(ctx, x, y, size) {
+      if (dzenIconImage && dzenIconImage.naturalWidth) {
+        ctx.drawImage(dzenIconImage, x, y, size, size);
+        return;
+      }
 
-      ctx.fillStyle = squareFill;
+      const dark = stampTheme === "dark";
+      const radius = Math.max(4, size * 0.26);
+      ctx.fillStyle = dark ? "#FFFFFF" : "#111114";
       roundRectPath(ctx, x, y, size, size, radius);
       ctx.fill();
 
       const cx = x + size / 2;
       const cy = y + size / 2;
-      ctx.fillStyle = starFill;
+      ctx.fillStyle = dark ? "#111114" : "#FFFFFF";
       drawDzenSparklePath(ctx, cx, cy, size * 0.24, size * 0.075);
       ctx.fill();
     }
@@ -4994,153 +5151,198 @@
       if (!rows.length) return;
 
       const dark = stampTheme === "dark";
+      const dividerColor = dark
+        ? "rgba(255,255,255,0.12)"
+        : "rgba(15,18,22,0.14)";
       const palette = dark
         ? {
-            shadow: "rgba(0, 0, 0, 0.58)",
-            fillTop: "rgba(22, 24, 32, 0.94)",
-            fillBottom: "rgba(10, 12, 16, 0.9)",
-            stroke: "rgba(255, 255, 255, 0.16)",
-            shine: "rgba(255, 255, 255, 0.16)",
-            grid: "rgba(255, 255, 255, 0.045)",
-            split: "rgba(255, 255, 255, 0.08)",
-            tag: "#a8b0c0",
-            value: "#f6f7fb",
-            bar: "rgba(246, 247, 251, 0.78)"
+            bg: "#0D0F12",
+            border: "rgba(255,255,255,0.15)",
+            shadow: "transparent",
+            label: "rgba(255,255,255,0.48)",
+            value: "#F5F7FA",
+            brand: "#F5F7FA"
           }
         : {
-            shadow: "rgba(16, 18, 24, 0.28)",
-            fillTop: "rgba(255, 255, 255, 0.97)",
-            fillBottom: "rgba(244, 246, 250, 0.94)",
-            stroke: "rgba(17, 17, 20, 0.12)",
-            shine: "rgba(255, 255, 255, 0.95)",
-            grid: "rgba(17, 17, 20, 0.04)",
-            split: "rgba(17, 17, 20, 0.08)",
-            tag: "#5c6170",
+            bg: "rgba(255,255,255,0.96)",
+            border: "rgba(15,18,22,0.15)",
+            shadow: "rgba(0,0,0,0.10)",
+            label: "rgba(15,18,22,0.48)",
             value: "#111318",
-            bar: "rgba(17, 17, 20, 0.55)"
+            brand: "#111318"
           };
 
-      const margin = Math.max(10, Math.round(width * 0.028));
-      const padX = Math.max(16, Math.round(width * 0.034));
-      const padY = Math.max(12, Math.round(width * 0.026));
-      const fontSize = Math.max(13, Math.round(width * 0.026));
-      const tagSize = Math.max(11, Math.round(fontSize * 0.82));
-      const lineH = Math.round(fontSize * 1.42);
-      const brandRowH = Math.round(fontSize * 1.55);
-      const radius = Math.max(16, Math.round(width * 0.034));
-      const maxTextW = width - margin * 2 - padX * 2 - 8;
+      const valueFontSize = Math.max(
+        13,
+        Math.min(22, Math.round(width * 0.017))
+      );
+      const labelFontSize = Math.round(valueFontSize * 0.78);
+      const brandTextSize = Math.round(valueFontSize * 0.82);
+      const fontFamily = "Manrope, Segoe UI, sans-serif";
+      const labelFont = "500 " + labelFontSize + "px " + fontFamily;
+      const valueFont = "600 " + valueFontSize + "px " + fontFamily;
+      const brandFont = "700 " + brandTextSize + "px " + fontFamily;
+      const rowH = Math.round(valueFontSize * 1.45);
+
+      const outerMargin = Math.round(Math.min(width, height) * 0.035);
+      const maxW = Math.min(width * 0.86, 780);
+      const minW = Math.min(width * 0.52, 380);
+      const markSize = Math.max(12, Math.round(valueFontSize * 1.02));
+      const brandGap = Math.round(valueFontSize * 0.24);
+      const padX = Math.max(12, Math.round(valueFontSize * 0.88));
+      const padY = Math.max(8, Math.round(valueFontSize * 0.58));
+      const valueGap = Math.max(8, Math.round(valueFontSize * 0.3));
+      const radius = Math.max(14, Math.min(18, Math.round(valueFontSize * 1.02)));
+      const accentInsetY = Math.max(11, Math.min(15, Math.round(valueFontSize * 0.9)));
 
       ctx.save();
       ctx.textBaseline = "top";
 
-      const wrapped = [];
+      ctx.font = brandFont;
+      const brandBlockW = markSize + brandGap + ctx.measureText("Дзен").width;
+
+      ctx.font = labelFont;
+      let labelColW = 0;
       rows.forEach((row) => {
-        ctx.font = "700 " + fontSize + "px Manrope, Segoe UI, sans-serif";
-        const prefix = row.tag + "  ";
-        const prefixW = ctx.measureText(prefix).width;
-        const valueLines = wrapTextLines(ctx, row.value, Math.max(40, maxTextW - prefixW)).slice(0, 2);
-        valueLines.forEach((line, i) => {
-          wrapped.push({
-            tag: i === 0 ? row.tag : "",
-            value: line
+        labelColW = Math.max(labelColW, ctx.measureText(row.tag).width);
+      });
+      labelColW += Math.round(valueFontSize * 0.3);
+
+      const layoutRowsForWidth = (boxWidth, labelWidth) => {
+        const accentW = Math.max(3, Math.round(boxWidth * 0.005));
+        const innerPad = accentW + 10;
+        const layout = [];
+        let maxValueW = 0;
+
+        rows.forEach((row, rowIdx) => {
+          const valueAvail = Math.max(
+            48,
+            boxWidth - padX * 2 - innerPad - labelWidth - valueGap -
+              (rowIdx === 0 ? brandBlockW : 0)
+          );
+          ctx.font = valueFont;
+          const lines = wrapTextLines(ctx, row.value, valueAvail).slice(0, 2);
+          lines.forEach((line, lineIdx) => {
+            maxValueW = Math.max(maxValueW, ctx.measureText(line).width);
+            layout.push({
+              tag: lineIdx === 0 ? row.tag : "",
+              value: line
+            });
           });
         });
-      });
 
-      const boxW = width - margin * 2;
-      const boxH = padY * 2 + wrapped.length * lineH + 8 + brandRowH;
-      const boxX = margin;
-      const boxY = height - margin - boxH;
+        return { layout, maxValueW, accentW };
+      };
 
-      ctx.fillStyle = palette.shadow;
-      roundRectPath(ctx, boxX + 1, boxY + 4, boxW, boxH, radius);
-      ctx.fill();
+      let measured = layoutRowsForWidth(maxW, labelColW);
+      let boxW = Math.max(
+        minW,
+        Math.min(
+          maxW,
+          width - outerMargin * 2,
+          padX * 2 + measured.accentW + 10 + labelColW + valueGap + measured.maxValueW
+        )
+      );
 
-      const fill = ctx.createLinearGradient(boxX, boxY, boxX, boxY + boxH);
-      fill.addColorStop(0, palette.fillTop);
-      fill.addColorStop(1, palette.fillBottom);
-      ctx.fillStyle = fill;
-      roundRectPath(ctx, boxX, boxY, boxW, boxH, radius);
-      ctx.fill();
+      labelColW = Math.min(
+        Math.round(boxW * 0.2),
+        Math.max(labelColW, Math.round(boxW * 0.13))
+      );
 
-      ctx.strokeStyle = palette.stroke;
-      ctx.lineWidth = Math.max(1, Math.round(width * 0.002));
-      roundRectPath(ctx, boxX, boxY, boxW, boxH, radius);
-      ctx.stroke();
+      measured = layoutRowsForWidth(boxW, labelColW);
+      boxW = Math.max(
+        minW,
+        Math.min(
+          maxW,
+          width - outerMargin * 2,
+          padX * 2 + measured.accentW + 10 + labelColW + valueGap + measured.maxValueW
+        )
+      );
+      measured = layoutRowsForWidth(boxW, labelColW);
 
-      ctx.save();
-      roundRectPath(ctx, boxX, boxY, boxW, boxH, radius);
-      ctx.clip();
-      ctx.strokeStyle = palette.shine;
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(boxX + radius, boxY + 1);
-      ctx.lineTo(boxX + boxW - radius, boxY + 1);
-      ctx.stroke();
+      const layoutRows = measured.layout;
+      const accentW = measured.accentW;
+      const contentH = layoutRows.length * rowH;
+      const boxH = padY * 2 + contentH;
+      const boxX = Math.round((width - boxW) / 2);
+      const boxY = height - outerMargin - boxH;
+      const textLeft = boxX + padX + accentW + 10;
+      const valueLeft = textLeft + labelColW + valueGap;
+      const dividerX = textLeft - Math.round(valueFontSize * 0.18);
+      const dividerEnd = boxX + boxW - padX;
+      const brandLeft = boxX + boxW - padX - brandBlockW;
+      const brandTop = boxY + padY;
 
-      const tape = tapeHex(meta && meta.tapeColor) || palette.bar;
-      ctx.fillStyle = tape;
-      ctx.fillRect(boxX, boxY, Math.max(4, Math.round(width * 0.011)), boxH);
-
-      ctx.strokeStyle = palette.grid;
-      ctx.lineWidth = 1;
-      const grid = Math.max(12, Math.round(fontSize * 1.05));
-      for (let x = boxX; x < boxX + boxW; x += grid) {
-        ctx.beginPath();
-        ctx.moveTo(x, boxY);
-        ctx.lineTo(x, boxY + boxH);
-        ctx.stroke();
+      if (!dark) {
+        ctx.shadowColor = palette.shadow;
+        ctx.shadowBlur = 10;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 3;
+      } else {
+        ctx.shadowColor = "transparent";
+        ctx.shadowBlur = 0;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 0;
       }
-      ctx.restore();
 
-      const textX = boxX + padX;
-      wrapped.forEach((row, i) => {
-        const y = boxY + padY + i * lineH;
-        if (i && row.tag) {
-          ctx.strokeStyle = palette.split;
-          ctx.lineWidth = 1;
+      ctx.fillStyle = palette.bg;
+      roundRectPath(ctx, boxX, boxY, boxW, boxH, radius);
+      ctx.fill();
+
+      ctx.shadowColor = "transparent";
+      ctx.shadowBlur = 0;
+      ctx.shadowOffsetX = 0;
+      ctx.shadowOffsetY = 0;
+
+      ctx.strokeStyle = palette.border;
+      ctx.lineWidth = 1;
+      roundRectPath(ctx, boxX, boxY, boxW, boxH, radius);
+      ctx.stroke();
+
+      const accentX = boxX + Math.round(padX * 0.5);
+      const accentY = boxY + accentInsetY;
+      const accentH = Math.max(8, boxH - accentInsetY * 2);
+      const tape = tapeHex(meta && meta.tapeColor) || (dark ? "#F5F7FA" : "#111318");
+      ctx.fillStyle = tape;
+      roundRectPath(ctx, accentX, accentY, accentW, accentH, accentW);
+      ctx.fill();
+
+      layoutRows.forEach((row, i) => {
+        const y = boxY + padY + i * rowH;
+
+        if (i < layoutRows.length - 1) {
+          const divY = boxY + padY + (i + 1) * rowH - Math.round(rowH * 0.16);
           ctx.beginPath();
-          ctx.moveTo(textX, y - 3);
-          ctx.lineTo(boxX + boxW - padX, y - 3);
+          ctx.moveTo(dividerX, divY);
+          ctx.lineTo(dividerEnd, divY);
+          ctx.strokeStyle = dividerColor;
+          ctx.lineWidth = 1;
           ctx.stroke();
         }
+
         if (row.tag) {
-          ctx.font = "700 " + tagSize + "px Manrope, Segoe UI, sans-serif";
-          ctx.fillStyle = palette.tag;
-          ctx.fillText(row.tag, textX, y + 1);
-          const tagW = ctx.measureText(row.tag + "  ").width;
-          ctx.font = "800 " + fontSize + "px Manrope, Segoe UI, sans-serif";
-          ctx.fillStyle = palette.value;
-          if (dark) {
-            ctx.shadowColor = "rgba(0, 0, 0, 0.45)";
-            ctx.shadowBlur = 3;
-          }
-          ctx.fillText(row.value, textX + tagW, y, maxTextW);
-          ctx.shadowColor = "transparent";
-          ctx.shadowBlur = 0;
-        } else {
-          ctx.font = "700 " + fontSize + "px Manrope, Segoe UI, sans-serif";
-          ctx.fillStyle = palette.value;
-          ctx.fillText(row.value, textX, y, maxTextW);
+          ctx.font = labelFont;
+          ctx.fillStyle = palette.label;
+          ctx.fillText(row.tag, textLeft, y + Math.round(valueFontSize * 0.06));
         }
+
+        ctx.font = valueFont;
+        ctx.fillStyle = palette.value;
+        const valueMaxW = i === 0
+          ? Math.max(24, brandLeft - valueLeft - 6)
+          : Math.max(24, boxX + boxW - padX - valueLeft);
+        ctx.fillText(row.value, valueLeft, y, valueMaxW);
       });
 
-      const brandY = boxY + padY + wrapped.length * lineH + 2;
-      ctx.strokeStyle = palette.split;
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(textX, brandY);
-      ctx.lineTo(boxX + boxW - padX, brandY);
-      ctx.stroke();
+      drawDzenMark(ctx, brandLeft, brandTop, markSize);
 
-      const markSize = Math.max(14, Math.round(fontSize * 1.05));
-      const brandTextSize = Math.max(12, Math.round(fontSize * 0.9));
-      const brandTop = brandY + Math.round(brandRowH * 0.22);
-      drawDzenMark(ctx, textX, brandTop, markSize, dark);
-
-      ctx.font = "800 " + brandTextSize + "px Manrope, Segoe UI, sans-serif";
-      ctx.fillStyle = palette.value;
-      ctx.fillText("Дзен", textX + markSize + Math.round(fontSize * 0.34), brandTop + markSize * 0.18);
+      ctx.font = brandFont;
+      ctx.fillStyle = palette.brand;
+      ctx.fillText(
+        "Дзен",
+        brandLeft + markSize + brandGap,
+        brandTop + Math.round(markSize * 0.14)
+      );
 
       ctx.restore();
     }
@@ -5249,6 +5451,7 @@
       canvas.width = imgW;
       canvas.height = imgH;
       const ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, imgW, imgH);
       ctx.drawImage(img, 0, 0, imgW, imgH);
 
       (strokes || []).forEach((stroke) => {
@@ -5256,6 +5459,7 @@
       });
 
       if (!options.noStamp) {
+        await ensureDzenIcon();
         paintStamp(ctx, imgW, imgH, meta);
       }
 
@@ -5367,8 +5571,34 @@
       const out = [];
       for (let i = 0; i < photos.length; i++) {
         const p = photos[i];
+        const keptGeo = p.geo || (originalItem && originalItem.geo) || null;
+        const keepPhoto = (raw, final, stampBaked) => ({
+          id: p.id || uid("p"),
+          url: p.url || "",
+          raw: raw,
+          strokes: Array.isArray(p.strokes) ? p.strokes : [],
+          final: final,
+          noStamp: !!p.noStamp,
+          stampBaked: stampBaked,
+          geo: keptGeo
+        });
+
+        if (p.stampBaked && !photoHasCleanRaw(p)) {
+          let final = isDataUrl(p.final) ? p.final : "";
+          if (!final && p.url) {
+            try {
+              final = await fetchPhotoAsDataUrl(photoDisplaySrc(p) || p.url);
+            } catch (_) {
+              final = "";
+            }
+          }
+          if (!final) continue;
+          out.push(keepPhoto("", final, !p.noStamp));
+          continue;
+        }
+
         let raw = "";
-        if (isDataUrl(p.raw)) raw = p.raw;
+        if (photoHasCleanRaw(p)) raw = p.raw;
         else if (isDataUrl(p.final)) raw = p.final;
         else raw = p.raw || p.final || "";
         if (!raw && p.url) {
@@ -5384,17 +5614,7 @@
         } catch (_) { /* keep */ }
         const meta = stampMetaForPhoto(p, { time: time }, originalItem);
         const final = await bakePhoto(raw, p.strokes || [], meta, { noStamp: !!p.noStamp });
-        const keptGeo = p.geo || (originalItem && originalItem.geo) || null;
-        out.push({
-          id: p.id || uid("p"),
-          url: p.url || "",
-          raw: raw,
-          strokes: Array.isArray(p.strokes) ? p.strokes : [],
-          final: final,
-          noStamp: !!p.noStamp,
-          stampBaked: !p.noStamp,
-          geo: keptGeo
-        });
+        out.push(keepPhoto(raw, final, !p.noStamp));
       }
       return out;
     }
@@ -5946,11 +6166,10 @@
       applyDrawViewToCtx(ctx, canvas);
       stageStrokes.forEach((s) => paintStrokeOnCtx(ctx, s, canvas));
       if (stageCurrent) paintStrokeOnCtx(ctx, stageCurrent, canvas);
-      const showStamp = editingPhotoIdx == null
-        ? true
-        : !(formPhotos[editingPhotoIdx] && formPhotos[editingPhotoIdx].noStamp);
-      if (stageRaw && showStamp) {
-        const stampPhoto = editingPhotoIdx != null ? formPhotos[editingPhotoIdx] : null;
+      const stampPhoto = editingPhotoIdx != null ? formPhotos[editingPhotoIdx] : null;
+      const showStamp = !(stampPhoto && stampPhoto.noStamp);
+      const canPaintStamp = showStamp && (!stampPhoto || !stampPhoto.stampBaked || photoHasCleanRaw(stampPhoto));
+      if (stageRaw && canPaintStamp) {
         const originalItem = editingId ? items.find((i) => i.id === editingId) : null;
         paintStampOnStage(ctx, canvas, stampMetaForPhoto(stampPhoto, {}, originalItem));
       }
@@ -6429,7 +6648,7 @@
 
       if (editingPhotoIdx != null && formPhotos[editingPhotoIdx]) {
         const photo = formPhotos[editingPhotoIdx];
-        const src = await ensurePhotoDataUrl(photo, editingId);
+        const src = await ensurePhotoEditDataUrl(photo, editingId);
         if (!src) {
           showToast("нет фото", true);
           closeStage();
@@ -6585,14 +6804,20 @@
     function commitCurrentDrawPhoto() {
       if (editingPhotoIdx == null || !formPhotos[editingPhotoIdx] || !stageRaw) return false;
       const prev = formPhotos[editingPhotoIdx];
+      const keepRaw = photoHasCleanRaw(prev)
+        ? prev.raw
+        : (!prev.stampBaked && isDataUrl(stageRaw) ? stageRaw : (prev.raw || ""));
       formPhotos[editingPhotoIdx] = {
         id: prev.id || uid("p"),
         url: prev.url || "",
-        raw: isDataUrl(stageRaw) ? stageRaw : (prev.raw || stageRaw),
+        raw: keepRaw,
         strokes: stageStrokes.slice(),
-        final: isDataUrl(stageRaw) ? stageRaw : (prev.final || stageRaw),
+        final: prev.stampBaked && isDataUrl(prev.final)
+          ? prev.final
+          : (isDataUrl(stageRaw) ? stageRaw : (prev.final || stageRaw)),
         noStamp: !!prev.noStamp,
-        stampBaked: !!prev.stampBaked
+        stampBaked: !!prev.stampBaked,
+        geo: prev.geo || null
       };
       return true;
     }
@@ -6604,7 +6829,7 @@
       commitCurrentDrawPhoto();
       editingPhotoIdx = nextIdx;
       const photo = formPhotos[editingPhotoIdx];
-      const src = await ensurePhotoDataUrl(photo, editingId);
+      const src = await ensurePhotoEditDataUrl(photo, editingId);
       if (!src) {
         showToast("нет фото", true);
         return;
@@ -9215,6 +9440,7 @@
       if (!allowed) return;
 
       updateAdminBadge();
+      ensureDzenIcon();
       applyAppTheme(loadAppTheme(), { persist: false });
       applyStampTheme(loadStampTheme(), { persist: false });
       loadHideTemplates();
