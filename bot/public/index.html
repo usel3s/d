@@ -2117,9 +2117,9 @@
 
     .stamp-preview-row .stamp-val {
       font-weight: 600;
-      font-size: 11px;
+      font-size: 10px;
       color: #111318;
-      text-align: center;
+      text-align: left;
       word-break: break-word;
     }
 
@@ -5157,8 +5157,8 @@
           };
 
       const valueFontSize = Math.max(
-        11,
-        Math.min(15, Math.round(width * 0.013))
+        10,
+        Math.min(13, Math.round(width * 0.011))
       );
       const labelFontSize = Math.round(valueFontSize * 0.86);
       const brandTextSize = Math.round(valueFontSize * 0.9);
@@ -5277,10 +5277,10 @@
 
         const rightLimit = row.isFirst ? brandLeft - 8 : valueRight;
         const valueMaxW = Math.max(24, rightLimit - valueLeft);
-        ctx.textAlign = "center";
+        ctx.textAlign = "left";
         ctx.font = valueFont;
         ctx.fillStyle = palette.value;
-        ctx.fillText(row.value, valueLeft + valueMaxW / 2, y, valueMaxW);
+        ctx.fillText(row.value, valueLeft, y, valueMaxW);
       });
 
       ctx.textAlign = "left";
