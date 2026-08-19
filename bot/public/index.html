@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
-  <title>ЧудоБот - Логистика</title>
+  <title>Дзен — Логистика</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -271,8 +271,8 @@
       width: 36px;
       height: 36px;
       border-radius: 11px;
-      background: var(--ink);
-      color: var(--on-ink);
+      background: #111114;
+      color: #fff;
       display: grid;
       place-items: center;
       flex-shrink: 0;
@@ -2090,7 +2090,7 @@
       display: grid;
       grid-template-columns: 4.2em 1fr;
       gap: 8px;
-      align-items: baseline;
+      align-items: center;
       padding: 5px 0;
       border-top: 1px solid rgba(15, 18, 22, 0.14);
       font-size: 12px;
@@ -2117,7 +2117,9 @@
 
     .stamp-preview-row .stamp-val {
       font-weight: 600;
+      font-size: 11px;
       color: #111318;
+      text-align: center;
       word-break: break-word;
     }
 
@@ -2131,15 +2133,16 @@
       border-radius: 5px;
       overflow: hidden;
       flex-shrink: 0;
-      display: block;
-      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.16);
+      display: grid;
+      place-items: center;
+      background: #111114;
+      color: #fff;
     }
 
-    .stamp-preview-mark img {
-      width: 100%;
-      height: 100%;
+    .stamp-preview-mark svg {
+      width: 10px;
+      height: 10px;
       display: block;
-      object-fit: cover;
     }
 
     .toast {
@@ -2219,7 +2222,11 @@
       display: grid;
       place-items: center;
       margin: 0 auto 14px;
-      font-size: 20px;
+    }
+
+    .access-card .mark svg {
+      width: 22px;
+      height: 22px;
     }
 
     .access-card h2 {
@@ -2787,7 +2794,9 @@
 <body>
   <div class="access-gate" id="accessGate" hidden aria-hidden="true">
     <div class="access-card">
-      <div class="mark">✦</div>
+      <div class="mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.2Q12 12 21.8 12Q12 12 12 21.8Q12 12 2.2 12Q12 12 12 2.2Z"/></svg>
+      </div>
       <h2 id="accessTitle">доступ</h2>
       <p id="accessText"></p>
     </div>
@@ -2795,12 +2804,12 @@
 
   <div class="app">
     <header class="header">
-      <div class="brand">
+      <div class="brand" aria-label="Дзен Логистика">
         <div class="brand-mark" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5l1.7 5.2H19l-4.2 3.1 1.6 5.2L12 12.9 7.6 16l1.6-5.2L5 7.7h5.3L12 2.5z"/></svg>
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.2Q12 12 21.8 12Q12 12 12 21.8Q12 12 2.2 12Q12 12 12 2.2Z"/></svg>
         </div>
         <div class="brand-text">
-          <h1>ЧудоБот - Логистика</h1>
+          <h1>Логистика</h1>
           <div class="admin-badge" id="adminBadge"></div>
         </div>
       </div>
@@ -2993,7 +3002,7 @@
             <div class="stamp-preview-head">
               <div class="stamp-preview-brand">
                 <span class="stamp-preview-mark" aria-hidden="true">
-                  <img src="dzen-icon.png" alt="" width="18" height="18" />
+                  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.2Q12 12 21.8 12Q12 12 12 21.8Q12 12 2.2 12Q12 12 12 2.2Z"/></svg>
                 </span>
                 <span>Дзен</span>
               </div>
@@ -4987,24 +4996,8 @@
       });
     }
 
-    const DZEN_ICON_SRC = "dzen-icon.png";
-    let dzenIconImage = null;
-    let dzenIconLoadPromise = null;
-
     function ensureDzenIcon() {
-      if (dzenIconImage && dzenIconImage.naturalWidth) {
-        return Promise.resolve(dzenIconImage);
-      }
-      if (!dzenIconLoadPromise) {
-        dzenIconLoadPromise = loadImageElement(DZEN_ICON_SRC).then((img) => {
-          dzenIconImage = img;
-          return img;
-        }).catch(() => {
-          dzenIconLoadPromise = null;
-          return null;
-        });
-      }
-      return dzenIconLoadPromise;
+      return Promise.resolve(null);
     }
 
     function compressImage(dataUrl, maxSide, quality) {
@@ -5114,35 +5107,26 @@
       ctx.closePath();
     }
 
-    function drawDzenSparklePath(ctx, cx, cy, outerR, innerR) {
+    function drawDzenSparklePath(ctx, cx, cy, outerR) {
       ctx.beginPath();
-      for (let i = 0; i < 8; i++) {
-        const r = i % 2 === 0 ? outerR : innerR;
-        const a = (Math.PI / 4) * i - Math.PI / 2;
-        const px = cx + Math.cos(a) * r;
-        const py = cy + Math.sin(a) * r;
-        if (i === 0) ctx.moveTo(px, py);
-        else ctx.lineTo(px, py);
-      }
+      ctx.moveTo(cx, cy - outerR);
+      ctx.quadraticCurveTo(cx, cy, cx + outerR, cy);
+      ctx.quadraticCurveTo(cx, cy, cx, cy + outerR);
+      ctx.quadraticCurveTo(cx, cy, cx - outerR, cy);
+      ctx.quadraticCurveTo(cx, cy, cx, cy - outerR);
       ctx.closePath();
     }
 
     function drawDzenMark(ctx, x, y, size) {
-      if (dzenIconImage && dzenIconImage.naturalWidth) {
-        ctx.drawImage(dzenIconImage, x, y, size, size);
-        return;
-      }
-
-      const dark = stampTheme === "dark";
-      const radius = Math.max(4, size * 0.26);
-      ctx.fillStyle = dark ? "#FFFFFF" : "#111114";
+      const radius = Math.max(4, size * 0.28);
+      ctx.fillStyle = "#111114";
       roundRectPath(ctx, x, y, size, size, radius);
       ctx.fill();
 
       const cx = x + size / 2;
       const cy = y + size / 2;
-      ctx.fillStyle = dark ? "#111114" : "#FFFFFF";
-      drawDzenSparklePath(ctx, cx, cy, size * 0.24, size * 0.075);
+      ctx.fillStyle = "#FFFFFF";
+      drawDzenSparklePath(ctx, cx, cy, size * 0.34);
       ctx.fill();
     }
 
@@ -5173,30 +5157,30 @@
           };
 
       const valueFontSize = Math.max(
-        13,
-        Math.min(22, Math.round(width * 0.017))
+        11,
+        Math.min(15, Math.round(width * 0.013))
       );
-      const labelFontSize = Math.round(valueFontSize * 0.78);
-      const brandTextSize = Math.round(valueFontSize * 0.82);
+      const labelFontSize = Math.round(valueFontSize * 0.86);
+      const brandTextSize = Math.round(valueFontSize * 0.9);
       const fontFamily = "Manrope, Segoe UI, sans-serif";
       const labelFont = "500 " + labelFontSize + "px " + fontFamily;
       const valueFont = "600 " + valueFontSize + "px " + fontFamily;
       const brandFont = "700 " + brandTextSize + "px " + fontFamily;
-      const rowH = Math.round(valueFontSize * 1.45);
+      const rowH = Math.round(valueFontSize * 1.7);
 
-      const outerMargin = Math.round(Math.min(width, height) * 0.035);
-      const maxW = Math.min(width * 0.86, 780);
-      const minW = Math.min(width * 0.52, 380);
-      const markSize = Math.max(12, Math.round(valueFontSize * 1.02));
+      const outerMargin = Math.max(10, Math.round(width * 0.028));
+      const boxW = width - outerMargin * 2;
+      const boxX = outerMargin;
+      const markSize = Math.max(12, Math.round(valueFontSize * 1.05));
       const brandGap = Math.round(valueFontSize * 0.24);
-      const padX = Math.max(12, Math.round(valueFontSize * 0.88));
-      const padY = Math.max(8, Math.round(valueFontSize * 0.58));
-      const valueGap = Math.max(8, Math.round(valueFontSize * 0.3));
-      const radius = Math.max(14, Math.min(18, Math.round(valueFontSize * 1.02)));
+      const padX = Math.max(14, Math.round(width * 0.032));
+      const padY = Math.max(8, Math.round(valueFontSize * 0.62));
+      const valueGap = Math.max(8, Math.round(valueFontSize * 0.32));
+      const radius = Math.max(14, Math.min(18, Math.round(valueFontSize * 1.05)));
       const accentInsetY = Math.max(11, Math.min(15, Math.round(valueFontSize * 0.9)));
 
       ctx.save();
-      ctx.textBaseline = "top";
+      ctx.textBaseline = "middle";
 
       ctx.font = brandFont;
       const brandBlockW = markSize + brandGap + ctx.measureText("Дзен").width;
@@ -5206,72 +5190,36 @@
       rows.forEach((row) => {
         labelColW = Math.max(labelColW, ctx.measureText(row.tag).width);
       });
-      labelColW += Math.round(valueFontSize * 0.3);
+      labelColW += Math.round(valueFontSize * 0.35);
 
-      const layoutRowsForWidth = (boxWidth, labelWidth) => {
-        const accentW = Math.max(3, Math.round(boxWidth * 0.005));
-        const innerPad = accentW + 10;
-        const layout = [];
-        let maxValueW = 0;
-
-        rows.forEach((row, rowIdx) => {
-          const valueAvail = Math.max(
-            48,
-            boxWidth - padX * 2 - innerPad - labelWidth - valueGap -
-              (rowIdx === 0 ? brandBlockW : 0)
-          );
-          ctx.font = valueFont;
-          const lines = wrapTextLines(ctx, row.value, valueAvail).slice(0, 2);
-          lines.forEach((line, lineIdx) => {
-            maxValueW = Math.max(maxValueW, ctx.measureText(line).width);
-            layout.push({
-              tag: lineIdx === 0 ? row.tag : "",
-              value: line
-            });
+      const accentW = Math.max(3, Math.round(boxW * 0.005));
+      const layoutRows = [];
+      rows.forEach((row, rowIdx) => {
+        const valueAvail = Math.max(
+          48,
+          boxW - padX * 2 - accentW - 10 - labelColW - valueGap -
+            (rowIdx === 0 ? brandBlockW + 8 : 0)
+        );
+        ctx.font = valueFont;
+        const lines = wrapTextLines(ctx, row.value, valueAvail).slice(0, 2);
+        lines.forEach((line, lineIdx) => {
+          layoutRows.push({
+            tag: lineIdx === 0 ? row.tag : "",
+            value: line,
+            isFirst: rowIdx === 0 && lineIdx === 0
           });
         });
+      });
 
-        return { layout, maxValueW, accentW };
-      };
-
-      let measured = layoutRowsForWidth(maxW, labelColW);
-      let boxW = Math.max(
-        minW,
-        Math.min(
-          maxW,
-          width - outerMargin * 2,
-          padX * 2 + measured.accentW + 10 + labelColW + valueGap + measured.maxValueW
-        )
-      );
-
-      labelColW = Math.min(
-        Math.round(boxW * 0.2),
-        Math.max(labelColW, Math.round(boxW * 0.13))
-      );
-
-      measured = layoutRowsForWidth(boxW, labelColW);
-      boxW = Math.max(
-        minW,
-        Math.min(
-          maxW,
-          width - outerMargin * 2,
-          padX * 2 + measured.accentW + 10 + labelColW + valueGap + measured.maxValueW
-        )
-      );
-      measured = layoutRowsForWidth(boxW, labelColW);
-
-      const layoutRows = measured.layout;
-      const accentW = measured.accentW;
-      const contentH = layoutRows.length * rowH;
-      const boxH = padY * 2 + contentH;
-      const boxX = Math.round((width - boxW) / 2);
+      const boxH = padY * 2 + layoutRows.length * rowH;
       const boxY = height - outerMargin - boxH;
       const textLeft = boxX + padX + accentW + 10;
       const valueLeft = textLeft + labelColW + valueGap;
+      const valueRight = boxX + boxW - padX;
       const dividerX = textLeft - Math.round(valueFontSize * 0.18);
-      const dividerEnd = boxX + boxW - padX;
-      const brandLeft = boxX + boxW - padX - brandBlockW;
-      const brandTop = boxY + padY;
+      const dividerEnd = valueRight;
+      const brandLeft = valueRight - brandBlockW;
+      const brandTop = boxY + padY + rowH / 2 - markSize / 2;
 
       if (!dark) {
         ctx.shadowColor = palette.shadow;
@@ -5308,10 +5256,10 @@
       ctx.fill();
 
       layoutRows.forEach((row, i) => {
-        const y = boxY + padY + i * rowH;
+        const y = boxY + padY + i * rowH + rowH / 2;
 
         if (i < layoutRows.length - 1) {
-          const divY = boxY + padY + (i + 1) * rowH - Math.round(rowH * 0.16);
+          const divY = boxY + padY + (i + 1) * rowH;
           ctx.beginPath();
           ctx.moveTo(dividerX, divY);
           ctx.lineTo(dividerEnd, divY);
@@ -5320,20 +5268,23 @@
           ctx.stroke();
         }
 
+        ctx.textAlign = "left";
         if (row.tag) {
           ctx.font = labelFont;
           ctx.fillStyle = palette.label;
-          ctx.fillText(row.tag, textLeft, y + Math.round(valueFontSize * 0.06));
+          ctx.fillText(row.tag, textLeft, y);
         }
 
+        const rightLimit = row.isFirst ? brandLeft - 8 : valueRight;
+        const valueMaxW = Math.max(24, rightLimit - valueLeft);
+        ctx.textAlign = "center";
         ctx.font = valueFont;
         ctx.fillStyle = palette.value;
-        const valueMaxW = i === 0
-          ? Math.max(24, brandLeft - valueLeft - 6)
-          : Math.max(24, boxX + boxW - padX - valueLeft);
-        ctx.fillText(row.value, valueLeft, y, valueMaxW);
+        ctx.fillText(row.value, valueLeft + valueMaxW / 2, y, valueMaxW);
       });
 
+      ctx.textAlign = "left";
+      ctx.textBaseline = "middle";
       drawDzenMark(ctx, brandLeft, brandTop, markSize);
 
       ctx.font = brandFont;
@@ -5341,7 +5292,7 @@
       ctx.fillText(
         "Дзен",
         brandLeft + markSize + brandGap,
-        brandTop + Math.round(markSize * 0.14)
+        boxY + padY + rowH / 2
       );
 
       ctx.restore();
