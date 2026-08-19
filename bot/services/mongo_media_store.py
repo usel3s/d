@@ -224,6 +224,9 @@ class MongoMediaStore:
             or self._now_iso(),
             "updated_at": raw.get("updatedAt") or raw.get("updated_at") or self._now_iso(),
             "photos": photos_meta,
+            "hidden": bool(raw["hidden"])
+            if "hidden" in raw
+            else bool((prev or {}).get("hidden")),
         }
 
     def _remove_item_photos(self, uid: int, item_id: str) -> None:
@@ -257,6 +260,8 @@ class MongoMediaStore:
 
             for old_id, old in prev_by_id.items():
                 if old_id not in incoming_ids:
+                    if old.get("hidden"):
+                        continue
                     self._remove_item_photos(uid, old_id)
                     self._items.delete_one({"id": old_id, "user_id": uid})
             return count
@@ -291,6 +296,36 @@ class MongoMediaStore:
                     removed += 1
             return removed
 
+    def hide_all_items(self, user_id: int) -> int:
+        with self._lock:
+            uid = self._uid(user_id)
+            if not uid:
+                return 0
+            res = self._items.update_many(
+                {"user_id": uid, "hidden": {"$ne": True}},
+                {"$set": {"hidden": True, "updated_at": self._now_iso()}},
+            )
+            return int(res.modified_count)
+
+    def restore_hidden_items(self, user_id: int) -> int:
+        with self._lock:
+            uid = self._uid(user_id)
+            if not uid:
+                return 0
+            res = self._items.update_many(
+                {"user_id": uid, "hidden": True},
+                {"$set": {"hidden": False, "updated_at": self._now_iso()}},
+            )
+            return int(res.modified_count)
+
+    def hidden_item_ids(self, user_id: int) -> list[str]:
+        with self._lock:
+            uid = self._uid(user_id)
+            if not uid:
+                return []
+            cursor = self._items.find({"user_id": uid, "hidden": True}, {"id": 1})
+            return [str(doc["id"]) for doc in cursor if doc.get("id")]
+
     def ensure_seed(self, user_id: int) -> int:
         with self._lock:
             from services.inventory_seed import build_seed_webapp_items
@@ -298,7 +333,7 @@ class MongoMediaStore:
             uid = self._uid(user_id)
             if not uid:
                 return 0
-            if self.list_items(user_id=uid):
+            if self.list_items(user_id=uid, include_hidden=True):
                 return 0
             seed = build_seed_webapp_items(uid)
             if not seed:
@@ -382,9 +417,17 @@ class MongoMediaStore:
             self.ensure_seed(user_id)
             return [self.to_webapp_item(i) for i in self.list_items(user_id=user_id)]
 
-    def list_items(self, user_id: int | None = None) -> list[dict[str, Any]]:
+    def list_items(
+        self,
+        user_id: int | None = None,
+        *,
+        include_hidden: bool = False,
+    ) -> list[dict[str, Any]]:
         with self._lock:
             query = self._item_query(user_id)
+            if not include_hidden:
+                query = dict(query)
+                query["hidden"] = {"$ne": True}
             cursor = self._items.find(query).sort("updated_at", DESCENDING)
             return [i for i in (self._normalize_item(d) for d in cursor) if i]
 

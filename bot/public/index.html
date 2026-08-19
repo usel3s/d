@@ -530,6 +530,18 @@
       color: var(--ink-soft);
       letter-spacing: 0.01em;
       align-self: flex-start;
+      padding-right: 36px;
+    }
+
+    .card-tape {
+      position: absolute;
+      left: 0;
+      top: 14px;
+      bottom: 14px;
+      width: 3px;
+      border-radius: 0 3px 3px 0;
+      background: var(--tape, #111);
+      z-index: 3;
     }
 
     .card-code {
@@ -597,6 +609,43 @@
       font-size: 11px;
       font-weight: 700;
       background: var(--field);
+    }
+
+    .card-overlay {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 2;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 6px;
+      padding: 22px 8px 7px;
+      background: linear-gradient(180deg, transparent 0%, rgba(12, 14, 18, 0.72) 100%);
+      color: #fff;
+      pointer-events: none;
+    }
+
+    .card-overlay .addr {
+      font-size: 10px;
+      font-weight: 800;
+      line-height: 1.2;
+      min-width: 0;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
+
+    .card-overlay .dist {
+      flex-shrink: 0;
+      font-size: 10px;
+      font-weight: 800;
+      background: rgba(255,255,255,0.18);
+      border-radius: 999px;
+      padding: 2px 6px;
+      white-space: nowrap;
     }
 
     .card-foot {
@@ -1544,6 +1593,10 @@
       display: none;
       position: fixed;
       inset: 0;
+      width: 100%;
+      height: 100%;
+      height: 100dvh;
+      max-width: 100vw;
       z-index: 90;
       background: var(--bg);
       flex-direction: column;
@@ -1715,6 +1768,9 @@
     .map-basemap button.active {
       background: var(--ink);
       color: var(--on-ink);
+    }
+
+    .map-sheet {
       position: absolute;
       left: 0;
       right: 0;
@@ -1897,6 +1953,8 @@
     .leaflet-container {
       font: inherit;
       background: var(--bg-soft);
+      width: 100%;
+      height: 100%;
     }
 
     .leaflet-popup-content-wrapper {
@@ -1907,23 +1965,258 @@
       font-family: "Manrope", sans-serif;
     }
 
+    .leaflet-popup-content {
+      margin: 12px 14px 10px;
+      line-height: 1.35;
+    }
+
+    .map-popup-edit {
+      display: block;
+      width: 100%;
+      margin-top: 10px;
+      border: 0;
+      border-radius: 12px;
+      padding: 8px 10px;
+      font: inherit;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      background: var(--ink);
+      color: var(--on-ink);
+    }
+
     .leaflet-popup-tip {
       box-shadow: none;
     }
 
     .map-pin {
-      width: 14px;
-      height: 14px;
+      width: 18px;
+      height: 18px;
       border-radius: 50%;
-      border: 2px solid #fff;
-      box-shadow: 0 1px 4px rgba(20, 24, 33, 0.28);
-      background: var(--ink);
+      border: 2px solid #111114;
+      box-shadow: 0 0 0 2px #fff, 0 2px 8px rgba(20, 24, 33, 0.35);
+      background: var(--pin, var(--ink));
+      box-sizing: border-box;
     }
 
-    .map-pin.crit { background: var(--danger); }
-    .map-pin.space { background: var(--warning); }
+    .map-pin.cache {
+      border-radius: 5px;
+    }
+
+    .map-pin.crit {
+      box-shadow: 0 0 0 2px #fff, 0 0 0 5px rgba(214, 69, 69, 0.55), 0 2px 8px rgba(20, 24, 33, 0.35);
+    }
+    .map-pin.space {
+      box-shadow: 0 0 0 2px #fff, 0 0 0 5px rgba(196, 138, 18, 0.5), 0 2px 8px rgba(20, 24, 33, 0.35);
+    }
     .map-pin.both {
-      background: linear-gradient(135deg, var(--danger) 50%, var(--warning) 50%);
+      box-shadow:
+        0 0 0 2px #fff,
+        0 0 0 5px rgba(214, 69, 69, 0.55),
+        0 0 0 8px rgba(196, 138, 18, 0.38),
+        0 2px 8px rgba(20, 24, 33, 0.35);
+    }
+
+    .map-cluster-wrap {
+      background: transparent !important;
+      border: none !important;
+    }
+
+    .map-cluster {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #111114;
+      color: #fff;
+      display: grid;
+      place-items: center;
+      font-size: 13px;
+      font-weight: 800;
+      border: 3px solid #fff;
+      box-shadow: 0 4px 14px rgba(20, 24, 33, 0.28);
+    }
+
+    .map-me {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #0a84ff;
+      border: 3px solid #fff;
+      box-shadow: 0 0 0 6px rgba(10, 132, 255, 0.22);
+    }
+
+    .map-locate {
+      position: absolute;
+      right: 12px;
+      bottom: calc(86px + env(safe-area-inset-bottom, 0px));
+      z-index: 850;
+      width: 44px;
+      height: 44px;
+      border: 1px solid var(--line-strong);
+      border-radius: 14px;
+      background: var(--map-chrome);
+      color: var(--ink);
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+    }
+
+    .map-locate svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .map-locate:disabled {
+      opacity: 0.45;
+    }
+
+    .map-sheet-sort {
+      display: flex;
+      gap: 6px;
+      padding: 0 12px 8px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+
+    .map-sheet.open .map-sheet-sort {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .map-sheet-sort button {
+      border: 1px solid var(--line-strong);
+      background: var(--bg-soft);
+      color: var(--ink-soft);
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 11px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .map-sheet-sort button.active {
+      background: var(--ink);
+      color: var(--on-ink);
+      border-color: var(--ink);
+    }
+
+    .map-street-h {
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--ink-soft);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 10px 4px 6px;
+    }
+
+    .map-stash-card {
+      display: grid;
+      grid-template-columns: 52px 1fr auto;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .map-stash-thumb {
+      width: 52px;
+      height: 52px;
+      border-radius: 12px;
+      object-fit: cover;
+      background: var(--field);
+      display: block;
+    }
+
+    .map-stash-thumb.placeholder {
+      display: grid;
+      place-items: center;
+      font-size: 10px;
+      font-weight: 800;
+      color: var(--ink-soft);
+    }
+
+    .map-stash-card .side {
+      text-align: right;
+      min-width: 54px;
+    }
+
+    .map-stash-card .side .grams {
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .map-stash-card .side .away {
+      margin-top: 3px;
+      font-size: 11px;
+      font-weight: 800;
+      color: #0a84ff;
+    }
+
+    .map-popup-kicker {
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--ink-soft);
+      margin-bottom: 4px;
+    }
+
+    .map-popup-addr {
+      font-weight: 800;
+      margin: 2px 0 4px;
+    }
+
+    .map-popup-note {
+      font-size: 12px;
+      color: var(--ink);
+    }
+
+    .map-popup-gps {
+      margin-top: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--ink-soft);
+      word-break: break-all;
+    }
+
+    .map-popup-risk {
+      margin-top: 6px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .map-popup-risk.crit { color: var(--danger); }
+    .map-popup-risk.space { color: var(--warning); }
+    .map-popup-risk.me { color: #0a84ff; }
+
+    .map-popup-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      margin-top: 10px;
+    }
+
+    .map-popup-edit.ghost {
+      background: var(--accent-dim);
+      color: var(--ink);
+    }
+
+    .map-dist-label {
+      background: rgba(17, 17, 20, 0.88);
+      color: #fff;
+      border: 0;
+      border-radius: 8px;
+      padding: 2px 7px;
+      font-size: 10px;
+      font-weight: 800;
+      white-space: nowrap;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.15s ease;
+    }
+
+    .map-zoom-close .map-dist-label {
+      opacity: 1;
     }
 
     .map-zone-label-wrap {
@@ -1965,13 +2258,33 @@
     }
 
     .menu-item:active { border-color: var(--ink); }
+    .menu-item:disabled {
+      opacity: 0.38;
+      pointer-events: none;
+    }
     .menu-item .hint { color: var(--ink-soft); font-size: 12px; font-weight: 700; }
+
+    .menu-pair {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .menu-pair .menu-item {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 4px;
+      min-height: 68px;
+    }
 
     .menu-group {
       padding: 12px;
       border-radius: 18px;
       border: 1px solid var(--line);
       background: var(--surface-card);
+    }
+
+    .stamp-theme-group {
+      overflow: hidden;
     }
 
     .menu-group-label {
@@ -2024,16 +2337,39 @@
       box-shadow: none;
     }
 
+    html[data-theme="dark"] .map-sheet-sort button.active {
+      background: #eef0f5;
+      color: #111318;
+    }
+
+    .stamp-preview-frame {
+      margin: 10px -12px -12px;
+      overflow: hidden;
+      border-radius: 0 0 17px 17px;
+      background:
+        linear-gradient(180deg, rgba(17, 17, 20, 0.04) 0%, rgba(17, 17, 20, 0.18) 100%),
+        linear-gradient(135deg, #d8dce3 0%, #b7bec8 52%, #9aa3ae 100%);
+    }
+
+    .stamp-preview-frame::before {
+      content: "";
+      display: block;
+      height: 44px;
+      background:
+        radial-gradient(ellipse 70% 90% at 20% 30%, rgba(255,255,255,0.28), transparent 55%),
+        radial-gradient(ellipse 50% 80% at 78% 70%, rgba(17,17,20,0.12), transparent 60%);
+    }
+
     .stamp-preview {
-      margin-top: 10px;
       position: relative;
       overflow: hidden;
-      border-radius: 18px;
-      padding: 10px 12px 10px 16px;
+      margin: 0 10px 10px;
+      border-radius: 16px;
+      padding: 8px 12px 8px 14px;
       background: rgba(255, 255, 255, 0.96);
       border: 1px solid rgba(15, 18, 22, 0.15);
       color: #111318;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
     }
 
     .stamp-preview[data-variant="dark"] {
@@ -2043,40 +2379,42 @@
       box-shadow: none;
     }
 
+    html[data-theme="dark"] .stamp-preview-frame {
+      background:
+        linear-gradient(180deg, rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0.45) 100%),
+        linear-gradient(135deg, #3a4048 0%, #23272e 52%, #171a1f 100%);
+    }
+
     .stamp-preview-tape {
       position: absolute;
-      left: 8px;
-      top: 14px;
-      bottom: 14px;
-      width: 4px;
+      left: 7px;
+      top: 11px;
+      bottom: 11px;
+      width: 3px;
       border-radius: 999px;
-      background: #d64545;
+      background: #111114;
+    }
+
+    .stamp-preview[data-variant="dark"] .stamp-preview-tape {
+      background: #f5f7fa;
     }
 
     .stamp-preview-brand {
-      position: relative;
-      z-index: 1;
       display: inline-flex;
       align-items: center;
-      gap: 6px;
-      margin-left: auto;
-      margin-bottom: 6px;
-      font-size: 12px;
+      gap: 5px;
+      margin-left: 8px;
+      font-size: 11px;
       font-weight: 700;
       letter-spacing: 0.01em;
       line-height: 1;
       color: #111318;
+      white-space: nowrap;
+      flex-shrink: 0;
     }
 
     .stamp-preview[data-variant="dark"] .stamp-preview-brand {
       color: #f5f7fa;
-    }
-
-    .stamp-preview-head {
-      position: relative;
-      z-index: 1;
-      display: flex;
-      justify-content: flex-end;
     }
 
     .stamp-preview-lines {
@@ -2088,24 +2426,29 @@
 
     .stamp-preview-row {
       display: grid;
-      grid-template-columns: 4.2em 1fr;
-      gap: 8px;
+      grid-template-columns: 4.7em minmax(0, 1fr);
+      column-gap: 8px;
       align-items: center;
-      padding: 5px 0;
-      border-top: 1px solid rgba(15, 18, 22, 0.14);
-      font-size: 12px;
+      min-height: 22px;
+      padding: 4px 0;
+      border-bottom: 1px solid rgba(15, 18, 22, 0.14);
       line-height: 1.25;
     }
 
-    .stamp-preview-row:first-child {
-      border-top: none;
+    .stamp-preview-row:last-child {
+      border-bottom: none;
+    }
+
+    .stamp-preview-row.is-first {
+      grid-template-columns: 4.7em minmax(0, 1fr) auto;
     }
 
     .stamp-preview[data-variant="dark"] .stamp-preview-row {
-      border-top-color: rgba(255, 255, 255, 0.12);
+      border-bottom-color: rgba(255, 255, 255, 0.12);
     }
 
     .stamp-preview-row .stamp-tag {
+      font-size: 11px;
       font-weight: 500;
       color: rgba(15, 18, 22, 0.48);
       white-space: nowrap;
@@ -2117,10 +2460,13 @@
 
     .stamp-preview-row .stamp-val {
       font-weight: 600;
-      font-size: 10px;
+      font-size: 12px;
       color: #111318;
       text-align: left;
-      word-break: break-word;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .stamp-preview[data-variant="dark"] .stamp-preview-row .stamp-val {
@@ -2128,9 +2474,9 @@
     }
 
     .stamp-preview-mark {
-      width: 18px;
-      height: 18px;
-      border-radius: 5px;
+      width: 13px;
+      height: 13px;
+      border-radius: 4px;
       overflow: hidden;
       flex-shrink: 0;
       display: grid;
@@ -2140,8 +2486,8 @@
     }
 
     .stamp-preview-mark svg {
-      width: 10px;
-      height: 10px;
+      width: 8px;
+      height: 8px;
       display: block;
     }
 
@@ -2868,7 +3214,7 @@
         </div>
 
         <div class="wizard-step hidden" id="wizardStep2" data-wizard-step="2">
-          <p class="wizard-lead">Шаг 2 · Способ укрытия <span class="opt">необязательно</span></p>
+          <p class="wizard-lead">Шаг 2 · Способ закладки <span class="opt">необязательно</span></p>
           <div class="hide-chips" id="wizardHideChips"></div>
           <div class="wizard-extra">
             <input type="text" id="wizardExtraNote" maxlength="200" placeholder="Дополнение (необязательно)" />
@@ -2991,28 +3337,31 @@
           </div>
         </div>
 
-        <div class="menu-group">
+        <div class="menu-group stamp-theme-group">
           <div class="menu-group-label">Штамп на фото</div>
           <div class="seg" id="stampThemeSeg">
             <button type="button" data-stamp-theme="light">Светлый</button>
             <button type="button" data-stamp-theme="dark">Тёмный</button>
           </div>
-          <div class="stamp-preview" id="stampPreview" data-variant="light">
-            <span class="stamp-preview-tape" aria-hidden="true"></span>
-            <div class="stamp-preview-head">
-              <div class="stamp-preview-brand">
-                <span class="stamp-preview-mark" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.2Q12 12 21.8 12Q12 12 12 21.8Q12 12 2.2 12Q12 12 12 2.2Z"/></svg>
-                </span>
-                <span>Дзен</span>
+          <div class="stamp-preview-frame">
+            <div class="stamp-preview" id="stampPreview" data-variant="light">
+              <span class="stamp-preview-tape" aria-hidden="true"></span>
+              <div class="stamp-preview-lines">
+                <div class="stamp-preview-row is-first">
+                  <span class="stamp-tag">#tape</span>
+                  <span class="stamp-val">Белая</span>
+                  <span class="stamp-preview-brand">
+                    <span class="stamp-preview-mark" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.2Q12 12 21.8 12Q12 12 12 21.8Q12 12 2.2 12Q12 12 12 2.2Z"/></svg>
+                    </span>
+                    Дзен
+                  </span>
+                </div>
+                <div class="stamp-preview-row"><span class="stamp-tag">#location</span><span class="stamp-val">Прикоп</span></div>
+                <div class="stamp-preview-row"><span class="stamp-tag">#note</span><span class="stamp-val">точно по метке вдавлен 1–2 см</span></div>
+                <div class="stamp-preview-row"><span class="stamp-tag">#gps</span><span class="stamp-val">57.007147, 40.995442  ±3.4 м</span></div>
+                <div class="stamp-preview-row"><span class="stamp-tag">#addr</span><span class="stamp-val">ул. Рыбинская</span></div>
               </div>
-            </div>
-            <div class="stamp-preview-lines">
-              <div class="stamp-preview-row"><span class="stamp-tag">#tape</span><span class="stamp-val">Красная</span></div>
-              <div class="stamp-preview-row"><span class="stamp-tag">#location</span><span class="stamp-val">Тайник</span></div>
-              <div class="stamp-preview-row"><span class="stamp-tag">#note</span><span class="stamp-val">—</span></div>
-              <div class="stamp-preview-row"><span class="stamp-tag">#gps</span><span class="stamp-val">55.7512, 37.6184</span></div>
-              <div class="stamp-preview-row"><span class="stamp-tag">#addr</span><span class="stamp-val">Тверская ул.</span></div>
             </div>
           </div>
         </div>
@@ -3021,6 +3370,20 @@
           <span>Обновить склад</span>
           <span class="hint">с сервера</span>
         </button>
+
+        <div class="menu-group">
+          <div class="menu-group-label">Позиции</div>
+          <div class="menu-pair">
+            <button type="button" class="menu-item" id="btnHideInventory">
+              <span>Скрыть все</span>
+              <span class="hint">с экрана</span>
+            </button>
+            <button type="button" class="menu-item" id="btnRestoreInventory">
+              <span>Подгрузить</span>
+              <span class="hint">из базы</span>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -3044,7 +3407,7 @@
       </div>
 
       <div class="settings-block">
-        <h3>Способы укрытия</h3>
+        <h3>Способы закладки</h3>
         <p class="admin-badge" style="margin:0 0 10px">Отдельные наборы для тайника и прикопа · один чип при добавлении</p>
         <div class="tpl-tabs" id="hideTplTabs">
           <button type="button" class="tpl-tab active" data-hide-loc="warehouse_1">Тайник</button>
@@ -3095,6 +3458,12 @@
         <div class="row"><span class="swatch warn"></span>осторожно до ~150 м</div>
         <div class="row"><span class="swatch space"></span>между кладами &lt;25 м</div>
       </div>
+      <button type="button" class="map-locate" id="btnMapLocate" aria-label="Я здесь" title="Я здесь">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M12 3v2.5M12 18.5V21M3 12h2.5M18.5 12H21" stroke-linecap="round"/>
+        </svg>
+      </button>
       <div class="map-sheet" id="mapSheet" aria-expanded="false">
         <div class="map-sheet-handle" id="mapSheetHandle">
           <div class="map-sheet-grip"></div>
@@ -3105,6 +3474,11 @@
             </div>
             <button type="button" class="map-sheet-toggle" id="mapSheetToggle">Открыть</button>
           </div>
+        </div>
+        <div class="map-sheet-sort" id="mapSheetSort" role="group" aria-label="Сортировка">
+          <button type="button" data-map-sort="near">Ближе</button>
+          <button type="button" class="active" data-map-sort="street">Улицы</button>
+          <button type="button" data-map-sort="risk">Риск</button>
         </div>
         <div class="map-sheet-body" id="mapSheetBody"></div>
       </div>
@@ -3286,6 +3660,7 @@
 
     /** @type {Array<Object>} */
     let items = [];
+    let hiddenCount = 0;
     let isLocalDevSession = false;
     let prices = { ...DEFAULT_PRICES };
     let hideTemplates = JSON.parse(JSON.stringify(DEFAULT_HIDE_TEMPLATES));
@@ -3320,6 +3695,10 @@
     let mapZoneLabelsLayer = null;
     let mapLabelZones = [];
     let mapOpenSeq = 0;
+    let mapUserGeo = null;
+    let mapUserMarker = null;
+    let mapUserCircle = null;
+    let mapSheetSort = "street";
     const mapOverpassCache = {};
     const mapOverpassInflight = {};
 
@@ -3448,6 +3827,8 @@
       btnCloseSettings: $("btnCloseSettings"),
       btnSaveSettings: $("btnSaveSettings"),
       btnSyncServer: $("btnSyncServer"),
+      btnHideInventory: $("btnHideInventory"),
+      btnRestoreInventory: $("btnRestoreInventory"),
       mapScreen: $("mapScreen"),
       mapCanvas: $("mapCanvas"),
       mapSheet: $("mapSheet"),
@@ -3461,6 +3842,8 @@
       mapLayers: $("mapLayers"),
       mapLegend: $("mapLegend"),
       btnCloseMap: $("btnCloseMap"),
+      btnMapLocate: $("btnMapLocate"),
+      mapSheetSort: $("mapSheetSort"),
       noteChips: $("noteChips"),
       wizardPanel: $("wizardPanel"),
       wizardProgress: $("wizardProgress"),
@@ -4219,7 +4602,18 @@
       };
     }
 
+    function savedEditGeo() {
+      if (!editingId) return null;
+      const fromPhoto = (formPhotos || []).find(photoHasGeo);
+      if (fromPhoto && fromPhoto.geo) return fromPhoto.geo;
+      const orig = items.find((i) => i.id === editingId);
+      if (orig && orig.geo && isFinite(Number(orig.geo.latitude))) return orig.geo;
+      if (currentGeo && isFinite(Number(currentGeo.latitude))) return currentGeo;
+      return null;
+    }
+
     function considerFix(fix) {
+      if (savedEditGeo()) return;
       const n = normalizeFix(fix);
       if (!n) return;
       if (n.accuracy > GEO_REJECT_ACCURACY_M) return;
@@ -4461,7 +4855,9 @@
       if (currentGeo.altitude != null) {
         chips.push('<span class="geo-chip muted">~' + escapeHtml(String(Math.round(currentGeo.altitude))) + " м</span>");
       }
-      if (geoBusy) {
+      if (savedEditGeo()) {
+        chips.push('<span class="geo-chip muted">с фото</span>');
+      } else if (geoBusy) {
         chips.push('<span class="geo-chip muted">уточняем</span>');
       }
 
@@ -4474,6 +4870,7 @@
     }
 
     function geoReadyForPhoto() {
+      if (savedEditGeo()) return true;
       return !!(
         currentGeo &&
         isFinite(currentGeo.latitude) &&
@@ -4645,6 +5042,12 @@
     async function acquirePreciseGeo(options) {
       options = options || {};
       const quiet = !!options.quiet;
+      if (savedEditGeo()) {
+        geoBusy = false;
+        stopGeoWatch();
+        renderGeoUi();
+        return;
+      }
       stopGeoWatch();
       if (!options.keepBest) {
         currentGeo = null;
@@ -4690,6 +5093,12 @@
     }
 
     function ensureAutoGeo() {
+      if (savedEditGeo()) {
+        geoBusy = false;
+        stopGeoWatch();
+        renderGeoUi();
+        return;
+      }
       if (!navigator.geolocation) return;
       if (geoWatchId == null) startBrowserWatch();
       const stale =
@@ -4708,6 +5117,8 @@
     }
 
     function snapshotGeoForCapture() {
+      const frozen = savedEditGeo();
+      if (frozen) return Object.assign({}, frozen);
       // Watch уже крутится в фоне — не ждём getCurrentPosition на каждый кадр.
       if (geoWatchId == null) startBrowserWatch();
       if (!geoReadyForPhoto()) return null;
@@ -4811,12 +5222,20 @@
         const thumb = firstPhotoSrc(item);
         const fetchPath = firstPhotoFetchPath(item);
         const loc = locationLabel(item.location);
+        const photosN = (item.photos && item.photos.length) || 0;
+        const addr = item.geo ? itemDisplayAddress(item) : "";
+        const dist = userDistM(item);
+        const tape = tapeHex(item.tapeColor) || "#111114";
         const pill =
-          formatGrams(item.weight) + " · " + formatRub(revenue) +
+          formatGrams(item.weight) +
+          (photosN ? " · " + photosN + " фото" : "") +
+          " · " + formatRub(revenue) +
           (heavy ? " · >3г" : "");
+        const hasGeo = !!(item.geo && isFinite(Number(item.geo.latitude)));
 
         return (
           '<article class="card" data-id="' + escapeAttr(item.id) + '">' +
+            '<span class="card-tape" style="--tape:' + escapeAttr(tape) + '"></span>' +
             '<div class="card-tag">#' + escapeHtml(String(loc).toLowerCase()) +
               ' #' + escapeHtml(tapeLabel(item.tapeColor).toLowerCase()) +
             '</div>' +
@@ -4827,6 +5246,15 @@
                   (fetchPath ? ' data-fetch="' + escapeAttr(fetchPath) + '"' : "") +
                   ' alt="" />'
                 : '<div class="card-photo placeholder">—</div>') +
+              (addr && addr !== "без адреса"
+                ? '<div class="card-overlay"><span class="addr">' + escapeHtml(addr) +
+                  '</span>' +
+                  (dist != null ? '<span class="dist">' + escapeHtml(formatDistM(dist)) + "</span>" : "") +
+                  "</div>"
+                : (dist != null
+                  ? '<div class="card-overlay"><span class="addr">GPS</span><span class="dist">' +
+                    escapeHtml(formatDistM(dist)) + "</span></div>"
+                  : "")) +
             '</div>' +
             '<div class="card-foot">' +
               '<div class="card-pill">' + escapeHtml(pill) + '</div>' +
@@ -4834,6 +5262,13 @@
                 '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5l1.7 5.2H19l-4.2 3.1 1.6 5.2L12 12.9 7.6 16l1.6-5.2L5 7.7h5.3L12 2.5z"/></svg>' +
               '</div>' +
               '<div class="card-actions">' +
+                (hasGeo
+                  ? '<button type="button" class="mini-btn" data-action="map" title="на карте" aria-label="на карте">' +
+                    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' +
+                    '<path d="M12 21s7-6.2 7-11a7 7 0 10-14 0c0 4.8 7 11 7 11z" stroke-linejoin="round"/>' +
+                    '<circle cx="12" cy="10" r="2.2"/>' +
+                    '</svg></button>'
+                  : "") +
                 '<button type="button" class="mini-btn" data-action="edit" title="edit" aria-label="edit">' +
                   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' +
                     '<path d="M4 20h4l10-10-4-4L4 16v4zM14 6l4 4" stroke-linecap="round" stroke-linejoin="round"/>' +
@@ -4856,6 +5291,7 @@
       renderFilters();
       renderList();
       updateRepeatButton();
+      updateInventoryActions();
       hydrateCardPhotos();
     }
 
@@ -5250,7 +5686,9 @@
       const accentX = boxX + Math.round(padX * 0.5);
       const accentY = boxY + accentInsetY;
       const accentH = Math.max(8, boxH - accentInsetY * 2);
-      const tape = tapeHex(meta && meta.tapeColor) || (dark ? "#F5F7FA" : "#111318");
+      const tape = dark
+        ? (tapeHex(meta && meta.tapeColor) || "#F5F7FA")
+        : "#111114";
       ctx.fillStyle = tape;
       roundRectPath(ctx, accentX, accentY, accentW, accentH, accentW);
       ctx.fill();
@@ -5605,11 +6043,13 @@
     }
 
     async function hydrateCardPhotos() {
-      const imgs = els.itemsList.querySelectorAll("img.card-photo[data-fetch]");
+      const imgs = document.querySelectorAll("img.card-photo[data-fetch], img.map-stash-thumb[data-fetch]");
       for (let i = 0; i < imgs.length; i++) {
         const img = imgs[i];
-        const card = img.closest("[data-id]");
-        const itemId = card ? card.getAttribute("data-id") : "";
+        const card = img.closest("[data-id], [data-stash-id]");
+        const itemId = card
+          ? (card.getAttribute("data-id") || card.getAttribute("data-stash-id") || "")
+          : "";
         const item = itemId ? items.find((it) => it.id === itemId) : null;
         const photo = item && item.photos && item.photos[0];
         try {
@@ -7305,8 +7745,12 @@
       setWizardUi();
       openOverlay(els.formOverlay);
       haptic("light");
-      if (!wizardMode || wizardStep === 4) {
+      if (!savedEditGeo() && (!wizardMode || wizardStep === 4)) {
         acquirePreciseGeo({ keepBest: !!currentGeo, quiet: true });
+      } else if (savedEditGeo()) {
+        geoBusy = false;
+        stopGeoWatch();
+        renderGeoUi();
       }
     }
 
@@ -7426,6 +7870,137 @@
         Math.cos(aLat * toR) * Math.cos(bLat * toR) *
         Math.sin(dLon / 2) * Math.sin(dLon / 2);
       return 2 * R * Math.asin(Math.min(1, Math.sqrt(x)));
+    }
+
+    function formatDistM(m) {
+      if (m == null || !isFinite(Number(m))) return "—";
+      const n = Number(m);
+      if (n < 10) return n.toFixed(1) + " м";
+      if (n < 1000) return Math.round(n) + " м";
+      const km = n / 1000;
+      return (km < 10 ? km.toFixed(1) : Math.round(km)) + " км";
+    }
+
+    function userFix() {
+      return mapUserGeo || currentGeo || null;
+    }
+
+    function userDistM(item) {
+      const me = userFix();
+      const g = item && item.geo;
+      if (!me || !g) return null;
+      const lat = Number(g.latitude);
+      const lon = Number(g.longitude);
+      if (!isFinite(lat) || !isFinite(lon)) return null;
+      return haversineM(me.latitude, me.longitude, lat, lon);
+    }
+
+    function mapsPointUrl(lat, lon) {
+      return "https://yandex.ru/maps/?pt=" + encodeURIComponent(lon + "," + lat) + "&z=18";
+    }
+
+    function copyText(text) {
+      const value = String(text || "");
+      if (!value) return Promise.resolve(false);
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        return navigator.clipboard.writeText(value).then(function () { return true; }).catch(function () { return false; });
+      }
+      try {
+        const el = document.createElement("textarea");
+        el.value = value;
+        el.setAttribute("readonly", "");
+        el.style.position = "fixed";
+        el.style.left = "-9999px";
+        document.body.appendChild(el);
+        el.select();
+        const ok = document.execCommand("copy");
+        document.body.removeChild(el);
+        return Promise.resolve(ok);
+      } catch (_) {
+        return Promise.resolve(false);
+      }
+    }
+
+    function syncMapZoomClass() {
+      const wrap = els.mapCanvas;
+      if (!wrap || !mapInstance) return;
+      wrap.classList.toggle("map-zoom-close", mapInstance.getZoom() >= 16);
+    }
+
+    function setMapUserGeo(geo) {
+      if (!geo || !isFinite(Number(geo.latitude)) || !isFinite(Number(geo.longitude))) return;
+      mapUserGeo = {
+        latitude: Number(geo.latitude),
+        longitude: Number(geo.longitude),
+        accuracy: geo.accuracy != null ? Number(geo.accuracy) : null
+      };
+      if (!currentGeo) currentGeo = Object.assign({}, mapUserGeo, { timestamp: Date.now() });
+      updateMapUserLayer();
+      if (mapInstance) {
+        renderMapSheetList(mapSheetGeoItems, mapSheetRiskById);
+        updateMapSub(mapSheetGeoItems, mapCriticalZones, mapSheetRiskById);
+      }
+      renderList();
+      hydrateCardPhotos();
+    }
+
+    function updateMapUserLayer() {
+      if (!mapInstance || typeof L === "undefined" || !mapUserGeo) return;
+      const latlng = [mapUserGeo.latitude, mapUserGeo.longitude];
+      const acc = Math.max(12, Math.min(120, Number(mapUserGeo.accuracy) || 25));
+      if (mapUserCircle) {
+        mapUserCircle.setLatLng(latlng);
+        mapUserCircle.setRadius(acc);
+      } else {
+        mapUserCircle = L.circle(latlng, {
+          radius: acc,
+          color: "#0a84ff",
+          weight: 1,
+          fillColor: "#0a84ff",
+          fillOpacity: 0.12,
+          interactive: false
+        }).addTo(mapInstance);
+      }
+      if (mapUserMarker) {
+        mapUserMarker.setLatLng(latlng);
+      } else {
+        mapUserMarker = L.marker(latlng, {
+          zIndexOffset: 800,
+          icon: L.divIcon({
+            className: "",
+            html: '<div class="map-me"></div>',
+            iconSize: [16, 16],
+            iconAnchor: [8, 8]
+          })
+        }).addTo(mapInstance);
+      }
+    }
+
+    function ensureUserGeo(quiet) {
+      if (userFix() && userFix().accuracy && userFix().accuracy <= 80) {
+        if (userFix() && !mapUserGeo) setMapUserGeo(userFix());
+        return Promise.resolve(userFix());
+      }
+      return requestBrowserFixOnce(8000).then((fix) => {
+        if (fix) setMapUserGeo(fix);
+        else if (!quiet) showToast("нет GPS", true);
+        return fix || userFix();
+      });
+    }
+
+    function locateMeOnMap() {
+      if (els.btnMapLocate) els.btnMapLocate.disabled = true;
+      ensureUserGeo(false).then((fix) => {
+        if (els.btnMapLocate) els.btnMapLocate.disabled = false;
+        if (!fix || !mapInstance) return;
+        mapSheetSort = "near";
+        const zoom = Math.max(mapInstance.getZoom() || 0, 16);
+        mapInstance.setView([fix.latitude, fix.longitude], zoom, { animate: true });
+        haptic("ok");
+        showToast("вы здесь");
+      }).catch(() => {
+        if (els.btnMapLocate) els.btnMapLocate.disabled = false;
+      });
     }
 
     function expandBBox(bounds, padM) {
@@ -7697,11 +8272,20 @@
     }
 
     function stashPinClass(risk) {
-      if (!risk) return "map-pin";
-      if (risk.critical && risk.neighbors.length) return "map-pin both";
-      if (risk.critical) return "map-pin crit";
-      if (risk.neighbors.length) return "map-pin space";
-      return "map-pin";
+      let cls = "map-pin";
+      if (!risk) return cls;
+      if (risk.critical && risk.neighbors && risk.neighbors.length) cls += " both";
+      else if (risk.critical) cls += " crit";
+      else if (risk.neighbors && risk.neighbors.length) cls += " space";
+      return cls;
+    }
+
+    function stashPinHtml(it, risk) {
+      const tape = tapeHex(it.tapeColor) || "#111114";
+      const kind = it.location === "warehouse_1" ? "cache" : "pickup";
+      return (
+        '<div class="' + stashPinClass(risk) + " " + kind + '" style="--pin:' + tape + '"></div>'
+      );
     }
 
     function itemsGeoFingerprint(geoItems) {
@@ -7874,13 +8458,13 @@
             interactive: false,
             keyboard: false,
             icon: L.divIcon({
-              className: "",
+              className: "map-zone-label-wrap",
               html:
-                '<div class="map-zone-label space">' +
-                Math.round(n.dist) +
-                " м</div>",
-              iconSize: [48, 18],
-              iconAnchor: [24, 9]
+                '<div class="map-dist-label">' +
+                formatDistM(n.dist) +
+                "</div>",
+              iconSize: [52, 18],
+              iconAnchor: [26, 9]
             })
           }).addTo(mapSpacingLayer);
         });
@@ -7926,16 +8510,51 @@
       if (els.mapSheetTitle) {
         els.mapSheetTitle.textContent = "Список · " + mapSheetGeoItems.length;
       }
+      if (els.mapSheetSort) {
+        els.mapSheetSort.querySelectorAll("[data-map-sort]").forEach((btn) => {
+          btn.classList.toggle("active", btn.getAttribute("data-map-sort") === mapSheetSort);
+        });
+      }
       if (!els.mapSheetBody) return;
 
-      const sorted = mapSheetGeoItems.slice().sort((a, b) => {
-        const sa = itemDisplayAddress(a);
-        const sb = itemDisplayAddress(b);
-        return sa.localeCompare(sb, "ru");
+      const rows = mapSheetGeoItems.map((it) => {
+        const risk = (riskById && riskById[it.id]) || {};
+        const neighbor = (risk.neighbors || []).slice().sort((a, b) => a.dist - b.dist)[0] || null;
+        return {
+          it: it,
+          risk: risk,
+          dist: userDistM(it),
+          neighbor: neighbor
+        };
       });
 
-      els.mapSheetBody.innerHTML = sorted.map((it) => {
-        const risk = riskById[it.id] || {};
+      if (mapSheetSort === "near") {
+        rows.sort((a, b) => (a.dist == null ? 1e12 : a.dist) - (b.dist == null ? 1e12 : b.dist));
+      } else if (mapSheetSort === "risk") {
+        rows.sort((a, b) => {
+          const ra = a.risk.critical ? 0 : a.neighbor ? 1 : 2;
+          const rb = b.risk.critical ? 0 : b.neighbor ? 1 : 2;
+          if (ra !== rb) return ra - rb;
+          const da = a.risk.near ? a.risk.near.dist : 1e9;
+          const db = b.risk.near ? b.risk.near.dist : 1e9;
+          return da - db;
+        });
+      } else {
+        rows.sort((a, b) => itemDisplayAddress(a.it).localeCompare(itemDisplayAddress(b.it), "ru"));
+      }
+
+      let html = "";
+      let lastStreet = "";
+      rows.forEach((row) => {
+        const it = row.it;
+        const risk = row.risk;
+        if (mapSheetSort === "street") {
+          const street = itemStreetName(it);
+          if (street !== lastStreet) {
+            html += '<div class="map-street-h">' + escapeHtml(street) + "</div>";
+            lastStreet = street;
+          }
+        }
         const addr = itemDisplayAddress(it);
         const hasCrit = !!risk.critical;
         const hasSpace = !!(risk.neighbors && risk.neighbors.length);
@@ -7949,68 +8568,149 @@
         if (hasCrit && risk.near) {
           tags +=
             '<span class="tag crit">' +
-            Math.round(risk.near.dist) + " м · " +
+            formatDistM(risk.near.dist) + " · " +
             escapeHtml((risk.near.zone && risk.near.zone.label) || "зона") +
             "</span>";
         }
-        if (hasSpace) {
-          const closest = risk.neighbors.slice().sort((a, b) => a.dist - b.dist)[0];
-          tags += '<span class="tag space">' + Math.round(closest.dist) + " м до соседа</span>";
+        if (hasSpace && row.neighbor) {
+          tags += '<span class="tag space">' + formatDistM(row.neighbor.dist) + " до соседа</span>";
         }
         const note = String(it.note || "").trim();
-        return (
+        const thumb = firstPhotoSrc(it);
+        const fetchPath = firstPhotoFetchPath(it);
+        const thumbHtml = (thumb || fetchPath)
+          ? '<img class="map-stash-thumb" src="' + escapeAttr(thumb || "") + '"' +
+            (fetchPath ? ' data-fetch="' + escapeAttr(fetchPath) + '"' : "") + " alt=\"\" />"
+          : '<div class="map-stash-thumb placeholder">—</div>';
+        html +=
           '<div class="' + cls + '" data-stash-id="' + escapeAttr(it.id) + '">' +
+            thumbHtml +
             "<div>" +
               '<div class="addr">' + escapeHtml(addr) + "</div>" +
               '<div class="meta">' +
-                (note ? escapeHtml(note.slice(0, 64)) : escapeHtml(itemStreetName(it))) +
+                (note ? escapeHtml(note.slice(0, 72)) : escapeHtml(itemStreetName(it))) +
               "</div>" +
               '<div class="tags">' + tags + "</div>" +
             "</div>" +
-            '<div class="side">' + escapeHtml(formatGrams(it.weight)) + "</div>" +
-          "</div>"
-        );
-      }).join("");
+            '<div class="side">' +
+              '<div class="grams">' + escapeHtml(formatGrams(it.weight)) + "</div>" +
+              (row.dist != null
+                ? '<div class="away">' + escapeHtml(formatDistM(row.dist)) + "</div>"
+                : "") +
+            "</div>" +
+          "</div>";
+      });
+      els.mapSheetBody.innerHTML = html || '<div class="empty" style="margin:8px 0"><strong>пусто</strong></div>';
+      hydrateCardPhotos();
+    }
+
+    function showItemOnMap(itemId) {
+      const item = items.find((i) => i.id === itemId);
+      if (!item || !item.geo || !isFinite(Number(item.geo.latitude))) {
+        showToast("нет GPS", true);
+        return;
+      }
+      Promise.resolve(openMapScreen()).then(() => {
+        setTimeout(() => focusStashOnMap(itemId, { collapseSheet: true }), 120);
+      });
     }
 
     function focusStashOnMap(itemId, options) {
       options = options || {};
       const marker = mapMarkersById[itemId];
       if (!mapInstance || !marker) return;
-      mapInstance.setView(marker.getLatLng(), Math.max(mapInstance.getZoom(), 17), { animate: true });
-      marker.openPopup();
-      if (els.mapSheetBody) {
+
+      const highlightList = () => {
+        if (!els.mapSheetBody) return;
         els.mapSheetBody.querySelectorAll(".map-stash-card").forEach((el) => {
-          el.classList.toggle("active", el.getAttribute("data-stash-id") === itemId);
+          const on = el.getAttribute("data-stash-id") === itemId;
+          el.classList.toggle("active", on);
+          if (on) el.scrollIntoView({ block: "nearest", behavior: "smooth" });
         });
+      };
+
+      const revealMarker = () => {
+        const ll = marker.getLatLng();
+        const zoom = Math.max(mapInstance.getZoom() || 0, 17);
+        mapInstance.setView(ll, zoom, { animate: true });
+        marker.openPopup();
+        highlightList();
+      };
+
+      const go = () => {
+        if (mapCluster && typeof mapCluster.zoomToShowLayer === "function") {
+          mapCluster.zoomToShowLayer(marker, revealMarker);
+        } else {
+          revealMarker();
+        }
+        haptic("light");
+      };
+
+      if (options.collapseSheet && mapSheetOpen) {
+        setMapSheetOpen(false);
+        setTimeout(go, 360);
+      } else {
+        go();
       }
-      if (options.collapseSheet) setMapSheetOpen(false);
-      haptic("light");
+    }
+
+    function editStashFromMap(itemId) {
+      const item = items.find((i) => i.id === itemId);
+      if (!item) return;
+      closeMapScreen();
+      openForm({ editItem: item });
     }
 
     function stashPopupHtml(it, risk) {
       const addr = itemDisplayAddress(it);
+      const lat = Number(it.geo && it.geo.latitude);
+      const lon = Number(it.geo && it.geo.longitude);
+      const acc = it.geo && it.geo.accuracy != null ? Number(it.geo.accuracy) : null;
+      const dist = userDistM(it);
       let riskHtml = "";
+      if (dist != null) {
+        riskHtml +=
+          '<div class="map-popup-risk me">от вас ' + escapeHtml(formatDistM(dist)) + "</div>";
+      }
       if (risk && risk.near && risk.near.dist <= MAP_WARN_M) {
         riskHtml +=
-          "<br/><span style=\"color:#d64545\">" +
-          Math.round(risk.near.dist) + " м · " +
+          '<div class="map-popup-risk crit">' +
+          escapeHtml(formatDistM(risk.near.dist)) + " · " +
           escapeHtml(criticalZoneTitle(risk.near.zone)) +
           (risk.critical ? " · запрет" : " · близко") +
-          "</span>";
+          "</div>";
       }
       if (risk && risk.neighbors && risk.neighbors.length) {
         const closest = risk.neighbors.slice().sort((a, b) => a.dist - b.dist)[0];
         riskHtml +=
-          "<br/><span style=\"color:#c48a12\">" +
-          Math.round(closest.dist) + " м до соседнего клада (мин. " + MAP_STASH_MIN_M + " м)</span>";
+          '<div class="map-popup-risk space">' +
+          escapeHtml(formatDistM(closest.dist)) +
+          " до соседнего клада (мин. " + MAP_STASH_MIN_M + " м)</div>";
       }
+      const gpsTxt = isFinite(lat) && isFinite(lon)
+        ? formatCoords(lat, lon) + (acc != null && isFinite(acc) ? "  ±" + formatAccuracy(acc) : "")
+        : "";
       return (
-        "<b>" + escapeHtml(locationLabel(it.location)) + "</b><br/>" +
-        escapeHtml(formatGrams(it.weight)) + " · " + escapeHtml(tapeLabel(it.tapeColor)) +
-        (it.note ? "<br/>" + escapeHtml(it.note) : "") +
-        "<br/><i>" + escapeHtml(addr) + "</i>" +
-        riskHtml
+        '<div class="map-popup-kicker">' +
+          escapeHtml(locationLabel(it.location)) + " · " +
+          escapeHtml(formatGrams(it.weight)) + " · " +
+          escapeHtml(tapeLabel(it.tapeColor)) +
+        "</div>" +
+        '<div class="map-popup-addr">' + escapeHtml(addr) + "</div>" +
+        (it.note ? '<div class="map-popup-note">' + escapeHtml(it.note) + "</div>" : "") +
+        (gpsTxt ? '<div class="map-popup-gps">' + escapeHtml(gpsTxt) + "</div>" : "") +
+        riskHtml +
+        '<div class="map-popup-actions">' +
+          '<button type="button" class="map-popup-edit ghost" data-map-copy="' +
+            escapeAttr(gpsTxt || (lat + ", " + lon)) +
+          '">Копировать GPS</button>' +
+          '<button type="button" class="map-popup-edit ghost" data-map-nav="' +
+            escapeAttr(lat + "," + lon) +
+          '">Маршрут</button>' +
+        "</div>" +
+        '<button type="button" class="map-popup-edit" data-map-edit="' +
+          escapeAttr(it.id) +
+        '">Редактировать</button>'
       );
     }
 
@@ -8028,7 +8728,8 @@
         geoItems.length + " точек · " +
         zoneN + " зон · " +
         critCount + " в 50м · " +
-        spaceCount + " ближе 25м";
+        spaceCount + " ближе 25м" +
+        (userFix() ? " · от вас" : "");
     }
 
     function buildStashMarkers(geoItems, riskById) {
@@ -8038,9 +8739,20 @@
       mapCluster = (L.markerClusterGroup
         ? L.markerClusterGroup({
             showCoverageOnHover: false,
-            maxClusterRadius: 48,
+            maxClusterRadius: 42,
+            disableClusteringAtZoom: 17,
+            spiderfyOnMaxZoom: true,
             animate: false,
-            chunkedLoading: true
+            chunkedLoading: true,
+            iconCreateFunction: function (cluster) {
+              const n = cluster.getChildCount();
+              return L.divIcon({
+                className: "map-cluster-wrap",
+                html: '<div class="map-cluster">' + n + "</div>",
+                iconSize: [36, 36],
+                iconAnchor: [18, 18]
+              });
+            }
           })
         : L.layerGroup()
       );
@@ -8059,14 +8771,13 @@
         const street = itemStreetKey(it);
         const icon = L.divIcon({
           className: "",
-          html: '<div class="' + stashPinClass(risk) + '"></div>',
-          iconSize: [14, 14],
-          iconAnchor: [7, 7]
+          html: stashPinHtml(it, risk),
+          iconSize: [22, 22],
+          iconAnchor: [11, 11]
         });
         const marker = L.marker([lat, lon], { icon: icon });
-        marker.bindPopup(stashPopupHtml(it, risk));
+        marker.bindPopup(stashPopupHtml(it, risk), { maxWidth: 300, className: "map-stash-popup" });
         marker.on("click", () => {
-          marker.openPopup();
           if (els.mapSheetBody) {
             els.mapSheetBody.querySelectorAll(".map-stash-card").forEach((el) => {
               el.classList.toggle("active", el.getAttribute("data-stash-id") === it.id);
@@ -8119,6 +8830,8 @@
       mapSheetRiskById = {};
       mapSheetGeoItems = [];
       mapItemsFingerprint = "";
+      mapUserMarker = null;
+      mapUserCircle = null;
       setMapSheetOpen(false);
     }
 
@@ -8135,6 +8848,9 @@
 
       const fp = itemsGeoFingerprint(geoItems);
       closeOverlay(els.menuOverlay);
+      try {
+        if (tg && typeof tg.expand === "function") tg.expand();
+      } catch (_) { /* ignore */ }
       els.mapScreen.hidden = false;
       els.mapScreen.classList.add("open");
       els.mapScreen.setAttribute("aria-hidden", "false");
@@ -8146,6 +8862,9 @@
         setTimeout(() => {
           if (mapInstance) mapInstance.invalidateSize({ animate: false });
         }, 60);
+        updateMapUserLayer();
+        ensureUserGeo(true);
+        syncMapZoomClass();
         if (!mapCriticalZones.length) {
           const bbox = geoItemsBBox(geoItems);
           const cached = bbox ? getCachedZones(bbox) : null;
@@ -8190,7 +8909,17 @@
       });
       setMapBasemap(mapBaseMode);
       L.control.zoom({ position: "bottomright" }).addTo(mapInstance);
-      mapInstance.on("zoomend", () => refreshZoneLabelsVisibility());
+      mapInstance.on("zoomend", () => {
+        refreshZoneLabelsVisibility();
+        syncMapZoomClass();
+      });
+
+      L.control.scale({
+        metric: true,
+        imperial: false,
+        maxWidth: 120,
+        position: "bottomleft"
+      }).addTo(mapInstance);
 
       // 1) Мгновенно: клады + дистанция 25м (без ожидания OSM)
       const riskQuick = analyzeStashRisks(geoItems, []);
@@ -8203,6 +8932,9 @@
         mapInstance.fitBounds(bounds, { padding: [36, 36], maxZoom: 16, paddingBottomRight: [24, 80] });
       }
       setMapSheetOpen(false);
+      syncMapZoomClass();
+      if (userFix()) setMapUserGeo(userFix());
+      else ensureUserGeo(true);
       setTimeout(() => {
         if (mapInstance && seq === mapOpenSeq) mapInstance.invalidateSize({ animate: false });
       }, 50);
@@ -8402,6 +9134,46 @@
       }
     }
 
+    function confirmDanger(message) {
+      return new Promise((resolve) => {
+        if (tg && typeof tg.showConfirm === "function") {
+          try {
+            tg.showConfirm(message, (ok) => resolve(!!ok));
+            return;
+          } catch (_) { /* fallback */ }
+        }
+        resolve(window.confirm(message));
+      });
+    }
+
+    function updateInventoryActions() {
+      if (els.btnHideInventory) els.btnHideInventory.disabled = !items.length;
+      if (els.btnRestoreInventory) els.btnRestoreInventory.disabled = hiddenCount < 1;
+    }
+
+    async function postInventoryAction(path) {
+      const userId = resolveTelegramUserId();
+      const initData = getTelegramInitData();
+      if (!userId && !initData) return null;
+      const res = await fetch(path, {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify({ userId: userId || 0, initData: initData })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) return null;
+      return data;
+    }
+
+    function applyHiddenIds(nextItems, hiddenIds) {
+      const hidden = {};
+      (hiddenIds || []).forEach((id) => {
+        if (id) hidden[String(id)] = true;
+      });
+      if (!Object.keys(hidden).length) return nextItems;
+      return (nextItems || []).filter((it) => it && it.id && !hidden[String(it.id)]);
+    }
+
     async function deleteItemOnServer(itemId) {
       let userId = resolveTelegramUserId();
       const initData = getTelegramInitData();
@@ -8507,6 +9279,52 @@
         const card = e.target.closest("[data-stash-id]");
         if (!card) return;
         focusStashOnMap(card.getAttribute("data-stash-id") || "", { collapseSheet: true });
+      });
+    }
+
+    if (els.mapScreen) {
+      els.mapScreen.addEventListener("click", (e) => {
+        const copyBtn = e.target.closest("[data-map-copy]");
+        if (copyBtn) {
+          e.preventDefault();
+          e.stopPropagation();
+          copyText(copyBtn.getAttribute("data-map-copy") || "").then((ok) => {
+            showToast(ok ? "GPS скопирован" : "не скопировалось", !ok);
+          });
+          return;
+        }
+        const navBtn = e.target.closest("[data-map-nav]");
+        if (navBtn) {
+          e.preventDefault();
+          e.stopPropagation();
+          const raw = String(navBtn.getAttribute("data-map-nav") || "");
+          const parts = raw.split(",");
+          const lat = Number(parts[0]);
+          const lon = Number(parts[1]);
+          if (isFinite(lat) && isFinite(lon)) {
+            window.open(mapsPointUrl(lat, lon), "_blank", "noopener");
+          }
+          return;
+        }
+        const btn = e.target.closest("[data-map-edit]");
+        if (!btn) return;
+        e.preventDefault();
+        e.stopPropagation();
+        editStashFromMap(btn.getAttribute("data-map-edit") || "");
+      }, true);
+    }
+
+    if (els.btnMapLocate) {
+      els.btnMapLocate.addEventListener("click", () => locateMeOnMap());
+    }
+
+    if (els.mapSheetSort) {
+      els.mapSheetSort.addEventListener("click", (e) => {
+        const btn = e.target.closest("[data-map-sort]");
+        if (!btn) return;
+        mapSheetSort = btn.getAttribute("data-map-sort") || "street";
+        renderMapSheetList(mapSheetGeoItems, mapSheetRiskById);
+        haptic("light");
       });
     }
 
@@ -8621,7 +9439,6 @@
         renderWizardHideChips();
         renderWizardMetaSum();
         haptic("light");
-        if (wizardStep === 2 && !wizardFillOpen && selectedHideChip) wizardGoNext();
       });
     }
 
@@ -8747,6 +9564,50 @@
       });
     });
 
+    if (els.btnHideInventory) {
+      els.btnHideInventory.addEventListener("click", async () => {
+        try {
+          const data = await postInventoryAction("/api/hide-inventory");
+          if (!data) {
+            showToast("не удалось скрыть", true);
+            return;
+          }
+          hiddenCount = typeof data.hiddenCount === "number"
+            ? data.hiddenCount
+            : (data.hiddenIds || []).length;
+          saveItemsPersistent(applyHiddenIds(items, data.hiddenIds));
+          closeOverlay(els.menuOverlay);
+          if (els.mapScreen && !els.mapScreen.hasAttribute("hidden") && typeof closeMapScreen === "function") {
+            closeMapScreen();
+          }
+          renderAll();
+          showToast(hiddenCount ? "скрыто · в базе на месте" : "нечего скрывать");
+          haptic("ok");
+        } catch (_) {
+          showToast("не удалось скрыть", true);
+        }
+      });
+    }
+
+    if (els.btnRestoreInventory) {
+      els.btnRestoreInventory.addEventListener("click", async () => {
+        try {
+          const data = await postInventoryAction("/api/restore-inventory");
+          if (!data) {
+            showToast("не удалось подгрузить", true);
+            return;
+          }
+          closeOverlay(els.menuOverlay);
+          const ok = await pullInventoryFromServer({ silent: true });
+          renderAll();
+          showToast(ok ? "подгружено" : "не удалось подгрузить", !ok);
+          haptic(ok ? "ok" : "light");
+        } catch (_) {
+          showToast("не удалось подгрузить", true);
+        }
+      });
+    }
+
     if (els.appThemeSeg) {
       els.appThemeSeg.addEventListener("click", (e) => {
         const btn = e.target.closest("[data-app-theme]");
@@ -8783,18 +9644,24 @@
       if (btn) {
         const action = btn.getAttribute("data-action");
         if (action === "delete") {
-          items = items.filter((i) => i.id !== id);
-          saveItemsPersistent(items);
-          renderAll();
-          showToast("удалено");
-          haptic("light");
-          deleteItemOnServer(id);
+          confirmDanger("Удалить позицию безвозвратно?").then((ok) => {
+            if (!ok) return;
+            items = items.filter((i) => i.id !== id);
+            saveItemsPersistent(items);
+            renderAll();
+            showToast("удалено");
+            haptic("light");
+            deleteItemOnServer(id);
+          });
           return;
         }
         if (action === "edit") {
           const item = items.find((i) => i.id === id);
           if (!item) return;
           openForm({ editItem: item });
+        }
+        if (action === "map") {
+          showItemOnMap(id);
         }
         return;
       }
@@ -9349,6 +10216,7 @@
         });
         (items || []).forEach((it) => {
           if (!it || !it.id) return;
+          if ((data.hiddenIds || []).indexOf(it.id) >= 0) return;
           const server = byId[it.id];
           if (!server) {
             byId[it.id] = it;
@@ -9365,7 +10233,10 @@
             photos: (server.photos && server.photos.length) ? server.photos : it.photos
           });
         });
-        const next = Object.keys(byId).map((k) => byId[k]);
+        const next = applyHiddenIds(Object.keys(byId).map((k) => byId[k]), data.hiddenIds);
+        hiddenCount = typeof data.hiddenCount === "number"
+          ? data.hiddenCount
+          : (data.hiddenIds || []).length;
         saveItemsPersistent(next);
         if (data.prices && typeof data.prices === "object") {
           WEIGHTS.forEach((w) => {
@@ -9407,6 +10278,7 @@
       updateAdminBadge();
       renderAll();
       prefetchMapZones();
+      ensureUserGeo(true);
     })();
     })();
   </script>

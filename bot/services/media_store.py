@@ -156,6 +156,9 @@ class MediaStore:
             "created_at": raw.get("createdAt") or raw.get("created_at") or (prev or {}).get("created_at"),
             "updated_at": raw.get("updatedAt") or raw.get("updated_at"),
             "photos": photos_meta,
+            "hidden": bool(raw["hidden"])
+            if "hidden" in raw
+            else bool((prev or {}).get("hidden")),
         }
 
     def _split_user_items(
@@ -192,12 +195,16 @@ class MediaStore:
                 incoming_ids.add(rec["id"])
                 new_records.append(rec)
 
+            kept_hidden: list[dict[str, Any]] = []
             for old in mine:
                 oid = str(old.get("id") or "")
                 if oid and oid not in incoming_ids:
+                    if old.get("hidden"):
+                        kept_hidden.append(old)
+                        continue
                     self._remove_item_photos(uid, oid)
 
-            self._save_items(others + new_records)
+            self._save_items(others + new_records + kept_hidden)
             return len(new_records)
 
     def merge_items(self, user_id: int, items: list[dict[str, Any]]) -> int:
@@ -233,6 +240,43 @@ class MediaStore:
             self._save_items(others + kept)
             return removed
 
+    def hide_all_items(self, user_id: int) -> int:
+        with self._lock:
+            uid, others, mine, _prev = self._split_user_items(user_id)
+            hidden = 0
+            next_mine: list[dict[str, Any]] = []
+            for item in mine:
+                rec = dict(item)
+                if not rec.get("hidden"):
+                    rec["hidden"] = True
+                    hidden += 1
+                next_mine.append(rec)
+            self._save_items(others + next_mine)
+            return hidden
+
+    def restore_hidden_items(self, user_id: int) -> int:
+        with self._lock:
+            uid, others, mine, _prev = self._split_user_items(user_id)
+            restored = 0
+            next_mine: list[dict[str, Any]] = []
+            for item in mine:
+                rec = dict(item)
+                if rec.get("hidden"):
+                    rec["hidden"] = False
+                    restored += 1
+                next_mine.append(rec)
+            self._save_items(others + next_mine)
+            return restored
+
+    def hidden_item_ids(self, user_id: int) -> list[str]:
+        with self._lock:
+            _uid, _others, mine, _prev = self._split_user_items(user_id)
+            return [
+                str(item["id"])
+                for item in mine
+                if item.get("hidden") and item.get("id")
+            ]
+
     def ensure_seed(self, user_id: int) -> int:
         """Если у админа пусто — засеять известную сводку (без фото)."""
         with self._lock:
@@ -241,7 +285,7 @@ class MediaStore:
             uid = self._uid(user_id)
             if not uid:
                 return 0
-            if self.list_items(user_id=uid):
+            if self.list_items(user_id=uid, include_hidden=True):
                 return 0
             seed = build_seed_webapp_items(uid)
             if not seed:
@@ -332,12 +376,19 @@ class MediaStore:
             self.ensure_seed(user_id)
             return [self.to_webapp_item(i) for i in self.list_items(user_id=user_id)]
 
-    def list_items(self, user_id: int | None = None) -> list[dict[str, Any]]:
+    def list_items(
+        self,
+        user_id: int | None = None,
+        *,
+        include_hidden: bool = False,
+    ) -> list[dict[str, Any]]:
         with self._lock:
             items = self._load_items()
             if user_id is not None:
                 uid = self._uid(user_id)
                 items = [i for i in items if self._owner_uid(i) == uid]
+            if not include_hidden:
+                items = [i for i in items if not i.get("hidden")]
             items.sort(
                 key=lambda x: str(x.get("updated_at") or x.get("created_at") or ""),
                 reverse=True,

@@ -237,23 +237,68 @@ async def handle_inventory(request: web.Request) -> web.Response:
     if not _is_admin_user(request, user_id):
         return web.json_response({"ok": False, "error": "forbidden"}, status=403)
 
+    return web.json_response(_inventory_payload(media_store, user_id))
+
+
+def _inventory_payload(media_store, user_id: int) -> dict:
     items = media_store.list_webapp_items(user_id)
-    return web.json_response(
-        {
-            "ok": True,
-            "userId": user_id,
-            "count": len(items),
-            "items": items,
-            "prices": {
-                "0.5": 850,
-                "1": 1100,
-                "2": 260,
-                "3": 380,
-                "4": 490,
-                "5": 600,
-            },
-        }
-    )
+    hidden_ids = media_store.hidden_item_ids(user_id)
+    return {
+        "ok": True,
+        "userId": user_id,
+        "count": len(items),
+        "hiddenCount": len(hidden_ids),
+        "hiddenIds": hidden_ids,
+        "items": items,
+        "prices": {
+            "0.5": 850,
+            "1": 1100,
+            "2": 260,
+            "3": 380,
+            "4": 490,
+            "5": 600,
+        },
+    }
+
+
+async def handle_hide_inventory(request: web.Request) -> web.Response:
+    """Скрыть все видимые позиции: в БД остаются, в боте и вебе не показываются."""
+    media_store = request.app["media_store"]
+    try:
+        payload = await request.json()
+    except Exception:
+        payload = {}
+
+    user_id = _resolve_request_user_id(request, payload)
+    if not user_id:
+        return web.json_response({"ok": False, "error": "no_user"}, status=401)
+    if not _is_admin_user(request, user_id):
+        return web.json_response({"ok": False, "error": "forbidden"}, status=403)
+
+    hidden = media_store.hide_all_items(user_id)
+    body = _inventory_payload(media_store, user_id)
+    body["hidden"] = hidden
+    return web.json_response(body)
+
+
+async def handle_restore_inventory(request: web.Request) -> web.Response:
+    """Вернуть скрытые позиции в бот и веб."""
+    media_store = request.app["media_store"]
+    try:
+        payload = await request.json()
+    except Exception:
+        payload = {}
+
+    user_id = _resolve_request_user_id(request, payload)
+    if not user_id:
+        return web.json_response({"ok": False, "error": "no_user"}, status=401)
+    if not _is_admin_user(request, user_id):
+        return web.json_response({"ok": False, "error": "forbidden"}, status=403)
+
+    restored = media_store.restore_hidden_items(user_id)
+    body = _inventory_payload(media_store, user_id)
+    body["restored"] = restored
+    return web.json_response(body)
 
 
 def _resolve_query_user_id(request: web.Request) -> int:
@@ -297,6 +342,10 @@ async def handle_photo(request: web.Request) -> web.Response:
     if not _is_admin_user(request, user_id):
         return web.json_response({"ok": False, "error": "forbidden"}, status=403)
 
+    item = media_store.get_item(item_id, user_id=user_id)
+    if not item or item.get("hidden"):
+        return web.json_response({"ok": False, "error": "not_found"}, status=404)
+
     blob = media_store.resolve_photo_bytes(user_id, item_id, photo_id)
     if not blob:
         return web.json_response({"ok": False, "error": "not_found"}, status=404)
@@ -333,6 +382,8 @@ async def run() -> None:
     app.router.add_post("/api/sync-item", handle_sync_item)
     app.router.add_post("/api/delete-item", handle_delete_item)
     app.router.add_post("/api/inventory", handle_inventory)
+    app.router.add_post("/api/hide-inventory", handle_hide_inventory)
+    app.router.add_post("/api/restore-inventory", handle_restore_inventory)
     app.router.add_get("/api/photo/{item_id}/{photo_id}", handle_photo)
 
     runner = web.AppRunner(app)

@@ -49,6 +49,8 @@ async def run() -> None:
     app.router.add_post("/api/sync-item", app_main.handle_sync_item)
     app.router.add_post("/api/delete-item", app_main.handle_delete_item)
     app.router.add_post("/api/inventory", app_main.handle_inventory)
+    app.router.add_post("/api/hide-inventory", app_main.handle_hide_inventory)
+    app.router.add_post("/api/restore-inventory", app_main.handle_restore_inventory)
     app.router.add_get("/api/photo/{item_id}/{photo_id}", app_main.handle_photo)
 
     runner = web.AppRunner(app)

@@ -135,6 +135,8 @@ def build_test_app(store: MediaStore, local_dev: bool = True) -> web.Application
     app.router.add_post("/api/sync-item", app_main.handle_sync_item)
     app.router.add_post("/api/delete-item", app_main.handle_delete_item)
     app.router.add_post("/api/inventory", app_main.handle_inventory)
+    app.router.add_post("/api/hide-inventory", app_main.handle_hide_inventory)
+    app.router.add_post("/api/restore-inventory", app_main.handle_restore_inventory)
     app.router.add_get("/api/photo/{item_id}/{photo_id}", app_main.handle_photo)
     return app
 
@@ -212,6 +214,24 @@ def test_media_store(suite: Suite, tmp: Path) -> None:
     suite.check("point delete removes item+photos, not others",
                 removed == 1 and a_ids == {"a1", "a3"} and b_ok and folder_gone,
                 f"removed={removed} A={sorted(a_ids)} B_ok={b_ok} folder_gone={folder_gone}",
+                (time.perf_counter() - t0) * 1000)
+
+    t0 = time.perf_counter()
+    hidden_n = store.hide_all_items(ADMIN_A)
+    visible = {i["id"] for i in store.list_items(ADMIN_A)}
+    stored = {i["id"] for i in store.list_items(ADMIN_A, include_hidden=True)}
+    hidden_ids = set(store.hidden_item_ids(ADMIN_A))
+    suite.check("hide all is visual only",
+                hidden_n == 2 and visible == set() and stored == {"a1", "a3"} and hidden_ids == {"a1", "a3"},
+                f"hidden={hidden_n} visible={sorted(visible)} stored={sorted(stored)}",
+                (time.perf_counter() - t0) * 1000)
+
+    t0 = time.perf_counter()
+    restored_n = store.restore_hidden_items(ADMIN_A)
+    visible = {i["id"] for i in store.list_items(ADMIN_A)}
+    suite.check("restore hidden items",
+                restored_n == 2 and visible == {"a1", "a3"} and store.hidden_item_ids(ADMIN_A) == [],
+                f"restored={restored_n} visible={sorted(visible)}",
                 (time.perf_counter() - t0) * 1000)
 
     t0 = time.perf_counter()
@@ -439,6 +459,28 @@ async def test_http(suite: Suite, tmp: Path) -> None:
                     (time.perf_counter() - t0) * 1000)
 
         t0 = time.perf_counter()
+        res = await client.post("/api/hide-inventory", json={"userId": ADMIN_A})
+        hide_body = await res.json()
+        inv_a = await (await client.post("/api/inventory", json={"userId": ADMIN_A})).json()
+        a_ids = {i["id"] for i in inv_a.get("items") or []}
+        hidden_ids = set(inv_a.get("hiddenIds") or [])
+        photo_hidden = await client.get(f"/api/photo/http_a1/p1?userId={ADMIN_A}")
+        suite.check("POST /api/hide-inventory is visual only",
+                    res.status == 200 and "http_a1" not in a_ids and "http_a1" in hidden_ids and photo_hidden.status == 404,
+                    f"A={sorted(a_ids)} hidden={sorted(hidden_ids)} photo={photo_hidden.status} body={hide_body}",
+                    (time.perf_counter() - t0) * 1000)
+
+        t0 = time.perf_counter()
+        res = await client.post("/api/restore-inventory", json={"userId": ADMIN_A})
+        restore_body = await res.json()
+        inv_a = await (await client.post("/api/inventory", json={"userId": ADMIN_A})).json()
+        a_ids = {i["id"] for i in inv_a.get("items") or []}
+        suite.check("POST /api/restore-inventory",
+                    res.status == 200 and "http_a1" in a_ids and not (inv_a.get("hiddenIds") or []),
+                    f"A={sorted(a_ids)} hidden={inv_a.get('hiddenIds')} body={restore_body}",
+                    (time.perf_counter() - t0) * 1000)
+
+        t0 = time.perf_counter()
         res = await client.post("/api/sync-items", json={
             "userId": ADMIN_A,
             "replace": True,
@@ -658,6 +700,11 @@ def test_client_static(suite: Suite) -> None:
                 "/api/sync-item" in html, "syncItemToServer present")
     suite.check("client has /api/delete-item",
                 "/api/delete-item" in html, "deleteItemOnServer present")
+    suite.check("client has hide/restore inventory",
+                "/api/hide-inventory" in html and "/api/restore-inventory" in html,
+                "visual hide + restore")
+    suite.check("single delete asks confirmation",
+                "Удалить позицию безвозвратно?" in html, "confirmDanger on card delete")
     suite.check("client does not send replace:true",
                 "replace: true" not in html and '"replace": true' not in html,
                 "no full-replace flag in client")
