@@ -87,7 +87,7 @@
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
-    html[data-theme="dark"] input,
+    html[data-theme="dark"] input:not([type="file"]):not([type="hidden"]):not([type="checkbox"]):not([type="radio"]),
     html[data-theme="dark"] select,
     html[data-theme="dark"] textarea,
     html[data-theme="dark"] .chip,
@@ -115,7 +115,7 @@
       border-color: var(--line);
     }
 
-    html[data-theme="dark"] input,
+    html[data-theme="dark"] input:not([type="file"]):not([type="hidden"]):not([type="checkbox"]):not([type="radio"]),
     html[data-theme="dark"] select,
     html[data-theme="dark"] textarea,
     html[data-theme="dark"] .tpl-add input,
@@ -743,7 +743,56 @@
       justify-content: center;
     }
 
-    .overlay.open { display: flex; }
+    .overlay.open { display: flex !important; }
+
+    /* Failsafe: keep gate/camera/gallery out of document flow even if later CSS is skipped. */
+    .hidden { display: none !important; }
+
+    .access-gate,
+    .stage,
+    .gallery {
+      display: none;
+      position: fixed;
+      inset: 0;
+    }
+
+    .access-gate {
+      z-index: 10000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .stage {
+      z-index: 300;
+      flex-direction: column;
+      background: #000;
+    }
+
+    .gallery {
+      z-index: 350;
+      flex-direction: column;
+      background: #0c0d10;
+    }
+
+    .access-gate.show,
+    .stage.open,
+    .gallery.open {
+      display: flex !important;
+    }
+
+    .camera-fallback {
+      position: fixed !important;
+      left: -9999px !important;
+      top: 0 !important;
+      width: 0 !important;
+      height: 0 !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+      overflow: hidden !important;
+      background: transparent !important;
+      border: 0 !important;
+      color: transparent !important;
+    }
 
     .sheet {
       width: 100%;
@@ -1435,7 +1484,7 @@
     }
 
     .map-screen.open {
-      display: flex;
+      display: flex !important;
     }
 
     .map-top {
@@ -1898,15 +1947,15 @@
     }
 
     .seg button.active {
-      background: var(--accent-dim);
-      color: var(--ink);
-      box-shadow: inset 0 0 0 1px var(--line-strong);
+      background: var(--ink);
+      color: var(--on-ink);
+      box-shadow: none;
     }
 
     html[data-theme="dark"] .seg button.active {
-      background: #2c3040;
-      color: #f6f7fb;
-      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+      background: #eef0f5;
+      color: #111318;
+      box-shadow: none;
     }
 
     .stamp-preview {
@@ -2632,11 +2681,11 @@
   </style>
 </head>
 <body>
-  <div class="access-gate" id="accessGate" aria-hidden="true">
+  <div class="access-gate" id="accessGate" hidden aria-hidden="true">
     <div class="access-card">
       <div class="mark">✦</div>
       <h2 id="accessTitle">доступ</h2>
-      <p id="accessText">проверка…</p>
+      <p id="accessText"></p>
     </div>
   </div>
 
@@ -2683,7 +2732,7 @@
   </div>
 
   <!-- Add / edit form -->
-  <div class="overlay" id="formOverlay">
+  <div class="overlay" id="formOverlay" hidden>
     <div class="sheet" role="dialog" aria-labelledby="formTitle">
       <div class="sheet-handle"></div>
       <div class="sheet-head">
@@ -2808,7 +2857,7 @@
   </div>
 
   <!-- Menu -->
-  <div class="overlay" id="menuOverlay">
+  <div class="overlay" id="menuOverlay" hidden>
     <div class="sheet">
       <div class="sheet-handle"></div>
       <div class="sheet-head">
@@ -2864,7 +2913,7 @@
   </div>
 
   <!-- Settings -->
-  <div class="overlay" id="settingsOverlay">
+  <div class="overlay" id="settingsOverlay" hidden>
     <div class="sheet">
       <div class="sheet-handle"></div>
       <div class="sheet-head">
@@ -2905,7 +2954,7 @@
   </div>
 
   <!-- MAP -->
-  <div class="map-screen" id="mapScreen" aria-hidden="true">
+  <div class="map-screen" id="mapScreen" hidden aria-hidden="true">
     <div class="map-top">
       <div>
         <h2>Карта кладов</h2>
@@ -2950,7 +2999,7 @@
   </div>
 
   <!-- FULLSCREEN STATIC STAGE -->
-  <div class="stage mode-camera" id="stage" aria-hidden="true">
+  <div class="stage mode-camera" id="stage" hidden aria-hidden="true">
     <div class="stage-viewport" id="stageViewport">
       <div class="stage-idle" id="stageIdle">
         <div>
@@ -3028,7 +3077,7 @@
   </div>
 
   <!-- FULLSCREEN ITEM GALLERY -->
-  <div class="gallery" id="gallery" aria-hidden="true">
+  <div class="gallery" id="gallery" hidden aria-hidden="true">
     <div class="gallery-top">
       <div>
         <div class="gallery-meta" id="galleryMeta">#photo</div>
@@ -4725,6 +4774,7 @@
         );
       }).join("");
 
+      els.gallery.hidden = false;
       els.gallery.classList.add("open");
       els.gallery.setAttribute("aria-hidden", "false");
       setVerticalSwipes(false);
@@ -4741,6 +4791,7 @@
       galleryDragX = 0;
       galleryDragging = false;
       els.gallery.classList.remove("open");
+      els.gallery.hidden = true;
       els.gallery.setAttribute("aria-hidden", "true");
       els.galleryTrack.innerHTML = "";
       els.galleryDots.innerHTML = "";
@@ -4771,12 +4822,14 @@
 
     function openOverlay(el) {
       if (document.body.classList.contains("access-denied")) return;
+      el.hidden = false;
       el.classList.add("open");
       if (tg && tg.BackButton) tg.BackButton.show();
     }
 
     function closeOverlay(el) {
       el.classList.remove("open");
+      el.hidden = true;
       if (
         tg &&
         tg.BackButton &&
@@ -6368,6 +6421,7 @@
       lockBodyScroll();
       setVerticalSwipes(false);
       requestStageFullscreen();
+      els.stage.hidden = false;
       els.stage.classList.add("open");
       els.stage.setAttribute("aria-hidden", "false");
       updateDrawButtons();
@@ -6404,6 +6458,7 @@
       resetDrawView();
       editingPhotoIdx = null;
       els.stage.classList.remove("open", "streaming");
+      els.stage.hidden = true;
       els.stage.setAttribute("aria-hidden", "true");
       els.stageImage.removeAttribute("src");
       els.stageImage.classList.add("hidden");
@@ -6434,7 +6489,7 @@
       }
       try {
         stopCamera();
-        mediaStream = await navigator.mediaDevices.getUserMedia({
+        const mediaPromise = navigator.mediaDevices.getUserMedia({
           audio: false,
           video: {
             facingMode: { ideal: "environment" },
@@ -6442,6 +6497,18 @@
             height: { ideal: 1080 }
           }
         });
+        mediaPromise.catch(() => {});
+        mediaStream = await Promise.race([
+          mediaPromise,
+          new Promise((_, reject) => {
+            setTimeout(() => reject(new Error("camera-timeout")), 8000);
+          })
+        ]);
+        mediaPromise.then((stream) => {
+          if (stream && els.stageVideo.srcObject !== stream) {
+            stream.getTracks().forEach((track) => track.stop());
+          }
+        }).catch(() => {});
         els.stageVideo.srcObject = mediaStream;
         await els.stageVideo.play();
         els.stage.classList.add("streaming");
@@ -7892,6 +7959,7 @@
 
       const fp = itemsGeoFingerprint(geoItems);
       closeOverlay(els.menuOverlay);
+      els.mapScreen.hidden = false;
       els.mapScreen.classList.add("open");
       els.mapScreen.setAttribute("aria-hidden", "false");
       if (tg && tg.BackButton) tg.BackButton.show();
@@ -7991,6 +8059,7 @@
 
     function closeMapScreen() {
       els.mapScreen.classList.remove("open");
+      els.mapScreen.hidden = true;
       els.mapScreen.setAttribute("aria-hidden", "true");
       // Карту оставляем в памяти для мгновенного повторного открытия.
       // Зоны продолжают грузиться в фоне и кэшируются.
@@ -8808,6 +8877,7 @@
           stageOpen = true;
           lockBodyScroll();
           setVerticalSwipes(false);
+          els.stage.hidden = false;
           els.stage.classList.add("open");
           els.stage.setAttribute("aria-hidden", "false");
           setStageMode("camera");
@@ -8973,20 +9043,28 @@
 
     /* ── Init ── */
 
-    function showAccessGate(title, text) {
+    function showAccessGate(title, text, options) {
+      options = options || {};
       const gate = $("accessGate");
       if (!gate) return;
       $("accessTitle").textContent = title;
       $("accessText").textContent = text;
+      gate.hidden = false;
       gate.classList.add("show");
       gate.setAttribute("aria-hidden", "false");
-      document.body.classList.add("access-denied", "stage-lock");
+      if (options.loading) {
+        document.body.classList.add("stage-lock");
+        document.body.classList.remove("access-denied");
+      } else {
+        document.body.classList.add("access-denied", "stage-lock");
+      }
     }
 
     function hideAccessGate() {
       const gate = $("accessGate");
       if (!gate) return;
       gate.classList.remove("show");
+      gate.hidden = true;
       gate.setAttribute("aria-hidden", "true");
       document.body.classList.remove("access-denied", "stage-lock");
     }
@@ -9004,66 +9082,73 @@
     }
 
     async function ensureAdminAccess() {
-      await waitForTelegramAuth();
-      let userId = resolveTelegramUserId();
-      const initData = getTelegramInitData();
-      const isLocalHost =
-        location.hostname === "localhost" ||
-        location.hostname === "127.0.0.1" ||
-        location.hostname === "[::1]";
-
-      // Локальный тест в браузере без Telegram WebApp
-      if (!userId && !initData && isLocalHost) {
-        try {
-          const params = new URLSearchParams(location.search);
-          const fromQuery = Number(params.get("userId") || 0) || 0;
-          userId = fromQuery || Number(localStorage.getItem(STORAGE_TG_UID) || 0) || 8647494349;
-          localStorage.setItem(STORAGE_TG_UID, String(userId));
-        } catch (_) {
-          userId = 8647494349;
-        }
-      }
-
-      if (!userId && !initData) {
-        showAccessGate("нет доступа", "открой Mini App из бота");
-        return false;
-      }
-
+      let loadingTimer = setTimeout(() => {
+        showAccessGate("доступ", "проверка…", { loading: true });
+      }, 400);
       try {
-        const res = await fetch("/api/auth", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-Telegram-Init-Data": initData
-          },
-          body: JSON.stringify({ userId: userId || 0, initData: initData })
-        });
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok || !data.ok || !data.admin) {
-          const uid = data.userId || userId || 0;
-          let hint = "открой Mini App из бота";
-          if (data.error === "forbidden" && uid) {
-            hint = "только admin · id " + uid;
-          } else if (data.error === "forbidden") {
-            hint = "только admin";
-          } else if (uid && !getTelegramInitData()) {
-            hint = "нет initData · открой из бота";
+        await waitForTelegramAuth();
+        let userId = resolveTelegramUserId();
+        const initData = getTelegramInitData();
+        const isLocalHost =
+          location.hostname === "localhost" ||
+          location.hostname === "127.0.0.1" ||
+          location.hostname === "[::1]";
+
+        // Локальный тест в браузере без Telegram WebApp
+        if (!userId && !initData && isLocalHost) {
+          try {
+            const params = new URLSearchParams(location.search);
+            const fromQuery = Number(params.get("userId") || 0) || 0;
+            userId = fromQuery || Number(localStorage.getItem(STORAGE_TG_UID) || 0) || 8647494349;
+            localStorage.setItem(STORAGE_TG_UID, String(userId));
+          } catch (_) {
+            userId = 8647494349;
           }
-          showAccessGate("нет доступа", hint);
+        }
+
+        if (!userId && !initData) {
+          showAccessGate("нет доступа", "открой Mini App из бота");
           return false;
         }
-        if (data.userId) {
-          try { localStorage.setItem(STORAGE_TG_UID, String(data.userId)); } catch (_) { /* ignore */ }
+
+        try {
+          const res = await fetch("/api/auth", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-Telegram-Init-Data": initData
+            },
+            body: JSON.stringify({ userId: userId || 0, initData: initData })
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok || !data.ok || !data.admin) {
+            const uid = data.userId || userId || 0;
+            let hint = "открой Mini App из бота";
+            if (data.error === "forbidden" && uid) {
+              hint = "только admin · id " + uid;
+            } else if (data.error === "forbidden") {
+              hint = "только admin";
+            } else if (uid && !getTelegramInitData()) {
+              hint = "нет initData · открой из бота";
+            }
+            showAccessGate("нет доступа", hint);
+            return false;
+          }
+          if (data.userId) {
+            try { localStorage.setItem(STORAGE_TG_UID, String(data.userId)); } catch (_) { /* ignore */ }
+          }
+          hideAccessGate();
+          if (data.localDev) {
+            isLocalDevSession = true;
+            showToast("local dev · " + data.userId);
+          }
+          return true;
+        } catch (_) {
+          showAccessGate("нет доступа", "сервер недоступен");
+          return false;
         }
-        hideAccessGate();
-        if (data.localDev) {
-          isLocalDevSession = true;
-          showToast("local dev · " + data.userId);
-        }
-        return true;
-      } catch (_) {
-        showAccessGate("нет доступа", "сервер недоступен");
-        return false;
+      } finally {
+        clearTimeout(loadingTimer);
       }
     }
 
@@ -9126,7 +9211,6 @@
     }
 
     (async function boot() {
-      showAccessGate("доступ", "проверка…");
       const allowed = await ensureAdminAccess();
       if (!allowed) return;
 
