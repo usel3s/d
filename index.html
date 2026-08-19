@@ -183,8 +183,7 @@
     html[data-theme="dark"] .note-chip.active,
     html[data-theme="dark"] .hide-chip.active,
     html[data-theme="dark"] .loc-card.active,
-    html[data-theme="dark"] .tpl-tab.active,
-    html[data-theme="dark"] .seg button.active {
+    html[data-theme="dark"] .tpl-tab.active {
       background: #2c3040;
       color: #f6f7fb;
       border-color: rgba(255, 255, 255, 0.22);
@@ -1854,7 +1853,10 @@
     .menu-item .hint { color: var(--ink-soft); font-size: 12px; font-weight: 700; }
 
     .menu-group {
-      padding: 12px 4px 4px;
+      padding: 12px;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      background: var(--surface-card);
     }
 
     .menu-group-label {
@@ -1885,11 +1887,26 @@
       font-size: 13px;
       font-weight: 800;
       cursor: pointer;
+      appearance: none;
+      -webkit-appearance: none;
+      margin: 0;
+      line-height: 1.2;
+    }
+
+    .seg button:focus {
+      outline: none;
     }
 
     .seg button.active {
-      background: var(--ink);
-      color: var(--on-ink);
+      background: var(--accent-dim);
+      color: var(--ink);
+      box-shadow: inset 0 0 0 1px var(--line-strong);
+    }
+
+    html[data-theme="dark"] .seg button.active {
+      background: #2c3040;
+      color: #f6f7fb;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
     }
 
     .stamp-preview {
@@ -1956,6 +1973,49 @@
       margin-right: 6px;
     }
 
+    .stamp-preview-brand {
+      position: relative;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid rgba(17, 17, 20, 0.08);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .stamp-preview[data-variant="dark"] .stamp-preview-brand {
+      border-top-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .stamp-preview-mark {
+      width: 18px;
+      height: 18px;
+      border-radius: 5px;
+      background: #111114;
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+    }
+
+    .stamp-preview-mark svg {
+      width: 11px;
+      height: 11px;
+      color: #fff;
+    }
+
+    .stamp-preview[data-variant="dark"] .stamp-preview-mark {
+      background: #f6f7fb;
+      box-shadow: none;
+    }
+
+    .stamp-preview[data-variant="dark"] .stamp-preview-mark svg {
+      color: #111114;
+    }
+
     .stamp-preview[data-variant="dark"] .stamp-preview-lines em {
       color: #a8b0c0;
     }
@@ -1997,7 +2057,7 @@
     .access-gate {
       position: fixed;
       inset: 0;
-      z-index: 500;
+      z-index: 10000;
       display: none;
       align-items: center;
       justify-content: center;
@@ -2008,6 +2068,15 @@
     }
 
     .access-gate.show { display: flex; }
+
+    body.access-denied .app,
+    body.access-denied .fab-bar,
+    body.access-denied .overlay,
+    body.access-denied .map-screen,
+    body.access-denied .stage,
+    body.access-denied .gallery {
+      display: none !important;
+    }
 
     .access-card {
       width: min(100%, 360px);
@@ -2776,6 +2845,12 @@
               <div><em>#tape</em> Красная</div>
               <div><em>#gps</em> 55.7512, 37.6184</div>
               <div><em>#addr</em> Тверская ул.</div>
+            </div>
+            <div class="stamp-preview-brand">
+              <span class="stamp-preview-mark" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.8c1.1 2.5 2.9 4.3 5.4 5.4-2.5 1.1-4.3 2.9-5.4 5.4-1.1-2.5-2.9-4.3-5.4-5.4 2.5-1.1 4.3-2.9 5.4-5.4z"/></svg>
+              </span>
+              <span>Дзен</span>
             </div>
           </div>
         </div>
@@ -4695,6 +4770,7 @@
     /* ── Overlays ── */
 
     function openOverlay(el) {
+      if (document.body.classList.contains("access-denied")) return;
       el.classList.add("open");
       if (tg && tg.BackButton) tg.BackButton.show();
     }
@@ -4831,6 +4907,35 @@
       ctx.closePath();
     }
 
+    function drawDzenSparklePath(ctx, cx, cy, outerR, innerR) {
+      ctx.beginPath();
+      for (let i = 0; i < 8; i++) {
+        const r = i % 2 === 0 ? outerR : innerR;
+        const a = (Math.PI / 4) * i - Math.PI / 2;
+        const px = cx + Math.cos(a) * r;
+        const py = cy + Math.sin(a) * r;
+        if (i === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      }
+      ctx.closePath();
+    }
+
+    function drawDzenMark(ctx, x, y, size, dark) {
+      const radius = Math.max(4, size * 0.26);
+      const squareFill = dark ? "#f6f7fb" : "#111114";
+      const starFill = dark ? "#111114" : "#ffffff";
+
+      ctx.fillStyle = squareFill;
+      roundRectPath(ctx, x, y, size, size, radius);
+      ctx.fill();
+
+      const cx = x + size / 2;
+      const cy = y + size / 2;
+      ctx.fillStyle = starFill;
+      drawDzenSparklePath(ctx, cx, cy, size * 0.24, size * 0.075);
+      ctx.fill();
+    }
+
     function paintStamp(ctx, width, height, meta) {
       const rows = buildStampRows(meta);
       if (!rows.length) return;
@@ -4868,6 +4973,7 @@
       const fontSize = Math.max(13, Math.round(width * 0.026));
       const tagSize = Math.max(11, Math.round(fontSize * 0.82));
       const lineH = Math.round(fontSize * 1.42);
+      const brandRowH = Math.round(fontSize * 1.55);
       const radius = Math.max(16, Math.round(width * 0.034));
       const maxTextW = width - margin * 2 - padX * 2 - 8;
 
@@ -4889,7 +4995,7 @@
       });
 
       const boxW = width - margin * 2;
-      const boxH = padY * 2 + wrapped.length * lineH + 8;
+      const boxH = padY * 2 + wrapped.length * lineH + 8 + brandRowH;
       const boxX = margin;
       const boxY = height - margin - boxH;
 
@@ -4965,6 +5071,23 @@
           ctx.fillText(row.value, textX, y, maxTextW);
         }
       });
+
+      const brandY = boxY + padY + wrapped.length * lineH + 2;
+      ctx.strokeStyle = palette.split;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(textX, brandY);
+      ctx.lineTo(boxX + boxW - padX, brandY);
+      ctx.stroke();
+
+      const markSize = Math.max(14, Math.round(fontSize * 1.05));
+      const brandTextSize = Math.max(12, Math.round(fontSize * 0.9));
+      const brandTop = brandY + Math.round(brandRowH * 0.22);
+      drawDzenMark(ctx, textX, brandTop, markSize, dark);
+
+      ctx.font = "800 " + brandTextSize + "px Manrope, Segoe UI, sans-serif";
+      ctx.fillStyle = palette.value;
+      ctx.fillText("Дзен", textX + markSize + Math.round(fontSize * 0.34), brandTop + markSize * 0.18);
 
       ctx.restore();
     }
@@ -8857,7 +8980,7 @@
       $("accessText").textContent = text;
       gate.classList.add("show");
       gate.setAttribute("aria-hidden", "false");
-      document.body.classList.add("stage-lock");
+      document.body.classList.add("access-denied", "stage-lock");
     }
 
     function hideAccessGate() {
@@ -8865,11 +8988,23 @@
       if (!gate) return;
       gate.classList.remove("show");
       gate.setAttribute("aria-hidden", "true");
-      document.body.classList.remove("stage-lock");
+      document.body.classList.remove("access-denied", "stage-lock");
+    }
+
+    async function waitForTelegramAuth(maxMs) {
+      maxMs = maxMs || 3000;
+      initTelegram();
+      const started = Date.now();
+      while (Date.now() - started < maxMs) {
+        if (getTelegramInitData() && resolveTelegramUserId()) return true;
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        initTelegram();
+      }
+      return !!(getTelegramInitData() || resolveTelegramUserId());
     }
 
     async function ensureAdminAccess() {
-      initTelegram();
+      await waitForTelegramAuth();
       let userId = resolveTelegramUserId();
       const initData = getTelegramInitData();
       const isLocalHost =
@@ -8905,7 +9040,16 @@
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok || !data.ok || !data.admin) {
-          showAccessGate("нет доступа", "только admin");
+          const uid = data.userId || userId || 0;
+          let hint = "открой Mini App из бота";
+          if (data.error === "forbidden" && uid) {
+            hint = "только admin · id " + uid;
+          } else if (data.error === "forbidden") {
+            hint = "только admin";
+          } else if (uid && !getTelegramInitData()) {
+            hint = "нет initData · открой из бота";
+          }
+          showAccessGate("нет доступа", hint);
           return false;
         }
         if (data.userId) {
@@ -8982,6 +9126,7 @@
     }
 
     (async function boot() {
+      showAccessGate("доступ", "проверка…");
       const allowed = await ensureAdminAccess();
       if (!allowed) return;
 
@@ -9002,7 +9147,7 @@
       renderAll();
       prefetchMapZones();
     })();
-  })();
+    })();
   </script>
 </body>
 </html>
