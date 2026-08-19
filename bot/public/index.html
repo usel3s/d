@@ -2365,7 +2365,7 @@
       overflow: hidden;
       margin: 0 10px 10px;
       border-radius: 16px;
-      padding: 8px 12px 8px 14px;
+      padding: 10px 14px 10px 16px;
       background: rgba(255, 255, 255, 0.96);
       border: 1px solid rgba(15, 18, 22, 0.15);
       color: #111318;
@@ -2400,21 +2400,25 @@
     }
 
     .stamp-preview-brand {
-      display: inline-flex;
+      display: flex;
       align-items: center;
-      gap: 5px;
-      margin-left: 8px;
-      font-size: 11px;
+      justify-content: flex-end;
+      gap: 6px;
+      min-height: 22px;
+      margin-bottom: 2px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid rgba(15, 18, 22, 0.14);
+      font-size: 12px;
       font-weight: 700;
       letter-spacing: 0.01em;
       line-height: 1;
       color: #111318;
       white-space: nowrap;
-      flex-shrink: 0;
     }
 
     .stamp-preview[data-variant="dark"] .stamp-preview-brand {
       color: #f5f7fa;
+      border-bottom-color: rgba(255, 255, 255, 0.12);
     }
 
     .stamp-preview-lines {
@@ -2440,7 +2444,7 @@
     }
 
     .stamp-preview-row.is-first {
-      grid-template-columns: 4.7em minmax(0, 1fr) auto;
+      grid-template-columns: 4.7em minmax(0, 1fr);
     }
 
     .stamp-preview[data-variant="dark"] .stamp-preview-row {
@@ -3347,15 +3351,15 @@
             <div class="stamp-preview" id="stampPreview" data-variant="light">
               <span class="stamp-preview-tape" aria-hidden="true"></span>
               <div class="stamp-preview-lines">
+                <div class="stamp-preview-brand">
+                  <span class="stamp-preview-mark" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.2Q12 12 21.8 12Q12 12 12 21.8Q12 12 2.2 12Q12 12 12 2.2Z"/></svg>
+                  </span>
+                  Дзен
+                </div>
                 <div class="stamp-preview-row is-first">
                   <span class="stamp-tag">#tape</span>
                   <span class="stamp-val">Белая</span>
-                  <span class="stamp-preview-brand">
-                    <span class="stamp-preview-mark" aria-hidden="true">
-                      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.2Q12 12 21.8 12Q12 12 12 21.8Q12 12 2.2 12Q12 12 12 2.2Z"/></svg>
-                    </span>
-                    Дзен
-                  </span>
                 </div>
                 <div class="stamp-preview-row"><span class="stamp-tag">#location</span><span class="stamp-val">Прикоп</span></div>
                 <div class="stamp-preview-row"><span class="stamp-tag">#note</span><span class="stamp-val">точно по метке вдавлен 1–2 см</span></div>
@@ -5493,13 +5497,32 @@
     }
 
     function wrapTextLines(ctx, text, maxWidth) {
-      const words = String(text || "").split(/\s+/).filter(Boolean);
-      if (!words.length) return [""];
+      const raw = String(text || "").trim();
+      if (!raw) return [""];
+      const maxW = Math.max(12, Number(maxWidth) || 0);
+      const words = [];
+      String(raw).split(/\s+/).forEach((word) => {
+        if (ctx.measureText(word).width <= maxW) {
+          words.push(word);
+          return;
+        }
+        let chunk = "";
+        Array.from(word).forEach((ch) => {
+          const test = chunk + ch;
+          if (chunk && ctx.measureText(test).width > maxW) {
+            words.push(chunk);
+            chunk = ch;
+          } else {
+            chunk = test;
+          }
+        });
+        if (chunk) words.push(chunk);
+      });
       const lines = [];
       let line = "";
       words.forEach((word) => {
         const test = line ? line + " " + word : word;
-        if (ctx.measureText(test).width > maxWidth && line) {
+        if (line && ctx.measureText(test).width > maxW) {
           lines.push(line);
           line = word;
         } else {
@@ -5507,7 +5530,7 @@
         }
       });
       if (line) lines.push(line);
-      return lines;
+      return lines.length ? lines : [""];
     }
 
     function buildStampRows(meta) {
@@ -5586,34 +5609,34 @@
         : {
             bg: "rgba(255,255,255,0.96)",
             border: "rgba(15,18,22,0.15)",
-            shadow: "rgba(0,0,0,0.10)",
+            shadow: "rgba(0,0,0,0.18)",
             label: "rgba(15,18,22,0.48)",
             value: "#111318",
             brand: "#111318"
           };
 
-      const valueFontSize = Math.max(
-        10,
-        Math.min(13, Math.round(width * 0.011))
-      );
-      const labelFontSize = Math.round(valueFontSize * 0.86);
-      const brandTextSize = Math.round(valueFontSize * 0.9);
+      // Как раньше: кегль от ширины кадра, без потолка в 13px —
+      // иначе на 960px фото метка схлопывалась.
+      const fontSize = Math.max(14, Math.round(width * 0.026));
+      const labelFontSize = Math.max(12, Math.round(fontSize * 0.82));
+      const brandTextSize = Math.max(13, Math.round(fontSize * 0.92));
       const fontFamily = "Manrope, Segoe UI, sans-serif";
       const labelFont = "500 " + labelFontSize + "px " + fontFamily;
-      const valueFont = "600 " + valueFontSize + "px " + fontFamily;
+      const valueFont = "700 " + fontSize + "px " + fontFamily;
       const brandFont = "700 " + brandTextSize + "px " + fontFamily;
-      const rowH = Math.round(valueFontSize * 1.7);
+      const rowH = Math.round(fontSize * 1.48);
 
       const outerMargin = Math.max(10, Math.round(width * 0.028));
       const boxW = width - outerMargin * 2;
       const boxX = outerMargin;
-      const markSize = Math.max(12, Math.round(valueFontSize * 1.05));
-      const brandGap = Math.round(valueFontSize * 0.24);
-      const padX = Math.max(14, Math.round(width * 0.032));
-      const padY = Math.max(8, Math.round(valueFontSize * 0.62));
-      const valueGap = Math.max(8, Math.round(valueFontSize * 0.32));
-      const radius = Math.max(14, Math.min(18, Math.round(valueFontSize * 1.05)));
-      const accentInsetY = Math.max(11, Math.min(15, Math.round(valueFontSize * 0.9)));
+      const markSize = Math.max(14, Math.round(fontSize * 1.08));
+      const brandGap = Math.round(fontSize * 0.28);
+      const padX = Math.max(16, Math.round(width * 0.034));
+      const padY = Math.max(12, Math.round(width * 0.022));
+      const valueGap = Math.max(10, Math.round(fontSize * 0.42));
+      const radius = Math.max(16, Math.round(width * 0.034));
+      const accentInsetY = Math.max(12, Math.round(fontSize * 0.72));
+      const accentW = Math.max(4, Math.round(width * 0.011));
 
       ctx.save();
       ctx.textBaseline = "middle";
@@ -5626,42 +5649,42 @@
       rows.forEach((row) => {
         labelColW = Math.max(labelColW, ctx.measureText(row.tag).width);
       });
-      labelColW += Math.round(valueFontSize * 0.35);
+      labelColW += Math.round(fontSize * 0.28);
 
-      const accentW = Math.max(3, Math.round(boxW * 0.005));
+      const valueAvail = Math.max(
+        48,
+        boxW - padX * 2 - accentW - 12 - labelColW - valueGap
+      );
       const layoutRows = [];
-      rows.forEach((row, rowIdx) => {
-        const valueAvail = Math.max(
-          48,
-          boxW - padX * 2 - accentW - 10 - labelColW - valueGap -
-            (rowIdx === 0 ? brandBlockW + 8 : 0)
-        );
+      rows.forEach((row) => {
         ctx.font = valueFont;
         const lines = wrapTextLines(ctx, row.value, valueAvail).slice(0, 2);
         lines.forEach((line, lineIdx) => {
           layoutRows.push({
             tag: lineIdx === 0 ? row.tag : "",
-            value: line,
-            isFirst: rowIdx === 0 && lineIdx === 0
+            value: line
           });
         });
       });
 
-      const boxH = padY * 2 + layoutRows.length * rowH;
-      const boxY = height - outerMargin - boxH;
+      const headerH = Math.max(markSize + 8, Math.round(fontSize * 1.55));
+      const drawH = padY * 2 + headerH + layoutRows.length * rowH;
+      const boxY = height - outerMargin - drawH;
       const textLeft = boxX + padX + accentW + 10;
       const valueLeft = textLeft + labelColW + valueGap;
       const valueRight = boxX + boxW - padX;
-      const dividerX = textLeft - Math.round(valueFontSize * 0.18);
+      const dividerX = textLeft - Math.round(fontSize * 0.18);
       const dividerEnd = valueRight;
       const brandLeft = valueRight - brandBlockW;
-      const brandTop = boxY + padY + rowH / 2 - markSize / 2;
+      const headerMidY = boxY + padY + headerH / 2;
+      const brandTop = headerMidY - markSize / 2;
+      const rowsTop = boxY + padY + headerH;
 
       if (!dark) {
         ctx.shadowColor = palette.shadow;
-        ctx.shadowBlur = 10;
+        ctx.shadowBlur = 12;
         ctx.shadowOffsetX = 0;
-        ctx.shadowOffsetY = 3;
+        ctx.shadowOffsetY = 4;
       } else {
         ctx.shadowColor = "transparent";
         ctx.shadowBlur = 0;
@@ -5670,7 +5693,7 @@
       }
 
       ctx.fillStyle = palette.bg;
-      roundRectPath(ctx, boxX, boxY, boxW, boxH, radius);
+      roundRectPath(ctx, boxX, boxY, boxW, drawH, radius);
       ctx.fill();
 
       ctx.shadowColor = "transparent";
@@ -5679,13 +5702,13 @@
       ctx.shadowOffsetY = 0;
 
       ctx.strokeStyle = palette.border;
-      ctx.lineWidth = 1;
-      roundRectPath(ctx, boxX, boxY, boxW, boxH, radius);
+      ctx.lineWidth = Math.max(1, Math.round(width * 0.002));
+      roundRectPath(ctx, boxX, boxY, boxW, drawH, radius);
       ctx.stroke();
 
-      const accentX = boxX + Math.round(padX * 0.5);
+      const accentX = boxX + Math.round(padX * 0.45);
       const accentY = boxY + accentInsetY;
-      const accentH = Math.max(8, boxH - accentInsetY * 2);
+      const accentH = Math.max(8, drawH - accentInsetY * 2);
       const tape = dark
         ? (tapeHex(meta && meta.tapeColor) || "#F5F7FA")
         : "#111114";
@@ -5693,11 +5716,25 @@
       roundRectPath(ctx, accentX, accentY, accentW, accentH, accentW);
       ctx.fill();
 
+      ctx.textAlign = "left";
+      ctx.textBaseline = "middle";
+      drawDzenMark(ctx, brandLeft, brandTop, markSize);
+      ctx.font = brandFont;
+      ctx.fillStyle = palette.brand;
+      ctx.fillText("Дзен", brandLeft + markSize + brandGap, headerMidY);
+
+      ctx.beginPath();
+      ctx.moveTo(dividerX, rowsTop);
+      ctx.lineTo(dividerEnd, rowsTop);
+      ctx.strokeStyle = dividerColor;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
       layoutRows.forEach((row, i) => {
-        const y = boxY + padY + i * rowH + rowH / 2;
+        const y = rowsTop + i * rowH + rowH / 2;
 
         if (i < layoutRows.length - 1) {
-          const divY = boxY + padY + (i + 1) * rowH;
+          const divY = rowsTop + (i + 1) * rowH;
           ctx.beginPath();
           ctx.moveTo(dividerX, divY);
           ctx.lineTo(dividerEnd, divY);
@@ -5706,32 +5743,16 @@
           ctx.stroke();
         }
 
-        ctx.textAlign = "left";
         if (row.tag) {
           ctx.font = labelFont;
           ctx.fillStyle = palette.label;
           ctx.fillText(row.tag, textLeft, y);
         }
 
-        const rightLimit = row.isFirst ? brandLeft - 8 : valueRight;
-        const valueMaxW = Math.max(24, rightLimit - valueLeft);
-        ctx.textAlign = "left";
         ctx.font = valueFont;
         ctx.fillStyle = palette.value;
-        ctx.fillText(row.value, valueLeft, y, valueMaxW);
+        ctx.fillText(row.value, valueLeft, y);
       });
-
-      ctx.textAlign = "left";
-      ctx.textBaseline = "middle";
-      drawDzenMark(ctx, brandLeft, brandTop, markSize);
-
-      ctx.font = brandFont;
-      ctx.fillStyle = palette.brand;
-      ctx.fillText(
-        "Дзен",
-        brandLeft + markSize + brandGap,
-        boxY + padY + rowH / 2
-      );
 
       ctx.restore();
     }
