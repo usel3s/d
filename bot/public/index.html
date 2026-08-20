@@ -4200,7 +4200,8 @@
         strokes: [],
         final: keepBlob ? finalSrc : "",
         noStamp: !!photo.noStamp,
-        stampBaked: photo.noStamp ? false : !!(photo.stampBaked || keepBlob)
+        stampBaked: photo.noStamp ? false : !!(photo.stampBaked || keepBlob),
+        geo: photo.geo ? freezeGeoFix(photo.geo) : null
       };
     }
 
@@ -4237,7 +4238,8 @@
             strokes: [],
             final: "",
             noStamp: !!p.noStamp,
-            stampBaked: !p.noStamp
+            stampBaked: !p.noStamp,
+            geo: p.geo ? freezeGeoFix(p.geo) : null
           };
         })
       }));
@@ -4257,7 +4259,8 @@
               strokes: [],
               final: "",
               noStamp: !!photos[j].noStamp,
-              stampBaked: !photos[j].noStamp
+              stampBaked: !photos[j].noStamp,
+              geo: photos[j].geo ? freezeGeoFix(photos[j].geo) : null
             };
             changed = true;
           }
@@ -4448,7 +4451,8 @@
           strokes: Array.isArray(photo.strokes) ? photo.strokes : [],
           final: final || raw || "",
           noStamp: !!(photo.noStamp || photo.no_stamp),
-          stampBaked: !!(photo.stampBaked || (url && !isDataUrl(raw) && !isDataUrl(final)))
+          stampBaked: !!(photo.stampBaked || (url && !isDataUrl(raw) && !isDataUrl(final))),
+          geo: photo.geo ? freezeGeoFix(photo.geo) : null
         };
       }
       return null;
@@ -4555,6 +4559,43 @@
       };
     }
 
+    function freezeGeoFix(raw) {
+      const n = normalizeFix(raw);
+      if (!n) return null;
+      return {
+        latitude: n.latitude,
+        longitude: n.longitude,
+        accuracy: n.accuracy,
+        altitude: n.altitude,
+        altitudeAccuracy: n.altitudeAccuracy,
+        heading: n.heading,
+        speed: n.speed,
+        source: n.source,
+        timestamp: n.timestamp,
+        address: n.address || ""
+      };
+    }
+
+    function pickBestGeoSample(samples) {
+      const list = (samples || []).filter(Boolean);
+      if (!list.length) return null;
+      return list.slice().sort((a, b) => {
+        const acc = Number(a.accuracy) - Number(b.accuracy);
+        if (Math.abs(acc) > 0.5) return acc;
+        return Number(b.timestamp || 0) - Number(a.timestamp || 0);
+      })[0];
+    }
+
+    function bestCaptureFix() {
+      const now = Date.now();
+      const recent = geoSamples.filter((s) => now - Number(s.timestamp || 0) <= 2500);
+      const pool = recent.length ? recent : geoSamples.slice();
+      const best = pickBestGeoSample(pool);
+      if (best) return freezeGeoFix(best);
+      if (currentGeo) return freezeGeoFix(currentGeo);
+      return null;
+    }
+
     function haversineM(lat1, lon1, lat2, lon2) {
       const R = 6371000;
       const toRad = (d) => (d * Math.PI) / 180;
@@ -4568,51 +4609,13 @@
     }
 
     function fuseBestSamples() {
-      const good = geoSamples
-        .filter((s) => s.accuracy <= Math.max(GEO_ACCEPTABLE_M, (currentGeo && currentGeo.accuracy) || GEO_ACCEPTABLE_M))
-        .slice()
-        .sort((a, b) => a.accuracy - b.accuracy)
-        .slice(0, 5);
-
-      if (!good.length) return null;
-      if (good.length === 1) return good[0];
-
-      const best = good[0];
-      const cluster = good.filter((s) => haversineM(best.latitude, best.longitude, s.latitude, s.longitude) <= 40);
-      const pool = cluster.length ? cluster : [best];
-      let wSum = 0;
-      let lat = 0;
-      let lon = 0;
-      let acc = Infinity;
-      pool.forEach((s) => {
-        const w = 1 / Math.max(s.accuracy, 1);
-        wSum += w;
-        lat += s.latitude * w;
-        lon += s.longitude * w;
-        acc = Math.min(acc, s.accuracy);
-      });
-
-      return {
-        latitude: lat / wSum,
-        longitude: lon / wSum,
-        accuracy: acc,
-        altitude: best.altitude,
-        altitudeAccuracy: best.altitudeAccuracy,
-        heading: best.heading,
-        speed: best.speed,
-        source: pool.some((p) => p.source !== pool[0].source) ? "fused" : pool[0].source,
-        timestamp: Date.now(),
-        address: currentAddress || ""
-      };
+      return pickBestGeoSample(geoSamples);
     }
 
     function savedEditGeo() {
       if (!editingId) return null;
       const fromPhoto = (formPhotos || []).find(photoHasGeo);
-      if (fromPhoto && fromPhoto.geo) return fromPhoto.geo;
-      const orig = items.find((i) => i.id === editingId);
-      if (orig && orig.geo && isFinite(Number(orig.geo.latitude))) return orig.geo;
-      if (currentGeo && isFinite(Number(currentGeo.latitude))) return currentGeo;
+      if (fromPhoto && fromPhoto.geo) return freezeGeoFix(fromPhoto.geo);
       return null;
     }
 
@@ -4652,7 +4655,7 @@
         n.timestamp >= currentGeo.timestamp;
 
       if (!currentGeo || better || movedFar || similarNewer) {
-        currentGeo = movedFar ? n : (fuseBestSamples() || n);
+        currentGeo = freezeGeoFix(pickBestGeoSample(geoSamples) || n);
         renderGeoUi();
         scheduleAddressLookup();
         saveDraft();
@@ -5122,11 +5125,10 @@
 
     function snapshotGeoForCapture() {
       const frozen = savedEditGeo();
-      if (frozen) return Object.assign({}, frozen);
-      // Watch уже крутится в фоне — не ждём getCurrentPosition на каждый кадр.
+      if (frozen) return frozen;
       if (geoWatchId == null) startBrowserWatch();
       if (!geoReadyForPhoto()) return null;
-      return Object.assign({}, currentGeo, { timestamp: Date.now() });
+      return bestCaptureFix();
     }
 
     /* ── Stats / list ── */
@@ -5781,23 +5783,21 @@
     function stampMetaForPhoto(photo, overrides, originalItem) {
       let geo = null;
       if (photoHasGeo(photo)) {
-        geo = photo.geo;
+        geo = freezeGeoFix(photo.geo);
       } else if (
         originalItem &&
         originalItem.geo &&
         isFinite(Number(originalItem.geo.latitude)) &&
         isFinite(Number(originalItem.geo.longitude))
       ) {
-        geo = originalItem.geo;
-      } else {
-        geo = currentGeo;
+        geo = freezeGeoFix(originalItem.geo);
       }
       let address = "";
       if (geo && geo.address) {
         address = streetOnlyAddress(geo.address);
       } else if (photo && photo.geo && photo.geo.address) {
         address = streetOnlyAddress(photo.geo.address);
-      } else {
+      } else if (geo) {
         address = streetOnlyAddress(currentAddress);
       }
       return currentStampMeta(Object.assign({ geo: geo, address: address }, overrides || {}));
@@ -5806,18 +5806,8 @@
     function buildItemGeo(photos, originalItem) {
       const list = photos || [];
       for (let i = 0; i < list.length; i++) {
-        const g = list[i] && list[i].geo;
-        if (g && isFinite(Number(g.latitude)) && isFinite(Number(g.longitude))) {
-          return {
-            latitude: g.latitude,
-            longitude: g.longitude,
-            accuracy: g.accuracy,
-            altitude: g.altitude,
-            source: g.source,
-            timestamp: g.timestamp,
-            address: g.address || (originalItem && originalItem.geo && originalItem.geo.address) || ""
-          };
-        }
+        const g = freezeGeoFix(list[i] && list[i].geo);
+        if (g) return g;
       }
       if (
         originalItem &&
@@ -5825,18 +5815,9 @@
         isFinite(Number(originalItem.geo.latitude)) &&
         isFinite(Number(originalItem.geo.longitude))
       ) {
-        return Object.assign({}, originalItem.geo);
+        return freezeGeoFix(originalItem.geo);
       }
-      if (!currentGeo) return null;
-      return {
-        latitude: currentGeo.latitude,
-        longitude: currentGeo.longitude,
-        accuracy: currentGeo.accuracy,
-        altitude: currentGeo.altitude,
-        source: currentGeo.source,
-        timestamp: currentGeo.timestamp,
-        address: currentAddress || currentGeo.address || ""
-      };
+      return null;
     }
 
     function savedGeoAvailable(photos, originalItem) {
@@ -5981,7 +5962,9 @@
       const out = [];
       for (let i = 0; i < photos.length; i++) {
         const p = photos[i];
-        const keptGeo = p.geo || (originalItem && originalItem.geo) || null;
+        const keptGeo = photoHasGeo(p)
+          ? freezeGeoFix(p.geo)
+          : (originalItem && originalItem.geo ? freezeGeoFix(originalItem.geo) : null);
         const keepPhoto = (raw, final, stampBaked) => ({
           id: p.id || uid("p"),
           url: p.url || "",
@@ -7229,7 +7212,7 @@
           : (isDataUrl(stageRaw) ? stageRaw : (prev.final || stageRaw)),
         noStamp: !!prev.noStamp,
         stampBaked: !!prev.stampBaked,
-        geo: prev.geo || null
+        geo: prev.geo ? freezeGeoFix(prev.geo) : null
       };
       return true;
     }
@@ -7274,7 +7257,7 @@
 
     async function addQuickPhoto(dataUrl, geoSnap) {
       const compressed = await compressImage(dataUrl, 960, 0.65);
-      const geo = geoSnap || (currentGeo ? Object.assign({}, currentGeo) : null);
+      const geo = geoSnap ? freezeGeoFix(geoSnap) : null;
       formPhotos.push({
         id: uid("p"),
         url: "",
@@ -7297,9 +7280,6 @@
         requireGeoForPhoto();
         return;
       }
-      currentGeo = snap;
-      renderGeoUi();
-      scheduleAddressLookup();
 
       if (formPhotos.length >= MAX_PHOTOS && editingPhotoIdx == null) {
         showToast("max " + MAX_PHOTOS);
@@ -7355,7 +7335,8 @@
         raw: stageRaw,
         strokes: stageStrokes.slice(),
         final: stageRaw,
-        noStamp: false
+        noStamp: false,
+        geo: snapshotGeoForCapture()
       });
       closeStage();
       renderPhotosGrid();
@@ -7750,7 +7731,7 @@
         if (item.geo) {
           formPhotos.forEach((p) => {
             if (p && !photoHasGeo(p)) {
-              p.geo = Object.assign({}, item.geo, { source: item.geo.source || "saved" });
+              p.geo = freezeGeoFix(Object.assign({}, item.geo, { source: item.geo.source || "saved" }));
             }
           });
         }
@@ -9919,8 +9900,6 @@
         els.photoInput.value = "";
         return;
       }
-      currentGeo = snap;
-      renderGeoUi();
       const file = els.photoInput.files && els.photoInput.files[0];
       els.photoInput.value = "";
       if (!file) return;
@@ -9933,6 +9912,7 @@
         const compressed = await compressImage(raw, 960, 0.65);
         if (editingPhotoIdx != null) {
           if (!stageOpen) await openStage({ editIndex: editingPhotoIdx });
+          formPhotos[editingPhotoIdx].geo = snap;
           enterDrawMode(compressed, []);
           haptic("ok");
           return;
