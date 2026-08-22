@@ -1431,7 +1431,7 @@
 
     .loc-pick {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 10px;
     }
 
@@ -1503,6 +1503,77 @@
       font-size: 13px;
       font-weight: 800;
       cursor: pointer;
+    }
+
+    .settings-toggle {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      cursor: pointer;
+    }
+
+    .settings-toggle-copy {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .settings-toggle-copy strong,
+    .settings-toggle-copy small {
+      display: block;
+    }
+
+    .settings-toggle-copy strong {
+      font-size: 14px;
+      color: var(--ink);
+    }
+
+    .settings-toggle-copy small {
+      margin-top: 4px;
+      color: var(--ink-soft);
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .settings-toggle input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .settings-switch {
+      position: relative;
+      flex: 0 0 48px;
+      width: 48px;
+      height: 28px;
+      border-radius: 999px;
+      background: var(--line);
+      transition: background 160ms ease;
+    }
+
+    .settings-switch::after {
+      content: "";
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 1px 4px rgba(20, 24, 33, 0.25);
+      transition: transform 160ms ease;
+    }
+
+    .settings-toggle input:checked + .settings-switch {
+      background: var(--ink);
+    }
+
+    .settings-toggle input:checked + .settings-switch::after {
+      transform: translateX(20px);
+    }
+
+    .settings-toggle input:focus-visible + .settings-switch {
+      outline: 3px solid var(--accent-dim);
+      outline-offset: 2px;
     }
 
     .wizard-meta-bar {
@@ -2001,6 +2072,11 @@
 
     .map-pin.cache {
       border-radius: 5px;
+    }
+
+    .map-pin.magnet {
+      border-radius: 3px 9px 3px 9px;
+      transform: rotate(45deg);
     }
 
     .map-pin.crit {
@@ -3240,6 +3316,7 @@
           <select id="locationSelect" required>
             <option value="warehouse_1">Тайник</option>
             <option value="pickup">Прикоп</option>
+            <option value="magnet">Магнит</option>
           </select>
         </div>
 
@@ -3406,16 +3483,29 @@
       </div>
 
       <div class="settings-block">
+        <h3>Добавление позиции</h3>
+        <label class="settings-toggle" for="instantCameraToggle">
+          <span class="settings-toggle-copy">
+            <strong>Сразу открывать камеру</strong>
+            <small>При нажатии «Добавить» мастер откроется сразу на съёмке. Тип и детали можно дозаполнить после.</small>
+          </span>
+          <input type="checkbox" id="instantCameraToggle" />
+          <span class="settings-switch" aria-hidden="true"></span>
+        </label>
+      </div>
+
+      <div class="settings-block">
         <h3>Цена по граммовке (₽)</h3>
         <div id="priceRows"></div>
       </div>
 
       <div class="settings-block">
         <h3>Способы закладки</h3>
-        <p class="admin-badge" style="margin:0 0 10px">Отдельные наборы для тайника и прикопа · один чип при добавлении</p>
+        <p class="admin-badge" style="margin:0 0 10px">Отдельные наборы для каждого типа · один чип при добавлении</p>
         <div class="tpl-tabs" id="hideTplTabs">
           <button type="button" class="tpl-tab active" data-hide-loc="warehouse_1">Тайник</button>
           <button type="button" class="tpl-tab" data-hide-loc="pickup">Прикоп</button>
+          <button type="button" class="tpl-tab" data-hide-loc="magnet">Магнит</button>
         </div>
         <div class="tpl-list" id="hideTplList"></div>
         <div class="tpl-add">
@@ -3610,6 +3700,7 @@
     const STORAGE_HIDE_TEMPLATES_BASE = "logistics_hide_tpl_v1";
     const STORAGE_THEME_BASE = "logistics_theme_v1";
     const STORAGE_STAMP_THEME_BASE = "logistics_stamp_theme_v1";
+    const STORAGE_INSTANT_CAMERA_BASE = "logistics_instant_camera_v1";
     const STORAGE_TG_UID = "logistics_tg_uid";
     const MAX_PHOTOS = 5;
     const DEFAULT_HIDE_TEMPLATES = {
@@ -3629,6 +3720,13 @@
         "в листве 1–2 см",
         "присыпан землёй 1–2 см",
         "точно по метке"
+      ],
+      magnet: [
+        "под лавкой",
+        "под перилами",
+        "за трубой",
+        "на металлической поверхности",
+        "точно по метке"
       ]
     };
     const LOCATION_LABELS_LEGACY = {
@@ -3637,7 +3735,8 @@
 
     const LOCATIONS = [
       { id: "warehouse_1", label: "Тайник" },
-      { id: "pickup", label: "Прикоп" }
+      { id: "pickup", label: "Прикоп" },
+      { id: "magnet", label: "Магнит" }
     ];
 
     const TAPE_COLORS = [
@@ -3671,6 +3770,7 @@
     let hideTplEditLoc = "warehouse_1";
     let stampTheme = "light";
     let appTheme = "light";
+    let instantCameraOnAdd = false;
     let wizardMode = false;
     let wizardStep = 1;
     let wizardFillOpen = false;
@@ -3830,6 +3930,7 @@
       stampPreview: $("stampPreview"),
       btnCloseSettings: $("btnCloseSettings"),
       btnSaveSettings: $("btnSaveSettings"),
+      instantCameraToggle: $("instantCameraToggle"),
       btnSyncServer: $("btnSyncServer"),
       btnHideInventory: $("btnHideInventory"),
       btnRestoreInventory: $("btnRestoreInventory"),
@@ -3957,7 +4058,7 @@
       const raw = loadJSON(migrateScopedStorage(STORAGE_HIDE_TEMPLATES_BASE), null);
       hideTemplates = JSON.parse(JSON.stringify(DEFAULT_HIDE_TEMPLATES));
       if (raw && typeof raw === "object" && !Array.isArray(raw)) {
-        ["warehouse_1", "pickup"].forEach((loc) => {
+        LOCATIONS.forEach(({ id: loc }) => {
           const list = raw[loc];
           if (Array.isArray(list) && list.length) {
             hideTemplates[loc] = list
@@ -3971,11 +4072,23 @@
     }
 
     function saveHideTemplates() {
-      const payload = {
-        warehouse_1: (hideTemplates.warehouse_1 || []).slice(0, 24),
-        pickup: (hideTemplates.pickup || []).slice(0, 24)
-      };
+      const payload = {};
+      LOCATIONS.forEach(({ id }) => {
+        payload[id] = (hideTemplates[id] || []).slice(0, 24);
+      });
       return saveJSON(migrateScopedStorage(STORAGE_HIDE_TEMPLATES_BASE), payload);
+    }
+
+    function loadInstantCameraOnAdd() {
+      return loadJSON(migrateScopedStorage(STORAGE_INSTANT_CAMERA_BASE), false) === true;
+    }
+
+    function saveInstantCameraOnAdd(value) {
+      instantCameraOnAdd = value === true;
+      return saveJSON(
+        migrateScopedStorage(STORAGE_INSTANT_CAMERA_BASE),
+        instantCameraOnAdd
+      );
     }
 
     function loadAppTheme() {
@@ -7021,9 +7134,14 @@
         showToast("max " + MAX_PHOTOS);
         return;
       }
-      // Новое фото только с GPS; правку обводки существующего — можно
-      if (options.editIndex == null && !requireGeoForPhoto()) {
-        return;
+      // Камеру можно открыть, пока GPS уточняется, но затвор останется
+      // заблокированным до получения подходящих координат.
+      if (options.editIndex == null && !geoReadyForPhoto()) {
+        if (!options.allowPendingGeo) {
+          requireGeoForPhoto();
+          return;
+        }
+        ensureAutoGeo();
       }
 
       editingPhotoIdx = options.editIndex != null ? options.editIndex : null;
@@ -7622,7 +7740,11 @@
       acquirePreciseGeo({ keepBest: !!currentGeo, quiet: true });
       if (options.repeatLast) {
         showToast("повтор — фото");
-        wizardSkipToPhoto({ openCamera: true });
+        wizardSkipToPhoto({ openCamera: true, allowPendingGeo: true });
+        return;
+      }
+      if (options.instantCamera) {
+        wizardSkipToPhoto({ openCamera: true, allowPendingGeo: true });
         return;
       }
       setWizardUi();
@@ -7640,7 +7762,7 @@
       if (options.openCamera) {
         setTimeout(() => {
           if (!wizardMode || wizardStep !== 4 || editingId) return;
-          if (geoReadyForPhoto()) openStage();
+          openStage({ allowPendingGeo: !!options.allowPendingGeo });
         }, 280);
       }
     }
@@ -7671,7 +7793,7 @@
         syncWizardNoteToField();
         wizardStep = 3;
       } else if (wizardStep === 3) {
-        wizardSkipToPhoto({ openCamera: true });
+        wizardSkipToPhoto({ openCamera: true, allowPendingGeo: true });
         return;
       }
       setWizardUi();
@@ -7740,7 +7862,10 @@
       } else {
         clearDraft();
         editingId = null;
-        startWizard({ repeatLast: !!options.repeatLast });
+        startWizard({
+          repeatLast: !!options.repeatLast,
+          instantCamera: !!options.instantCamera
+        });
       }
 
       suppressDraft = false;
@@ -7772,6 +7897,9 @@
     function openSettings() {
       renderPriceSettings();
       renderHideTemplateSettings();
+      if (els.instantCameraToggle) {
+        els.instantCameraToggle.checked = instantCameraOnAdd;
+      }
       updateAdminBadge();
       closeOverlay(els.menuOverlay);
       openOverlay(els.settingsOverlay);
@@ -8284,7 +8412,9 @@
 
     function stashPinHtml(it, risk) {
       const tape = tapeHex(it.tapeColor) || "#111114";
-      const kind = it.location === "warehouse_1" ? "cache" : "pickup";
+      const kind = it.location === "warehouse_1"
+        ? "cache"
+        : (it.location === "magnet" ? "magnet" : "pickup");
       return (
         '<div class="' + stashPinClass(risk) + " " + kind + '" style="--pin:' + tape + '"></div>'
       );
@@ -9260,7 +9390,9 @@
 
     /* ── Events ── */
 
-    els.btnAdd.addEventListener("click", () => openForm({ create: true }));
+    els.btnAdd.addEventListener("click", () => {
+      openForm({ create: true, instantCamera: instantCameraOnAdd });
+    });
     els.btnRepeat.addEventListener("click", () => {
       if (els.btnRepeat.disabled) return;
       openForm({ repeatLast: true });
@@ -9427,7 +9559,6 @@
         renderWizardHideChips();
         renderWizardMetaSum();
         haptic("light");
-        if (wizardStep === 1 && !wizardFillOpen) wizardGoNext();
       });
     }
 
@@ -9462,7 +9593,7 @@
 
     if (els.wizardSkipPhoto) {
       els.wizardSkipPhoto.addEventListener("click", () => {
-        wizardSkipToPhoto({ openCamera: true });
+        wizardSkipToPhoto({ openCamera: true, allowPendingGeo: true });
       });
     }
 
@@ -9552,6 +9683,9 @@
       prices = next;
       saveJSON(migrateScopedStorage(STORAGE_PRICES_BASE), prices);
       saveHideTemplates();
+      saveInstantCameraOnAdd(
+        !!(els.instantCameraToggle && els.instantCameraToggle.checked)
+      );
       closeOverlay(els.settingsOverlay);
       renderAll();
       showToast("ok");
@@ -10266,6 +10400,7 @@
       ensureDzenIcon();
       applyAppTheme(loadAppTheme(), { persist: false });
       applyStampTheme(loadStampTheme(), { persist: false });
+      instantCameraOnAdd = loadInstantCameraOnAdd();
       loadHideTemplates();
       items = loadItems();
       const storedPrices = loadJSON(migrateScopedStorage(STORAGE_PRICES_BASE), {});

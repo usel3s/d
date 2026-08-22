@@ -8,6 +8,7 @@ LOCATION_LABELS = {
     "warehouse_1": "Тайник",
     "warehouse_2": "Подьезд",
     "pickup": "Прикоп",
+    "magnet": "Магнит",
 }
 
 TAPE_LABELS = {
