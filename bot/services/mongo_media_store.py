@@ -379,38 +379,49 @@ class MongoMediaStore:
     def resolve_photo_bytes(
         self, user_id: int, item_id: str, photo_id: str
     ) -> bytes | None:
-        with self._lock:
-            item = self.get_item(item_id, user_id=user_id)
-            if not item:
-                return None
-            allowed = {str(p.get("id") or "") for p in item.get("photos") or []}
-            if str(photo_id) not in allowed:
-                return None
-            doc = self._photos.find_one(
-                {
-                    "user_id": self._uid(user_id),
-                    "item_id": str(item_id),
-                    "photo_id": str(photo_id),
-                },
-                {"data": 1},
-            )
-            if not doc:
-                return None
-            data = doc.get("data")
-            return bytes(data) if data is not None else None
+        item = self.get_item(item_id, user_id=user_id)
+        if not item:
+            return None
+        allowed = {str(p.get("id") or "") for p in item.get("photos") or []}
+        if str(photo_id) not in allowed:
+            return None
+        doc = self._photos.find_one(
+            {
+                "user_id": self._uid(user_id),
+                "item_id": str(item_id),
+                "photo_id": str(photo_id),
+            },
+            {"data": 1},
+        )
+        if not doc:
+            return None
+        data = doc.get("data")
+        return bytes(data) if data is not None else None
 
     def photo_bytes(self, item: dict[str, Any]) -> list[tuple[str, bytes]]:
         uid = self._owner_uid(item)
         item_id = str(item.get("id") or "")
-        out: list[tuple[str, bytes]] = []
-        for photo in item.get("photos") or []:
-            photo_id = str(photo.get("id") or "")
-            if not photo_id:
-                continue
-            blob = self.resolve_photo_bytes(uid, item_id, photo_id)
-            if blob:
-                out.append((f"{photo_id}.jpg", blob))
-        return out
+        photo_ids = [
+            str(photo.get("id") or "")
+            for photo in item.get("photos") or []
+            if isinstance(photo, dict) and photo.get("id")
+        ]
+        if not uid or not item_id or not photo_ids:
+            return []
+        found: dict[str, bytes] = {}
+        for doc in self._photos.find(
+            {
+                "user_id": uid,
+                "item_id": item_id,
+                "photo_id": {"$in": photo_ids},
+            },
+            {"photo_id": 1, "data": 1},
+        ):
+            pid = str(doc.get("photo_id") or "")
+            data = doc.get("data")
+            if pid and data is not None:
+                found[pid] = bytes(data)
+        return [(f"{pid}.jpg", found[pid]) for pid in photo_ids if pid in found]
 
     def list_webapp_items(self, user_id: int) -> list[dict[str, Any]]:
         with self._lock:
@@ -423,17 +434,15 @@ class MongoMediaStore:
         *,
         include_hidden: bool = False,
     ) -> list[dict[str, Any]]:
-        with self._lock:
-            query = self._item_query(user_id)
-            if not include_hidden:
-                query = dict(query)
-                query["hidden"] = {"$ne": True}
-            cursor = self._items.find(query).sort("updated_at", DESCENDING)
-            return [i for i in (self._normalize_item(d) for d in cursor) if i]
+        query = self._item_query(user_id)
+        if not include_hidden:
+            query = dict(query)
+            query["hidden"] = {"$ne": True}
+        cursor = self._items.find(query).sort("updated_at", DESCENDING)
+        return [i for i in (self._normalize_item(d) for d in cursor) if i]
 
     def get_item(self, item_id: str, user_id: int | None = None) -> dict[str, Any] | None:
-        with self._lock:
-            return self._get_item_doc(item_id, user_id=user_id)
+        return self._get_item_doc(item_id, user_id=user_id)
 
     def ping(self) -> bool:
         try:

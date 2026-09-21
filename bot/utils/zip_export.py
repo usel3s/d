@@ -9,7 +9,7 @@ from typing import Any, Callable
 from utils.formatting import format_grams, location_label, tape_label
 
 MSK = timezone(timedelta(hours=3))
-TELEGRAM_DOC_LIMIT = 45 * 1024 * 1024
+TELEGRAM_DOC_LIMIT = 18 * 1024 * 1024
 _UNSAFE_NAME = re.compile(r'[<>:"/\\|?*\x00-\x1f]')
 
 
@@ -209,13 +209,7 @@ def build_position_archives(
     cutoff: datetime,
     zip_stem: str = "sklad",
 ) -> list[tuple[str, bytes]]:
-    packed: list[tuple[dict[str, Any], list[tuple[str, bytes]]]] = []
-    photo_counts: list[int] = []
-    for item in items:
-        blobs = photo_loader(item) or []
-        packed.append((item, blobs))
-        photo_counts.append(len(blobs))
-
+    photo_counts = [len(item.get("photos") or []) for item in items]
     parts = _ZipParts(zip_stem)
     parts.add(
         "позиции.txt",
@@ -227,7 +221,8 @@ def build_position_archives(
         ),
     )
     used_folders: set[str] = set()
-    for idx, (item, blobs) in enumerate(packed, start=1):
+    for idx, item in enumerate(items, start=1):
+        blobs = photo_loader(item) or []
         folder = folder_name(item, idx)
         base = folder
         n = 2

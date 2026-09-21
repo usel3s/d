@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import time
 from datetime import datetime, timezone
 
 from aiogram import F, Router
@@ -107,23 +108,49 @@ async def _send_zip_archive(
     status = None
     try:
         status = await message.answer(f"{pe('loading')} Собираю ZIP с позициями и фото…")
-        items = media_store.list_items(user_id=user_id)
-        recent, cutoff, label = filter_recent_items(items, period)
+
+        def _prepare() -> tuple[list[dict], datetime, str]:
+            items = media_store.list_items(user_id=user_id)
+            return filter_recent_items(items, period)
+
+        recent, cutoff, label = await asyncio.to_thread(_prepare)
         if not recent:
             await status.edit_text(
                 f"{pe('file')} За выбранный период (<b>{label}</b>) позиций нет."
             )
             return
 
-        archives = await asyncio.to_thread(
-            build_position_archives,
-            recent,
-            photo_loader=media_store.photo_bytes,
-            period_label=label,
-            cutoff=cutoff,
-            zip_stem=f"sklad_{period}_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M')}",
-        )
         photo_total = sum(len(item.get("photos") or []) for item in recent)
+        await status.edit_text(
+            f"{pe('loading')} Собираю ZIP: <b>{len(recent)}</b> поз. · "
+            f"<b>{photo_total}</b> фото…"
+        )
+
+        zip_stem = f"sklad_{period}_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M')}"
+
+        def _build() -> list[tuple[str, bytes]]:
+            return build_position_archives(
+                recent,
+                photo_loader=media_store.photo_bytes,
+                period_label=label,
+                cutoff=cutoff,
+                zip_stem=zip_stem,
+            )
+
+        loop = asyncio.get_running_loop()
+        fut = loop.run_in_executor(None, _build)
+        started = time.monotonic()
+        while not fut.done():
+            await asyncio.sleep(4)
+            elapsed = int(time.monotonic() - started)
+            try:
+                await status.edit_text(
+                    f"{pe('loading')} Собираю ZIP: <b>{len(recent)}</b> поз. · "
+                    f"<b>{photo_total}</b> фото… {elapsed}с"
+                )
+            except Exception:
+                pass
+        archives = await fut
         caption = (
             f"{pe('file')} <b>Архив склада · {label}</b>\n"
             f"Позиций: <b>{len(recent)}</b> · фото: <b>{photo_total}</b>"
@@ -136,7 +163,8 @@ async def _send_zip_archive(
             await message.bot.send_document(
                 chat_id,
                 BufferedInputFile(data, filename=name),
-                caption=part_caption if idx == 0 or len(archives) > 1 else None,
+                caption=part_caption,
+                request_timeout=300,
             )
         try:
             await status.delete()
