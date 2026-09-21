@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+import asyncio
+import logging
+from datetime import datetime, timezone
+
 from aiogram import F, Router
 from aiogram.filters import Command
 from aiogram.types import (
@@ -10,23 +14,25 @@ from aiogram.types import (
 )
 
 from config import Settings
-from database import Database
-from keyboards import section_keyboard
+from keyboards import download_period_keyboard, section_keyboard
 from keyboards.menu import photos_list_keyboard
 from services import MediaStore
 from utils.emoji import pe
 from utils.screens import (
+    download_period_text,
     item_button_title,
     item_caption,
-    stats_text,
     warehouse_empty_text,
     warehouse_list_text,
-    warehouse_stats,
 )
+from utils.zip_export import build_position_archives, filter_recent_items
+
+logger = logging.getLogger(__name__)
 
 router = Router(name="admin")
 
 PAGE_SIZE = 5
+_zip_busy: set[int] = set()
 
 
 def _is_admin(user_id: int, settings: Settings) -> bool:
@@ -74,26 +80,80 @@ async def _show_warehouse(
         await message.answer(text, reply_markup=markup)
 
 
-async def _show_stats(
+async def _show_download(
+    *,
+    message: Message,
+    edit: bool,
+) -> None:
+    text = download_period_text()
+    markup = download_period_keyboard()
+    if edit:
+        await message.edit_text(text, reply_markup=markup)
+    else:
+        await message.answer(text, reply_markup=markup)
+
+
+async def _send_zip_archive(
     *,
     message: Message,
     user_id: int,
-    db: Database,
+    period: str,
     media_store: MediaStore,
-    edit: bool,
 ) -> None:
-    users = await db.count_users()
-    syncs = await db.count_syncs()
-    inv = warehouse_stats(user_id, media_store)
-    text = stats_text(
-        stats=inv,
-        bot_users=users,
-        syncs=syncs,
-    )
-    if edit:
-        await message.edit_text(text, reply_markup=section_keyboard())
-    else:
-        await message.answer(text, reply_markup=section_keyboard())
+    if user_id in _zip_busy:
+        await message.answer(f"{pe('loading')} Архив уже собирается.")
+        return
+    _zip_busy.add(user_id)
+    status = None
+    try:
+        status = await message.answer(f"{pe('loading')} Собираю ZIP с позициями и фото…")
+        items = media_store.list_items(user_id=user_id)
+        recent, cutoff, label = filter_recent_items(items, period)
+        if not recent:
+            await status.edit_text(
+                f"{pe('file')} За выбранный период (<b>{label}</b>) позиций нет."
+            )
+            return
+
+        archives = await asyncio.to_thread(
+            build_position_archives,
+            recent,
+            photo_loader=media_store.photo_bytes,
+            period_label=label,
+            cutoff=cutoff,
+            zip_stem=f"sklad_{period}_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M')}",
+        )
+        photo_total = sum(len(item.get("photos") or []) for item in recent)
+        caption = (
+            f"{pe('file')} <b>Архив склада · {label}</b>\n"
+            f"Позиций: <b>{len(recent)}</b> · фото: <b>{photo_total}</b>"
+        )
+        chat_id = message.chat.id
+        for idx, (name, data) in enumerate(archives):
+            part_caption = caption
+            if len(archives) > 1:
+                part_caption += f"\nЧасть {idx + 1}/{len(archives)}"
+            await message.bot.send_document(
+                chat_id,
+                BufferedInputFile(data, filename=name),
+                caption=part_caption if idx == 0 or len(archives) > 1 else None,
+            )
+        try:
+            await status.delete()
+        except Exception:
+            pass
+    except Exception:
+        logger.exception("ZIP export failed for user %s period %s", user_id, period)
+        err = f"{pe('error')} Не удалось собрать архив. Попробуйте ещё раз."
+        try:
+            if status:
+                await status.edit_text(err)
+            else:
+                await message.answer(err)
+        except Exception:
+            await message.answer(err)
+    finally:
+        _zip_busy.discard(user_id)
 
 
 @router.message(Command("admin"))
@@ -116,33 +176,17 @@ async def cmd_warehouse(
     )
 
 
-@router.message(F.text == "Сводка")
-async def cmd_stats(
+@router.message(F.text == "Скачать")
+@router.message(Command("export"))
+async def cmd_download(
     message: Message,
     settings: Settings,
-    db: Database,
-    media_store: MediaStore,
 ) -> None:
     user = message.from_user
     if user is None or not _is_admin(user.id, settings):
         await message.answer(f"{pe('lock')} Недостаточно прав.")
         return
-    await _show_stats(
-        message=message,
-        user_id=user.id,
-        db=db,
-        media_store=media_store,
-        edit=False,
-    )
-
-
-@router.message(Command("export"))
-async def cmd_export(message: Message, settings: Settings) -> None:
-    user = message.from_user
-    if user is None or not _is_admin(user.id, settings):
-        await message.answer(f"{pe('lock')} Недостаточно прав.")
-        return
-    await message.answer(f"{pe('error')} Экспорт сейчас отключён.")
+    await _show_download(message=message, edit=False)
 
 
 @router.callback_query(F.data == "admin:home")
@@ -165,33 +209,40 @@ async def admin_home(
     await callback.answer()
 
 
-@router.callback_query(F.data == "admin:export")
-async def admin_export(callback: CallbackQuery, settings: Settings) -> None:
-    if not _is_admin(callback.from_user.id, settings):
-        await callback.answer("Нет доступа", show_alert=True)
-        return
-    await callback.answer("Экспорт отключён", show_alert=True)
-
-
-@router.callback_query(F.data == "admin:stats")
-async def admin_stats(
+@router.callback_query(F.data.in_({"admin:download", "admin:stats", "admin:export"}))
+async def admin_download(
     callback: CallbackQuery,
     settings: Settings,
-    db: Database,
-    media_store: MediaStore,
 ) -> None:
     if not _is_admin(callback.from_user.id, settings):
         await callback.answer("Нет доступа", show_alert=True)
         return
     if callback.message:
-        await _show_stats(
+        await _show_download(message=callback.message, edit=True)
+    await callback.answer()
+
+
+@router.callback_query(F.data.in_({"admin:zip:12h", "admin:zip:day"}))
+async def admin_zip(
+    callback: CallbackQuery,
+    settings: Settings,
+    media_store: MediaStore,
+) -> None:
+    if not _is_admin(callback.from_user.id, settings):
+        await callback.answer("Нет доступа", show_alert=True)
+        return
+    if callback.from_user.id in _zip_busy:
+        await callback.answer("Архив уже собирается", show_alert=True)
+        return
+    period = "day" if str(callback.data).endswith(":day") else "12h"
+    await callback.answer("Собираю архив…")
+    if callback.message:
+        await _send_zip_archive(
             message=callback.message,
             user_id=callback.from_user.id,
-            db=db,
+            period=period,
             media_store=media_store,
-            edit=True,
         )
-    await callback.answer()
 
 
 @router.callback_query(F.data.regexp(r"^admin:photos:\d+$"))

@@ -6,10 +6,10 @@ from typing import Any
 from services.inventory_seed import DEFAULT_PRICES
 from utils.emoji import pe
 from utils.formatting import (
-    TAPE_LABELS,
     format_grams,
     format_money,
     location_label,
+    tape_label,
 )
 
 
@@ -49,7 +49,7 @@ def home_text(is_admin: bool, stats: dict[str, float | int] | None = None) -> st
         "фото, GPS и адрес сохраняются сами.",
         "",
         f"{pe('file')} <b>Склад</b> — фото и описания",
-        f"{pe('stats')} <b>Сводка</b> — вес, сумма, количество",
+        f"{pe('file')} <b>Скачать</b> — ZIP с позициями и фото за 12ч/день",
     ]
     if stats is not None:
         lines.extend(
@@ -73,7 +73,7 @@ def help_text(is_admin: bool) -> str:
         f"{pe('info')} <b>Справка</b>\n\n"
         f"{pe('package')} <b>Учёт</b> — Mini App: новые клады, карта, фото.\n"
         f"{pe('file')} <b>Склад</b> — просмотр позиций и фото в боте.\n"
-        f"{pe('stats')} <b>Сводка</b> — вес, сумма и количество.\n\n"
+        f"{pe('file')} <b>Скачать</b> — ZIP с позициями и фото за 12ч или день.\n\n"
         "Чтобы сохранить фото, нужен GPS.\n"
         "Открывайте Mini App кнопкой из этого бота."
     )
@@ -121,6 +121,14 @@ def stats_text(
     )
 
 
+def download_period_text() -> str:
+    return (
+        f"{pe('file')} <b>Скачать архив</b>\n\n"
+        "Соберу ZIP с твоими позициями и фото.\n"
+        "Выбери период: <b>12 часов</b> или <b>день</b>."
+    )
+
+
 def warehouse_empty_text() -> str:
     return (
         f"{pe('file')} <b>Склад</b>\n"
@@ -147,7 +155,7 @@ def warehouse_list_text(
     for idx, item in enumerate(items, start=start_index):
         loc = location_label(str(item.get("location") or ""))
         weight = format_grams(item.get("weight") or 0)
-        tape = TAPE_LABELS.get(str(item.get("tape_color") or ""), item.get("tape_color") or "—")
+        tape = tape_label(str(item.get("tape_color") or ""))
         n_photos = len(item.get("photos") or [])
         note = (item.get("note") or "").strip()
         if len(note) > 48:
@@ -174,7 +182,7 @@ def item_button_title(item: dict[str, Any], index: int) -> str:
 
 def item_caption(item: dict[str, Any]) -> str:
     loc = location_label(str(item.get("location") or ""))
-    tape = TAPE_LABELS.get(str(item.get("tape_color") or ""), item.get("tape_color") or "—")
+    tape = tape_label(str(item.get("tape_color") or ""))
     note = (item.get("note") or "").strip() or "—"
     return (
         f"{pe('package')} <b>{escape(loc)}</b>\n"

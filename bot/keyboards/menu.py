@@ -27,8 +27,8 @@ def main_reply_keyboard(webapp_url: str) -> ReplyKeyboardMarkup:
                     icon_custom_emoji_id=pe_id("file"),
                 ),
                 KeyboardButton(
-                    text="Сводка",
-                    icon_custom_emoji_id=pe_id("stats"),
+                    text="Скачать",
+                    icon_custom_emoji_id=pe_id("file"),
                 ),
             ],
             [
@@ -83,9 +83,9 @@ def main_inline_keyboard(webapp_url: str) -> InlineKeyboardMarkup:
                     icon_custom_emoji_id=pe_id("file"),
                 ),
                 InlineKeyboardButton(
-                    text="Сводка",
-                    callback_data="admin:stats",
-                    icon_custom_emoji_id=pe_id("stats"),
+                    text="Скачать",
+                    callback_data="admin:download",
+                    icon_custom_emoji_id=pe_id("file"),
                 ),
             ],
             [
@@ -147,9 +147,9 @@ def section_keyboard() -> InlineKeyboardMarkup:
                     icon_custom_emoji_id=pe_id("file"),
                 ),
                 InlineKeyboardButton(
-                    text="Сводка",
-                    callback_data="admin:stats",
-                    icon_custom_emoji_id=pe_id("stats"),
+                    text="Скачать",
+                    callback_data="admin:download",
+                    icon_custom_emoji_id=pe_id("file"),
                 ),
             ],
             [
@@ -165,6 +165,37 @@ def section_keyboard() -> InlineKeyboardMarkup:
 
 def admin_keyboard() -> InlineKeyboardMarkup:
     return section_keyboard()
+
+
+def download_period_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="12 часов",
+                    callback_data="admin:zip:12h",
+                    icon_custom_emoji_id=pe_id("time"),
+                ),
+                InlineKeyboardButton(
+                    text="День",
+                    callback_data="admin:zip:day",
+                    icon_custom_emoji_id=pe_id("calendar"),
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    text="К складу",
+                    callback_data="admin:photos:0",
+                    icon_custom_emoji_id=pe_id("file"),
+                ),
+                InlineKeyboardButton(
+                    text="В меню",
+                    callback_data="menu:home",
+                    icon_custom_emoji_id=pe_id("home"),
+                ),
+            ],
+        ]
+    )
 
 
 def photos_list_keyboard(
@@ -214,9 +245,9 @@ def photos_list_keyboard(
     rows.append(
         [
             InlineKeyboardButton(
-                text="Сводка",
-                callback_data="admin:stats",
-                icon_custom_emoji_id=pe_id("stats"),
+                text="Скачать",
+                callback_data="admin:download",
+                icon_custom_emoji_id=pe_id("file"),
             ),
             InlineKeyboardButton(
                 text="В меню",

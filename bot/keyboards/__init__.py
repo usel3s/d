@@ -1,6 +1,7 @@
 from .menu import (
     admin_keyboard,
     back_home_keyboard,
+    download_period_keyboard,
     guest_inline_keyboard,
     guest_reply_keyboard,
     main_inline_keyboard,
@@ -11,6 +12,7 @@ from .menu import (
 __all__ = [
     "admin_keyboard",
     "back_home_keyboard",
+    "download_period_keyboard",
     "guest_inline_keyboard",
     "guest_reply_keyboard",
     "main_inline_keyboard",

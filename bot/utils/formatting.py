@@ -15,9 +15,19 @@ TAPE_LABELS = {
     "red": "Красная",
     "blue": "Синяя",
     "yellow": "Жёлтая",
+    "lime": "Желто-зелёная",
     "white": "Белая",
     "black": "Чёрная",
 }
+
+
+def tape_label(tape_id: str) -> str:
+    tid = str(tape_id or "").strip()
+    if tid in TAPE_LABELS:
+        return TAPE_LABELS[tid]
+    if tid.startswith("#") and len(tid) == 7:
+        return "Свой"
+    return tid or "—"
 
 
 def location_label(location_id: str) -> str:

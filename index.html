@@ -900,7 +900,8 @@
 
     .field select,
     .field textarea,
-    .field input[type="number"] {
+    .field input[type="number"],
+    .field input[type="text"] {
       width: 100%;
       background: var(--field);
       border: 1px solid var(--line);
@@ -921,6 +922,54 @@
     .field textarea {
       min-height: 88px;
       resize: vertical;
+    }
+
+    .tape-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .tape-custom-btn {
+      width: 46px;
+      height: 46px;
+      border-radius: 14px;
+      border: 1px solid var(--line-strong);
+      background: var(--field);
+      font-size: 22px;
+      font-weight: 800;
+      line-height: 1;
+      cursor: pointer;
+      color: var(--ink);
+      flex-shrink: 0;
+    }
+
+    .tape-custom-btn:active { transform: scale(0.98); }
+
+    .tape-custom-panel {
+      margin-top: 8px;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .tape-custom-panel.hidden { display: none; }
+
+    .tape-custom-panel input[type="color"] {
+      width: 46px;
+      height: 46px;
+      padding: 3px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: var(--field);
+      cursor: pointer;
+    }
+
+    .tape-custom-save {
+      padding: 12px 14px;
+      white-space: nowrap;
     }
 
     .photos-box {
@@ -3336,13 +3385,15 @@
         </div>
         <div class="field block-wizard-step3 block-edit-only">
           <label for="tapeSelect">Изолента <span class="req">*</span></label>
-          <select id="tapeSelect" required>
-            <option value="red">Красная</option>
-            <option value="blue">Синяя</option>
-            <option value="yellow">Жёлтая</option>
-            <option value="white">Белая</option>
-            <option value="black">Чёрная</option>
-          </select>
+          <div class="tape-row">
+            <select id="tapeSelect" required></select>
+            <button type="button" class="tape-custom-btn" id="btnTapeCustom" aria-label="Свой цвет" title="Свой цвет">+</button>
+          </div>
+          <div class="tape-custom-panel hidden" id="tapeCustomPanel">
+            <input type="color" id="tapeCustomPicker" value="#9acd32" aria-label="Цвет изоленты" />
+            <input type="text" id="tapeCustomName" maxlength="24" placeholder="Название цвета" />
+            <button type="button" class="btn-outline tape-custom-save" id="btnTapeCustomSave">Добавить</button>
+          </div>
         </div>
 
         <div class="wizard-nav block-wizard-only" id="wizardNav">
@@ -3701,6 +3752,7 @@
     const STORAGE_THEME_BASE = "logistics_theme_v1";
     const STORAGE_STAMP_THEME_BASE = "logistics_stamp_theme_v1";
     const STORAGE_INSTANT_CAMERA_BASE = "logistics_instant_camera_v1";
+    const STORAGE_TAPE_CUSTOM_BASE = "logistics_tape_custom_v1";
     const STORAGE_TG_UID = "logistics_tg_uid";
     const MAX_PHOTOS = 5;
     const DEFAULT_HIDE_TEMPLATES = {
@@ -3743,6 +3795,7 @@
       { id: "red", label: "Красная", hex: "#ff3b30" },
       { id: "blue", label: "Синяя", hex: "#0a84ff" },
       { id: "yellow", label: "Жёлтая", hex: "#f0d000" },
+      { id: "lime", label: "Желто-зелёная", hex: "#b8c800" },
       { id: "white", label: "Белая", hex: "#ffffff" },
       { id: "black", label: "Чёрная", hex: "#1c1c1e" }
     ];
@@ -3914,6 +3967,11 @@
       locationSelect: $("locationSelect"),
       weightSelect: $("weightSelect"),
       tapeSelect: $("tapeSelect"),
+      btnTapeCustom: $("btnTapeCustom"),
+      tapeCustomPanel: $("tapeCustomPanel"),
+      tapeCustomPicker: $("tapeCustomPicker"),
+      tapeCustomName: $("tapeCustomName"),
+      btnTapeCustomSave: $("btnTapeCustomSave"),
       noteInput: $("noteInput"),
       heavyAlert: $("heavyAlert"),
       btnAdd: $("btnAdd"),
@@ -4438,14 +4496,101 @@
       return id;
     }
 
+    function normalizeTapeHex(hex) {
+      const s = String(hex || "").trim();
+      if (!/^#[0-9a-f]{6}$/i.test(s)) return "";
+      return "#" + s.slice(1).toLowerCase();
+    }
+
+    function getCustomTapes() {
+      const raw = loadJSON(migrateScopedStorage(STORAGE_TAPE_CUSTOM_BASE), []);
+      if (!Array.isArray(raw)) return [];
+      return raw
+        .map((t) => ({
+          hex: normalizeTapeHex(t.hex),
+          label: String(t.label || "").trim() || "Свой"
+        }))
+        .filter((t) => t.hex);
+    }
+
+    function saveCustomTapes(list) {
+      return saveJSON(migrateScopedStorage(STORAGE_TAPE_CUSTOM_BASE), list.slice(0, 24));
+    }
+
+    function isPresetTapeColor(id) {
+      return TAPE_COLORS.some((t) => t.id === id);
+    }
+
+    function isKnownTapeColor(id) {
+      if (isPresetTapeColor(id)) return true;
+      return !!normalizeTapeHex(id);
+    }
+
+    function normalizeTapeColorId(raw) {
+      if (isPresetTapeColor(raw)) return raw;
+      const hex = normalizeTapeHex(raw);
+      if (hex) return hex;
+      return "yellow";
+    }
+
+    function addCustomTapeColor(hex, label) {
+      const normalized = normalizeTapeHex(hex);
+      if (!normalized) return null;
+      const name = String(label || "").trim() || "Свой";
+      const list = getCustomTapes().filter((t) => t.hex !== normalized);
+      list.unshift({ hex: normalized, label: name });
+      saveCustomTapes(list);
+      return normalized;
+    }
+
+    function renderTapeSelect(selected) {
+      if (!els.tapeSelect) return;
+      const customs = getCustomTapes();
+      const seen = new Set();
+      let html = TAPE_COLORS.map((t) => (
+        '<option value="' + escapeAttr(t.id) + '">' + escapeHtml(t.label) + "</option>"
+      )).join("");
+
+      customs.forEach((t) => {
+        if (!t.hex || seen.has(t.hex)) return;
+        seen.add(t.hex);
+        html += '<option value="' + escapeAttr(t.hex) + '">' + escapeHtml(t.label) + "</option>";
+      });
+
+      const selectedHex = normalizeTapeHex(selected);
+      if (
+        selected &&
+        !isPresetTapeColor(selected) &&
+        selectedHex &&
+        !seen.has(selectedHex)
+      ) {
+        html += '<option value="' + escapeAttr(selectedHex) + '">' + escapeHtml(tapeLabel(selectedHex)) + "</option>";
+      }
+
+      els.tapeSelect.innerHTML = html;
+      if (selected && isKnownTapeColor(selected)) {
+        els.tapeSelect.value = isPresetTapeColor(selected) ? selected : normalizeTapeHex(selected);
+      } else {
+        els.tapeSelect.value = "yellow";
+      }
+    }
+
     function tapeLabel(id) {
-      const found = TAPE_COLORS.find((t) => t.id === id);
-      return found ? found.label : id || "—";
+      const preset = TAPE_COLORS.find((t) => t.id === id);
+      if (preset) return preset.label;
+      const hex = normalizeTapeHex(id);
+      if (hex) {
+        const custom = getCustomTapes().find((t) => t.hex === hex);
+        return custom ? custom.label : "Свой";
+      }
+      return id || "—";
     }
 
     function tapeHex(id) {
-      const found = TAPE_COLORS.find((t) => t.id === id);
-      return found ? found.hex : "#888";
+      const preset = TAPE_COLORS.find((t) => t.id === id);
+      if (preset) return preset.hex;
+      const hex = normalizeTapeHex(id);
+      return hex || "#888";
     }
 
     function formatRub(n) {
@@ -4593,9 +4738,7 @@
       }
 
       const weight = Number(raw.weight);
-      const tapeColor = TAPE_COLORS.some((t) => t.id === raw.tapeColor)
-        ? raw.tapeColor
-        : "yellow";
+      const tapeColor = normalizeTapeColorId(raw.tapeColor);
 
       return {
         id: raw.id || uid("i"),
@@ -7544,6 +7687,7 @@
       els.locationSelect.value = draft.location || "warehouse_1";
       els.weightSelect.value = draft.weight != null ? String(draft.weight) : "0.5";
       els.tapeSelect.value = draft.tapeColor || "yellow";
+      renderTapeSelect(els.tapeSelect.value);
       els.noteInput.value = draft.note || "";
       // photos не восстанавливаем из draft
       if (draft.geo) {
@@ -7578,7 +7722,10 @@
       if (defaults) {
         if (defaults.location) els.locationSelect.value = defaults.location;
         if (defaults.weight != null) els.weightSelect.value = String(defaults.weight);
-        if (defaults.tapeColor) els.tapeSelect.value = defaults.tapeColor;
+        if (defaults.tapeColor) {
+          renderTapeSelect(defaults.tapeColor);
+          els.tapeSelect.value = normalizeTapeColorId(defaults.tapeColor);
+        }
         if (defaults.note != null) els.noteInput.value = defaults.note;
       }
       updateHeavyAlert();
@@ -7596,7 +7743,12 @@
         els.locationSelect.value = last.location;
       }
       if (last.weight != null) els.weightSelect.value = String(last.weight);
-      if (last.tapeColor) els.tapeSelect.value = last.tapeColor;
+      if (last.tapeColor) {
+        renderTapeSelect(last.tapeColor);
+        els.tapeSelect.value = isPresetTapeColor(last.tapeColor)
+          ? last.tapeColor
+          : (normalizeTapeHex(last.tapeColor) || "yellow");
+      }
       const note = String(last.note || "").trim();
       if (note && els.noteInput) {
         els.noteInput.value = note;
@@ -7733,6 +7885,7 @@
       if (els.wizardExtraNote) els.wizardExtraNote.value = "";
       els.locationSelect.value = "warehouse_1";
       els.weightSelect.value = "0.5";
+      renderTapeSelect("yellow");
       els.tapeSelect.value = "yellow";
       els.noteInput.value = "";
       updateHeavyAlert();
@@ -7834,7 +7987,8 @@
               ? item.location
               : "warehouse_1";
           els.weightSelect.value = String(item.weight != null ? item.weight : "0.5");
-          els.tapeSelect.value = item.tapeColor || "yellow";
+          renderTapeSelect(item.tapeColor || "yellow");
+          els.tapeSelect.value = normalizeTapeColorId(item.tapeColor);
           els.noteInput.value = item.note || "";
           if (item.geo) {
             currentGeo = normalizeFix(Object.assign({}, item.geo, { source: item.geo.source || "browser" }));
@@ -9906,6 +10060,37 @@
       if (stageOpen && stageRaw) redrawStageCanvas();
     });
 
+    if (els.btnTapeCustom && els.tapeCustomPanel) {
+      els.btnTapeCustom.addEventListener("click", () => {
+        els.tapeCustomPanel.classList.toggle("hidden");
+        if (!els.tapeCustomPanel.classList.contains("hidden") && els.tapeCustomName) {
+          els.tapeCustomName.focus();
+        }
+      });
+    }
+
+    if (els.btnTapeCustomSave) {
+      els.btnTapeCustomSave.addEventListener("click", () => {
+        const hex = addCustomTapeColor(
+          els.tapeCustomPicker && els.tapeCustomPicker.value,
+          els.tapeCustomName && els.tapeCustomName.value
+        );
+        if (!hex) {
+          showToast("нужен цвет", true);
+          return;
+        }
+        renderTapeSelect(hex);
+        els.tapeSelect.value = hex;
+        if (els.tapeCustomPanel) els.tapeCustomPanel.classList.add("hidden");
+        if (els.tapeCustomName) els.tapeCustomName.value = "";
+        saveDraft();
+        renderWizardMetaSum();
+        if (stageOpen && stageRaw) redrawStageCanvas();
+        showToast("цвет добавлен");
+        haptic("ok");
+      });
+    }
+
     els.noteInput.addEventListener("input", () => {
       saveDraft();
       if (stageOpen && stageRaw) redrawStageCanvas();
@@ -10402,6 +10587,7 @@
       applyStampTheme(loadStampTheme(), { persist: false });
       instantCameraOnAdd = loadInstantCameraOnAdd();
       loadHideTemplates();
+      renderTapeSelect("yellow");
       items = loadItems();
       const storedPrices = loadJSON(migrateScopedStorage(STORAGE_PRICES_BASE), {});
       prices = {};

@@ -718,6 +718,77 @@ def test_client_static(suite: Suite) -> None:
                 "baked photos copied before persist/strip")
 
 
+def test_zip_export(suite: Suite, tmp: Path) -> None:
+    print("\n== ZIP export 12h/day ==")
+    from datetime import datetime, timedelta, timezone
+    import io
+    import zipfile
+
+    from utils.zip_export import build_position_archives, filter_recent_items, folder_name
+
+    store = MediaStore(tmp / "zip_media")
+    now = datetime(2026, 9, 21, 15, 0, tzinfo=timezone.utc)
+    recent_iso = (now - timedelta(hours=2)).strftime("%Y-%m-%dT%H:%M:%S.000Z")
+    today_old_iso = (now - timedelta(hours=14)).strftime("%Y-%m-%dT%H:%M:%S.000Z")
+    yesterday_iso = (now - timedelta(hours=30)).strftime("%Y-%m-%dT%H:%M:%S.000Z")
+
+    store.merge_items(ADMIN_A, [
+        make_item("new1", createdAt=recent_iso, updatedAt=recent_iso, note="точно по метке"),
+        make_item("today_old", createdAt=today_old_iso, updatedAt=today_old_iso, note="утром"),
+        make_item("old1", createdAt=yesterday_iso, updatedAt=yesterday_iso, note="вчера"),
+    ])
+    items = store.list_items(ADMIN_A)
+
+    h12, cutoff12, label12 = filter_recent_items(items, "12h", now=now)
+    ids12 = {i["id"] for i in h12}
+    suite.check(
+        "12h keeps only last 12 hours",
+        ids12 == {"new1"} and label12 == "12 часов",
+        f"ids={sorted(ids12)} label={label12}",
+    )
+
+    day, cutoff_day, label_day = filter_recent_items(items, "day", now=now)
+    ids_day = {i["id"] for i in day}
+    suite.check(
+        "day keeps calendar day MSK, not yesterday",
+        ids_day == {"new1", "today_old"} and label_day == "день",
+        f"ids={sorted(ids_day)} cutoff={cutoff_day.isoformat()} label={label_day}",
+    )
+
+    name = folder_name({"location": "pickup", "weight": 1, "note": "точно / по:метке?"}, 1)
+    suite.check(
+        "folder name strips unsafe chars",
+        "/" not in name and ":" not in name and "?" not in name and name.startswith("01_"),
+        f"name={name}",
+    )
+
+    archives = build_position_archives(
+        h12,
+        photo_loader=store.photo_bytes,
+        period_label=label12,
+        cutoff=cutoff12,
+        zip_stem="sklad_12h_test",
+    )
+    suite.check(
+        "builds one zip",
+        len(archives) == 1 and archives[0][0].endswith(".zip"),
+        f"files={[n for n, _ in archives]} sizes={[len(b) for _, b in archives]}",
+    )
+
+    zf = zipfile.ZipFile(io.BytesIO(archives[0][1]))
+    names = zf.namelist()
+    has_summary = "позиции.txt" in names
+    has_photo = any(n.endswith(".jpg") for n in names)
+    has_info = any(n.endswith("info.txt") for n in names)
+    summary = zf.read("позиции.txt").decode("utf-8")
+    suite.check(
+        "zip has positions, info and photos",
+        has_summary and has_photo and has_info and "точно по метке" in summary,
+        f"names={names} summary_ok={'точно по метке' in summary}",
+    )
+    zf.close()
+
+
 async def amain() -> int:
     suite = Suite()
     print("Logistics bot - functional / load / persistence audit")
@@ -727,6 +798,7 @@ async def amain() -> int:
     with tempfile.TemporaryDirectory(prefix="logistics_test_") as raw:
         tmp = Path(raw)
         test_media_store(suite, tmp)
+        test_zip_export(suite, tmp)
         await test_http(suite, tmp)
         await test_http_production_auth_hole(suite, tmp)
 
